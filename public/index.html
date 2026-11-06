@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Kardeşler Ligi</title>
 <style>
@@ -85,4 +85,16 @@ const ns=e=>{const x=f(e);confirm('Tüm maçlar silinecek. Emin misin?')&&act(()
 const sv=e=>{const x=f(e),b={};new FormData(x).forEach((v,k)=>b[k]=v);act(()=>api('PUT','/api/admin/settings',b),'Ayarlar kaydedildi');return false};
 const pw=e=>{const x=f(e);act(()=>api('POST','/api/admin/password',{current:x.c.value,next:x.n.value}),'Şifre değişti');x.reset();return false};
 addEventListener('hashchange',()=>load().then(render));load().then(render);
+// Gerçek zamanlı güncelleme (SSE)
+const events = new EventSource('/api/events');
+
+events.onmessage = async () => {
+  if (document.hidden) return;
+  try {
+    await load();
+    if (!location.hash.startsWith('#/yonetici')) render();
+  } catch (e) {
+    console.error('Canlı güncelleme hatası:', e);
+  }
+};
 </script></body></html>

@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 // Kardeşler Ligi — takım tabanlı lig. Veritabanı: PostgreSQL (Neon), bağlantı: DATABASE_URL.
 const http = require('http'), fs = require('fs'), path = require('path'), crypto = require('crypto');
 const { Pool } = require('pg');
@@ -156,11 +156,34 @@ async function api(req, res, u) {
 }
 
 const PUB = path.join(__dirname, 'public');
+const sseClients = new Set();
+function notifyClients() {
+  for (const client of sseClients) {
+    try { client.write('data: update\n\n'); }
+    catch { sseClients.delete(client); }
+  }
+}
 const server = http.createServer(async (req, res) => {
   res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('X-Frame-Options', 'DENY'); res.setHeader('Referrer-Policy', 'same-origin');
   try {
     const u = new URL(req.url, 'http://x');
-    if (u.pathname.startsWith('/api/')) return await api(req, res, u);
+    if (u.pathname === '/api/events' && req.method === 'GET') {
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-cache, no-transform',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no'
+      });
+      res.write(': connected\n\n');
+      sseClients.add(res);
+      res.on('close', () => sseClients.delete(res));
+      return;
+    }
+    if (u.pathname.startsWith('/api/')) {
+      await api(req, res, u);
+      if (req.method !== 'GET') notifyClients();
+      return;
+    }
     let f = path.normalize(path.join(PUB, u.pathname === '/' ? 'index.html' : u.pathname));
     if (!f.startsWith(PUB) || !fs.existsSync(f) || !fs.statSync(f).isFile()) f = path.join(PUB, 'index.html');
     res.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream' }); fs.createReadStream(f).on('error', () => res.destroy()).pipe(res);
