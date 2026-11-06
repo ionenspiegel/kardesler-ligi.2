@@ -1,9 +1,16 @@
 # Kardeşler Ligi (takım tabanlı)
-Gereksinim: Node 22.5+ (bağımlılık yok; `better-sqlite3` kuruluysa otomatik kullanılır).
+Gereksinim: Node 22+. Veritabanı: **PostgreSQL (Neon)** — bağlantı `DATABASE_URL` ortam değişkeninden okunur.
 
-1. `npm start`
-2. İlk çalıştırmada konsolda **kurulum kodu** yazar. `http://localhost:3000/#/yonetici` adresinde bu kodla Yusuf'un şifresini belirle. Şifre kodda/dosyada tutulmaz (scrypt hash).
-3. Tek yönetici: `yusuf`. Test: `npm test`.
+## Yerelde çalıştırma
+1. `.env.local` içinde `DATABASE_URL=...` olmalı (GitHub'a gönderilmez).
+2. `npm run dev` (= `node --env-file=.env.local server.js`).
+3. Yönetici kaydı yoksa konsolda **kurulum kodu** yazar; `/#/yonetici` adresinde bu kodla Yusuf'un şifresini belirle (scrypt hash, DB'de saklanır).
+4. Test: `npm test` (gerçek `kl_` tablolarına dokunmaz; geçici `klt_...` tablolarıyla çalışır ve sonunda yalnızca onları siler).
 
-Veri: `data/league.db` (`DB_PATH` ile değiştirilebilir). Eski tablolara dokunulmaz; yeni tablolar `kl_` ön ekiyle açılır. Eski `teams`/`matches` tabloları tanınırsa ilk açılışta kopyalanır.
-Yayın: `NODE_ENV=production` + HTTPS, `data/` klasörünü kalıcı diske koy ve yedekle.
+## Render
+Environment: `DATABASE_URL` (Neon pooled bağlantı), `NODE_ENV=production`, `SESSION_SECRET` (uzun rastgele bir metin; verilmezse DB'de `kl_secret` tablosuna üretilip saklanır).
+Yönetici kaydı yoksa kurulum kodu Render **Logs** ekranında görünür.
+
+## Veri
+Tablolar `kl_` ön ekiyle açılır (`CREATE TABLE IF NOT EXISTS`; hiçbir şey silinmez/DROP edilmez): `kl_admin, kl_teams, kl_matches, kl_settings, kl_secret`.
+Eski SQLite yedeğini (JSON) aktarmak: `npm run import -- yedek.json` (deneme) ve `npm run import -- yedek.json --apply`.

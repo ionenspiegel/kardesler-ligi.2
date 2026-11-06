@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "start": "node server.js",
-    "test": "node test.js"
+    "dev": "node --env-file=.env.local server.js",
+    "test": "node --env-file=.env.local test.js",
+    "import": "node --env-file=.env.local scripts/import-backup.js"
   },
   "engines": {
     "node": ">=22.5"

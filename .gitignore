@@ -3,3 +3,9 @@ data
 .env
 .neon
 .env.local
+*.db
+*.db-wal
+*.db-shm
+kardesler-ligi-yedek*.json
+yedek*.json
+.vs/
