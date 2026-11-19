@@ -355,6 +355,13 @@ function storyModal(){
   const top=sb.slice(0,8);
   inner=`<div class="story-head"><div class="story-sub">${esc(S.settings.season)} · HAFTA ${maxPlayedW}</div><h3>🏆 ${esc(S.settings.name)}</h3><div class="story-sub">GOL & ASİST KRALLIĞI</div></div>
   <div class="story-list">${top.length?top.map((x,i)=>{const tm=T(x.team_id);return `<div class="story-row"><span class="story-tname"><b style="min-width:20px">${i+1}.</b>${badge(tm,22)}<span>${esc(x.player)}</span></span><span style="white-space:nowrap"><b style="color:var(--g)">${x.goals}G</b> <span class="mut">${x.assists}A</span></span></div>`}).join(''):'<div class="empty">Henüz gol kaydı girilmemiş.</div>'}</div>`;
+ }else if(story.type==='remaining'){
+  const list=remainingData();
+  inner=`<div class="story-head"><div class="story-sub">${esc(S.settings.season)} · KALAN FİKSTÜR</div><h3>🏆 ${esc(S.settings.name)}</h3><div class="story-sub">HERKESİN KALAN MAÇI</div></div>
+  <div class="story-rem-grid">${list.map(x=>{
+   const lines=x.items.length?x.items.map(it=>`H${it.week} ${esc(it.opp.short||it.opp.name.slice(0,5))}(${it.isHome?'E':'D'})`).join(' · '):'Kalan maç yok';
+   return `<div class="story-rem-box"><div class="story-rem-head"><span class="story-tname">${badgePure(x.team,18)}<span>${esc(x.team.name)}</span></span><span style="color:var(--g);white-space:nowrap">${x.rem.length}M</span></div><div class="story-rem-sub">${lines}</div></div>`;
+  }).join('')}</div>`;
  }else if(story.type==='match'){
   const m=S.matches.find(x=>x.id===story.id);if(!m){story=null;return ''}
   const h=T(m.home_id),a=T(m.away_id);
@@ -381,7 +388,7 @@ function storyModal(){
     <button class="xs ${story.type==='remaining'?'pri':''}" onclick="story={type:'remaining'};render()">Kalan Maçlar</button>
    </div>
    <div class="story">${inner}<div class="story-foot">${esc(S.settings.name)} · EKRAN GÖRÜNTÜSÜ AL</div></div>
-   <button class="sm" onclick="story=null;render()">✕ Kapat</button>
+   <button class="sm pri" onclick="downloadStoryPng()">📥 PNG İndir</button><button class="sm" onclick="story=null;render()">✕ Kapat</button>
   </div>
  </div>`;
 }
