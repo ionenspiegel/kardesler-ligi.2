@@ -336,7 +336,12 @@ const fx=d=>act(async()=>{const r=await api('POST','/api/admin/fixture',{double:
 const ns=e=>{const x=f(e);confirm('Mevcut sezon Şampiyonlar Müzesi\'ne arşivlenecek ve maçlar sıfırlanacak. Emin misin?')&&act(()=>api('POST','/api/admin/season',{name:x.n.value}),'Sezon arşivlendi ve yeni sezon başladı');return false};
 const sv=e=>{const x=f(e),b={};new FormData(x).forEach((v,k)=>b[k]=v);act(()=>api('PUT','/api/admin/settings',b),'Ayarlar kaydedildi');return false};
 const pw=e=>{const x=f(e);act(()=>api('POST','/api/admin/password',{current:x.c.value,next:x.n.value}),'Şifre değişti');x.reset();return false};
-addEventListener('hashchange',()=>load().then(render));load().then(render);
+const boot = () => load().then(render).catch(e => {
+  console.error(e);
+  document.getElementById('app').innerHTML = '<div class="card" style="max-width:460px;margin:15vh auto;text-align:center"><h3>Bağlantı veya Yükleme Hatası</h3><p class="mut">' + esc(e.message || 'Sunucuya ulaşılamadı') + '</p><button class="pri" onclick="boot()">Tekrar Dene</button></div>';
+});
+addEventListener('hashchange', boot);
+boot();
 const events = new EventSource('/api/events');
 events.onmessage = async () => {
   if (document.hidden) return;
