@@ -420,10 +420,17 @@ function predBar(m){
   const k=String(m.id);
   const preds=allPredictions();
   const map=preds[k]||{};
+  const my=(MY_NICK&&map[MY_NICK])||VOTES[k]||'';
+  if(m.played){
+    if(!my)return '';
+    const out=matchOutcome(m);
+    return '<div class="pred-box">'+(my===out
+      ?'<div class="pred-res ok">✅ Tahminin Tuttu! (+3 Puan)</div>'
+      :'<div class="pred-res no">❌ Tahminin Yattı</div>')+'</div>';
+  }
   const entries=Object.entries(map);
   let cH=0,cD=0,cA=0;
   for(const [,v] of entries){if(v==='H')cH++;else if(v==='D')cD++;else if(v==='A')cA++;}
-  const my=(MY_NICK&&map[MY_NICK])||VOTES[k]||'';
   if(my && !entries.some(([u])=>u===MY_NICK)){
     if(my==='H')cH++;else if(my==='D')cD++;else if(my==='A')cA++;
   }
@@ -432,24 +439,11 @@ function predBar(m){
   const rD=tot?Math.round(cD*100/tot):0;
   const rA=tot?Math.max(0,100-rH-rD):0;
   const h=T(m.home_id),a=T(m.away_id);
-  const out=matchOutcome(m);
-  const dis=m.played?'disabled':'';
-  let statusHtml='';
-  if(m.played){
-    if(my){
-      statusHtml=my===out
-        ?'<div class="pred-res ok">✅ Tahminin Tuttu! (+3 Puan)</div>'
-        :'<div class="pred-res no">❌ Tahminin Yattı</div>';
-    }else{
-      statusHtml='<div class="mut" style="text-align:center;font-size:11px;margin-top:5px">🔒 Maç tamamlandı · Oylama kilitli ('+tot+' oy)</div>';
-    }
-  }else{
-    statusHtml='<div class="mut" style="text-align:center;font-size:11px;margin-top:5px">'+(tot?tot+' kişi oy verdi':'İlk tahmini sen yap!')+(MY_NICK?' · 👤 '+esc(MY_NICK):'')+'</div>';
-  }
+  const statusHtml='<div class="mut" style="text-align:center;font-size:11px;margin-top:5px">'+(tot?tot+' kişi oy verdi':'İlk tahmini sen yap!')+(MY_NICK?' · 👤 '+esc(MY_NICK):'')+'</div>';
   return '<div class="pred-box"><div class="pred-row">'
-    +'<button type="button" '+dis+' class="xs pred-btn '+(my==='H'?'pri picked':'')+' '+(out==='H'?'win':'')+'" onclick="votePick('+m.id+',\'H\')">'+esc(h.short||h.name)+' '+(tot?'(%'+rH+')':'')+'</button>'
-    +'<button type="button" '+dis+' class="xs pred-btn '+(my==='D'?'pri picked':'')+' '+(out==='D'?'win':'')+'" onclick="votePick('+m.id+',\'D\')">Berabere '+(tot?'(%'+rD+')':'')+'</button>'
-    +'<button type="button" '+dis+' class="xs pred-btn '+(my==='A'?'pri picked':'')+' '+(out==='A'?'win':'')+'" onclick="votePick('+m.id+',\'A\')">'+esc(a.short||a.name)+' '+(tot?'(%'+rA+')':'')+'</button>'
+    +'<button type="button" class="xs pred-btn '+(my==='H'?'pri picked':'')+'" onclick="votePick('+m.id+',\'H\')">'+esc(h.short||h.name)+' '+(tot?'(%'+rH+')':'')+'</button>'
+    +'<button type="button" class="xs pred-btn '+(my==='D'?'pri picked':'')+'" onclick="votePick('+m.id+',\'D\')">Berabere '+(tot?'(%'+rD+')':'')+'</button>'
+    +'<button type="button" class="xs pred-btn '+(my==='A'?'pri picked':'')+'" onclick="votePick('+m.id+',\'A\')">'+esc(a.short||a.name)+' '+(tot?'(%'+rA+')':'')+'</button>'
     +'</div>'+statusHtml+'</div>';
 }
 
@@ -476,10 +470,25 @@ function predictionLeaderboard(){
     +'</tbody></table></div>';
 }
 
+function getPlayoffCfg(){
+  let cfg={};
+  try{cfg=JSON.parse(S.settings.playoff_cfg||'{}')||{}}catch{cfg={}}
+  return Object.assign({hidden:false,mode:'auto',sf1_h:'',sf1_a:'',sf1_hs:'',sf1_aws:'',sf2_h:'',sf2_a:'',sf2_hs:'',sf2_aws:'',fin_h:'',fin_a:'',fin_hs:'',fin_aws:''},cfg);
+}
+
+function getCustomNews(){
+  let arr=[];
+  try{arr=JSON.parse(S.settings.custom_news||'[]')||[]}catch{arr=[]}
+  return Array.isArray(arr)?arr:[];
+}
+
 function headlinesSection(){
   const pl=S.matches.filter(m=>m.played).sort((a,b)=>(b.updated||'').localeCompare(a.updated||'')||b.id-a.id);
   const st=liveStandings();
   const items=[];
+  for(const cn of getCustomNews()){
+    if(cn&&cn.title)items.push({k:esc(cn.kicker||'ÖZEL MANŞET'),t:esc(cn.title)});
+  }
   if(st.rows.length>=2){
     const l1=st.rows[0],l2=st.rows[1];
     const gap=(l1.pts||0)-(l2.pts||0);
@@ -503,12 +512,37 @@ function headlinesSection(){
   }
   if(!items.length)return '';
   return '<div class="sh"><h2>📰 Spor Gazetesi Manşetleri</h2></div><div class="news-ticker">'
-    +items.slice(0,3).map(x=>'<div class="news-item"><div class="news-kicker">'+x.k+'</div><div class="news-title">'+x.t+'</div></div>').join('')
+    +items.slice(0,4).map(x=>'<div class="news-item"><div class="news-kicker">'+x.k+'</div><div class="news-title">'+x.t+'</div></div>').join('')
     +'</div>';
 }
 
 function playoffSection(){
+  const cfg=getPlayoffCfg();
+  if(cfg.hidden)return '';
   const st=liveStandings();
+  if(cfg.mode==='manual'){
+    const renderSlot=(idVal,label,scVal)=>{
+      const tm=idVal?T(Number(idVal)):null;
+      const sc=(scVal!==''&&scVal!==null&&scVal!==undefined)?esc(String(scVal)):'-';
+      if(tm&&tm.id)return '<div class="po-team"><span>'+badgePure(tm,22)+' <b>'+esc(tm.name)+'</b></span><b>'+sc+'</b></div>';
+      return '<div class="po-team"><span class="mut">'+esc(label)+'</span><b>'+sc+'</b></div>';
+    };
+    return '<div class="sh"><h2>🏆 Kupa / Play-Off Ağacı</h2><span class="tag">Yönetici Özel Eşleşmesi</span></div>'
+      +'<div class="card"><div class="po-grid">'
+      +'<div class="po-col">'
+      +'<div class="po-match"><div class="mut" style="font-size:11px;font-weight:800">YARI FİNAL 1</div>'
+      +renderSlot(cfg.sf1_h,'Belirlenmedi',cfg.sf1_hs)
+      +renderSlot(cfg.sf1_a,'Belirlenmedi',cfg.sf1_aws)+'</div>'
+      +'<div class="po-match"><div class="mut" style="font-size:11px;font-weight:800">YARI FİNAL 2</div>'
+      +renderSlot(cfg.sf2_h,'Belirlenmedi',cfg.sf2_hs)
+      +renderSlot(cfg.sf2_a,'Belirlenmedi',cfg.sf2_aws)+'</div>'
+      +'</div>'
+      +'<div class="po-col"><div class="po-match po-final"><div style="font-size:11px;font-weight:900;color:#facc15">🏆 BÜYÜK FİNAL</div>'
+      +renderSlot(cfg.fin_h,'Yarı Final 1 Galibi',cfg.fin_hs)
+      +renderSlot(cfg.fin_a,'Yarı Final 2 Galibi',cfg.fin_aws)
+      +'</div></div>'
+      +'</div></div>';
+  }
   if(st.rows.length<4)return '';
   const top4=st.rows.slice(0,4);
   const t1=top4[0],t2=top4[1],t3=top4[2],t4=top4[3];
@@ -531,6 +565,97 @@ function playoffSection(){
     +'<div class="po-team"><span>Yarı Final 2 Galibi</span><span class="tag">Finalist</span></div>'
     +'<div class="mut" style="font-size:11px;margin-top:8px">Lig sıralaması değiştikçe eşleşmeler otomatik güncellenir.</div></div></div>'
     +'</div></div>';
+}
+
+async function saveAdminExtra(key,obj){
+  try{
+    const val=JSON.stringify(obj);
+    await api('POST','/api/admin/extras',{key,value:val});
+    S.settings[key]=val;
+    toast('Kaydedildi');
+    render();
+  }catch(e){toast(e.message||'Kaydedilemedi',1)}
+}
+
+function savePlayoffForm(){
+  const g=id=>document.getElementById(id)?.value??'';
+  const cfg={
+    hidden:!!document.getElementById('po_hidden')?.checked,
+    mode:g('po_mode')||'auto',
+    sf1_h:g('po_sf1_h'),sf1_a:g('po_sf1_a'),sf1_hs:g('po_sf1_hs'),sf1_aws:g('po_sf1_aws'),
+    sf2_h:g('po_sf2_h'),sf2_a:g('po_sf2_a'),sf2_hs:g('po_sf2_hs'),sf2_aws:g('po_sf2_aws'),
+    fin_h:g('po_fin_h'),fin_a:g('po_fin_a'),fin_hs:g('po_fin_hs'),fin_aws:g('po_fin_aws')
+  };
+  saveAdminExtra('playoff_cfg',cfg);
+}
+
+function addCustomHeadline(){
+  const k=(document.getElementById('cn_kicker')?.value||'ÖZEL MANŞET').trim().slice(0,30);
+  const t=(document.getElementById('cn_title')?.value||'').trim().slice(0,140);
+  if(!t)return toast('Manşet metni yaz',1);
+  const list=getCustomNews();
+  list.unshift({id:Date.now(),kicker:k||'ÖZEL MANŞET',title:t});
+  saveAdminExtra('custom_news',list);
+}
+
+function delCustomHeadline(idx){
+  const list=getCustomNews();
+  list.splice(idx,1);
+  saveAdminExtra('custom_news',list);
+}
+
+function delPredictorUser(uname){
+  if(!uname)return;
+  if(!confirm(uname+' kullanıcısının tüm tahminleri silinsin mi?'))return;
+  const preds=allPredictions();
+  for(const mid of Object.keys(preds)){
+    if(preds[mid]&&typeof preds[mid]==='object')delete preds[mid][uname];
+  }
+  saveAdminExtra('predictions',preds);
+}
+
+function resetAllPredictions(){
+  if(!confirm('Tüm tahminler ve Tahmin Kralı puanları sıfırlansın mı?'))return;
+  saveAdminExtra('predictions',{});
+}
+
+function adminExtrasTab(){
+  const cfg=getPlayoffCfg();
+  const news=getCustomNews();
+  const preds=allPredictions();
+  const users=[...new Set(Object.values(preds).flatMap(m=>Object.keys(m||{})))];
+  const teamOpts=(sel,emptyLbl)=>'<option value="">'+emptyLbl+'</option>'+S.teams.map(t=>'<option value="'+t.id+'" '+(String(sel)===String(t.id)?'selected':'')+'>'+esc(t.name)+'</option>').join('');
+  return '<div class="card"><h3>🏆 Kupa / Play-Off Yönetimi (Oto & Manuel)</h3>'
+    +'<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px">'
+    +'<label>Mod: <select id="po_mode"><option value="auto" '+(cfg.mode==='auto'?'selected':'')+'>Otomatik (Puan Durumu İlk 4)</option><option value="manual" '+(cfg.mode==='manual'?'selected':'')+'>Manuel (Yönetici Seçimi)</option></select></label>'
+    +'<label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="po_hidden" '+(cfg.hidden?'checked':'')+'> Ana sayfada gizle</label>'
+    +'</div>'
+    +'<div class="grid" style="margin-bottom:12px">'
+    +'<div class="card" style="margin:0"><b>Yarı Final 1</b><div style="display:grid;gap:6px;margin-top:8px">'
+    +'<div style="display:flex;gap:6px"><select id="po_sf1_h" style="flex:1">'+teamOpts(cfg.sf1_h,'Ev Sahibi Seç')+'</select><input id="po_sf1_hs" value="'+esc(cfg.sf1_hs)+'" placeholder="Skor" style="width:64px"></div>'
+    +'<div style="display:flex;gap:6px"><select id="po_sf1_a" style="flex:1">'+teamOpts(cfg.sf1_a,'Deplasman Seç')+'</select><input id="po_sf1_aws" value="'+esc(cfg.sf1_aws)+'" placeholder="Skor" style="width:64px"></div>'
+    +'</div></div>'
+    +'<div class="card" style="margin:0"><b>Yarı Final 2</b><div style="display:grid;gap:6px;margin-top:8px">'
+    +'<div style="display:flex;gap:6px"><select id="po_sf2_h" style="flex:1">'+teamOpts(cfg.sf2_h,'Ev Sahibi Seç')+'</select><input id="po_sf2_hs" value="'+esc(cfg.sf2_hs)+'" placeholder="Skor" style="width:64px"></div>'
+    +'<div style="display:flex;gap:6px"><select id="po_sf2_a" style="flex:1">'+teamOpts(cfg.sf2_a,'Deplasman Seç')+'</select><input id="po_sf2_aws" value="'+esc(cfg.sf2_aws)+'" placeholder="Skor" style="width:64px"></div>'
+    +'</div></div>'
+    +'<div class="card" style="margin:0"><b>🏆 Büyük Final</b><div style="display:grid;gap:6px;margin-top:8px">'
+    +'<div style="display:flex;gap:6px"><select id="po_fin_h" style="flex:1">'+teamOpts(cfg.fin_h,'Yarı Final 1 Galibi')+'</select><input id="po_fin_hs" value="'+esc(cfg.fin_hs)+'" placeholder="Skor" style="width:64px"></div>'
+    +'<div style="display:flex;gap:6px"><select id="po_fin_a" style="flex:1">'+teamOpts(cfg.fin_a,'Yarı Final 2 Galibi')+'</select><input id="po_fin_aws" value="'+esc(cfg.fin_aws)+'" placeholder="Skor" style="width:64px"></div>'
+    +'</div></div>'
+    +'</div>'
+    +'<button type="button" class="pri" onclick="savePlayoffForm()">💾 Play-Off Ayarlarını Kaydet</button></div>'
+    +'<div class="card"><h3>📰 Özel Spor Gazetesi Manşeti</h3>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'
+    +'<input id="cn_kicker" placeholder="Etiket (örn: SON DAKİKA)" style="width:170px">'
+    +'<input id="cn_title" placeholder="Manşet metni..." style="flex:1;min-width:200px">'
+    +'<button type="button" class="pri" onclick="addCustomHeadline()">+ Manşet Ekle</button>'
+    +'</div>'
+    +(news.length?news.map((n,i)=>'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid rgba(255,255,255,.08)"><span><b style="color:#fbbf24">['+esc(n.kicker)+']</b> '+esc(n.title)+'</span><button type="button" class="xs bad" onclick="delCustomHeadline('+i+')">Sil</button></div>').join(''):'<div class="mut" style="font-size:12px">Henüz özel manşet eklenmedi (otomatik manşetler çalışıyor).</div>')
+    +'</div>'
+    +'<div class="card"><h3>🎯 Tahmin Kralı & Oy Yönetimi</h3>'
+    +(users.length?'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+users.map(u=>'<span class="tag" style="display:inline-flex;align-items:center;gap:6px">👤 '+esc(u)+' <button type="button" class="xs bad" data-user="'+esc(u)+'" onclick="delPredictorUser(this.dataset.user)">×</button></span>').join('')+'</div>':'<div class="mut" style="font-size:12px;margin-bottom:10px">Henüz kayıtlı tahminci yok.</div>')
+    +'<button type="button" class="sm bad" onclick="resetAllPredictions()">🗑 Tüm Tahminleri Sıfırla</button></div>';
 }
 
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}))}
@@ -730,7 +855,7 @@ const doLogin=e=>{e.preventDefault();const f=e.target;act(()=>api('POST','/api/a
 
 function panel(){const weeks=[...new Set(S.matches.map(m=>m.week))].sort((a,b)=>a-b);if(!wk||!weeks.includes(wk))wk=+S.settings.week&&weeks.includes(+S.settings.week)?+S.settings.week:weeks[0]||1;
  const tabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['s','⚙ Ayarlar']];let c='';
- if(tab==='m')c=`<div class="tabs">${weeks.map(w=>`<button class="${w===wk?'on':''}" onclick="wk=${w};render()">H${w}</button>`).join('')}</div>${S.matches.some(m=>m.week===wk)?`<div class="grid">${S.matches.filter(m=>m.week===wk).map(m=>mcard(m,1)).join('')}</div>`:'<div class="card empty">Bu haftada maç yok. Aşağıdan ekle ya da fikstür oluştur.</div>'}
+ if(tab==='kupa')c=adminExtrasTab();else if(tab==='m')c=`<div class="tabs">${weeks.map(w=>`<button class="${w===wk?'on':''}" onclick="wk=${w};render()">H${w}</button>`).join('')}</div>${S.matches.some(m=>m.week===wk)?`<div class="grid">${S.matches.filter(m=>m.week===wk).map(m=>mcard(m,1)).join('')}</div>`:'<div class="card empty">Bu haftada maç yok. Aşağıdan ekle ya da fikstür oluştur.</div>'}
  <div class="sh"><h2>Maç Ekle</h2></div><form class="card row" onsubmit="return addM(event)"><input name="w" type="number" min="1" value="${wk}" title="Hafta"><select name="h">${S.teams.map(t=>`<option value="${t.id}">${esc(t.name)}`).join('')}</select><select name="a">${S.teams.map((t,i)=>`<option value="${t.id}" ${i==1?'selected':''}>${esc(t.name)}`).join('')}</select><button class="pri">Ekle</button></form>${goalModal()}`;
  if(tab==='t')c=`<form class="card row" onsubmit="return addT(event)"><input name="n" placeholder="Takım adı" required maxlength="40"><input name="s" placeholder="Kısa ad" maxlength="4" style="max-width:100px"><input name="c" type="color" value="#22c55e"><button class="pri">Takım ekle</button></form><div class="grid" style="margin-top:12px">${S.teams.map(t=>`<form class="card row" onsubmit="return editT(event,${t.id})">${badge(t)}<input name="n" value="${esc(t.name)}" required maxlength="40"><input name="s" value="${esc(t.short||'')}" maxlength="4" style="max-width:80px"><input name="c" type="color" value="${esc(t.color)}"><button>💾</button><button type="button" class="dng" onclick="delT(${t.id},'${esc(t.name).replace(/'/g,'')}')">🗑</button></form>`).join('')||'<div class="card empty">Takım yok.</div>'}</div>`;
  if(tab==='c'){
