@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Kardeşler Ligi</title>
 <style>
@@ -46,7 +46,7 @@ async function load(){[S,ME]=await Promise.all([api('GET','/api/league'),api('GE
 const T=id=>S.teams.find(t=>t.id===id)||{name:'?',color:'#888'};
 const badge=t=>`<span class="b" style="--c:${esc(t.color)}">${esc(t.short||t.name.slice(0,3).toUpperCase())}</span>`;
 function mcard(m,adm){const h=T(m.home_id),a=T(m.away_id),live=!m.played&&(m.hs||m.aws),b=bump===m.id;
- return `<div class="m"><div class="t">${badge(h)}${esc(h.name)}</div><div class="sc ${b?'pop':''}"><span>${m.hs} - ${m.aws}</span><small>${m.played?'Bitti':live?'<span class="tag live">CANLI</span>':'Hafta '+m.week}</small></div><div class="t">${badge(a)}${esc(a.name)}</div>
+ return `<div class="m"><div class="t">${badge(h)}${esc(h.name)}</div><div class="sc ${b?'pop':''}"><span>${m.hs} - ${m.aws}</span><small>${m.played?'Bitti · H'+m.week:live?'<span class="tag live">CANLI</span> · H'+m.week:'Hafta '+m.week}</small></div><div class="t">${badge(a)}${esc(a.name)}</div>
  ${adm?`<div class="mc"><div class="ctr"><button class="gb" onclick="g(${m.id},'hs',-1)">−</button><button class="gb plus" onclick="g(${m.id},'hs',1)">+</button></div><button onclick="fin(${m.id},${m.played?0:1})">${m.played?'↩ Aç':'✔ Bitir'}</button><button class="dng" onclick="delM(${m.id})">🗑</button><div class="ctr"><button class="gb" onclick="g(${m.id},'aws',-1)">−</button><button class="gb plus" onclick="g(${m.id},'aws',1)">+</button></div></div>`:''}</div>`}
 function home(){const s=S.settings,pl=S.matches.filter(m=>m.played).sort((a,b)=>(b.updated||'').localeCompare(a.updated||'')||b.id-a.id).slice(0,6),nx=S.matches.filter(m=>!m.played).slice(0,6);
  return `<div class="hero"><h1>🏆 ${esc(s.name)}</h1><p>Sezon ${esc(s.season)}</p><div class="chips"><span class="chip">Hafta ${esc(s.week)}</span><span class="chip">${S.teams.length} takım</span><span class="chip">${S.matches.filter(m=>m.played).length} maç oynandı</span></div></div>
