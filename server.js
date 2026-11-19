@@ -52,6 +52,7 @@ const E = (code, msg) => Object.assign(new Error(msg), { code });
 const int = (v, lo, hi, name) => { v = Number(v); if (!Number.isInteger(v) || v < lo || v > hi) throw E(400, `${name} geçersiz`); return v; };
 const okId = id => Number.isInteger(id) && id > 0 && id <= MAXID;
 const clean = s => String(s ?? '').replace(/\u0000/g, '').trim();
+const escHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const settings = async () => Object.fromEntries((await q(`SELECT k,v FROM ${SETTINGS}`)).map(r => [r.k, r.v]));
 async function standings() {
   const s = await settings(), W = +s.win, D = +s.draw, L = +s.loss, T = {};
@@ -102,9 +103,99 @@ async function matchData(b, old = {}) {
   if (m.home_id === m.away_id) throw E(400, 'Bir takım kendisiyle oynayamaz'); return m;
 }
 
+async function restoreBackup(b) {
+  if (!b || typeof b !== 'object' || !Array.isArray(b.teams) || !Array.isArray(b.matches) || !b.settings || typeof b.settings !== 'object') {
+    throw E(400, 'Geçersiz yedek dosyası biçimi');
+  }
+  const s = b.settings;
+  const newSet = {
+    name: clean(s.name || DEF.name).slice(0, 40) || DEF.name,
+    season: clean(s.season || DEF.season).slice(0, 20) || DEF.season,
+    win: String(int(s.win ?? DEF.win, 0, 10, 'Puan')),
+    draw: String(int(s.draw ?? DEF.draw, 0, 10, 'Puan')),
+    loss: String(int(s.loss ?? DEF.loss, 0, 10, 'Puan')),
+    week: String(int(s.week ?? DEF.week, 1, 200, 'Hafta'))
+  };
+
+  const teamIds = new Set();
+  const cleanTeams = b.teams.map(tm => {
+    const id = int(tm.id, 1, MAXID, 'Takım ID');
+    if (teamIds.has(id)) throw E(400, 'Yedekte tekrarlayan takım ID var');
+    teamIds.add(id);
+    const [name, short, color] = teamData(tm);
+    return { id, name, short, color };
+  });
+
+  const matchIds = new Set();
+  const cleanMatches = b.matches.map(m => {
+    const id = int(m.id, 1, MAXID, 'Maç ID');
+    if (matchIds.has(id)) throw E(400, 'Yedekte tekrarlayan maç ID var');
+    matchIds.add(id);
+    const week = int(m.week, 1, 200, 'Hafta');
+    const home_id = int(m.home_id, 1, MAXID, 'Ev sahibi');
+    const away_id = int(m.away_id, 1, MAXID, 'Deplasman');
+    if (!teamIds.has(home_id) || !teamIds.has(away_id) || home_id === away_id) throw E(400, 'Yedekte geçersiz maç takımı var');
+    const hs = int(m.hs ?? 0, 0, 99, 'Skor');
+    const aws = int(m.aws ?? 0, 0, 99, 'Skor');
+    const played = m.played ? 1 : 0;
+    const updated = m.updated ? clean(m.updated).slice(0, 40) : null;
+    const note = clean(m.note).slice(0, 80);
+    return { id, week, home_id, away_id, hs, aws, played, updated, note };
+  });
+
+  const cleanGoals = (Array.isArray(b.goals) ? b.goals : []).map(g => {
+    const id = int(g.id, 1, MAXID, 'Gol ID');
+    const match_id = int(g.match_id, 1, MAXID, 'Maç ID');
+    const team_id = int(g.team_id, 1, MAXID, 'Takım ID');
+    if (!matchIds.has(match_id) || !teamIds.has(team_id)) throw E(400, 'Yedekte geçersiz gol kaydı var');
+    const player = clean(g.player).slice(0, 40);
+    if (!player) throw E(400, 'Yedekte boş oyuncu adı var');
+    const goals = int(g.goals ?? 1, 0, 50, 'Gol');
+    const assists = int(g.assists ?? 0, 0, 50, 'Asist');
+    return { id, match_id, team_id, player, goals, assists };
+  });
+
+  const cleanArchives = (Array.isArray(b.archives) ? b.archives : []).map(a => {
+    const id = int(a.id, 1, MAXID, 'Arşiv ID');
+    const season = clean(a.season).slice(0, 20) || 'Sezon';
+    const champion = clean(a.champion).slice(0, 40) || 'Şampiyon';
+    const data = typeof a.data === 'string' ? a.data : JSON.stringify(a.data || []);
+    const archived_at = a.archived_at ? clean(a.archived_at).slice(0, 40) : null;
+    return { id, season, champion, data, archived_at };
+  });
+
+  await tx(async t => {
+    await t.run(`DELETE FROM ${GOALS}`);
+    await t.run(`DELETE FROM ${MATCHES}`);
+    await t.run(`DELETE FROM ${TEAMS}`);
+    await t.run(`DELETE FROM ${ARCHIVES}`);
+    for (const [k, v] of Object.entries(newSet)) {
+      await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES($1,$2) ON CONFLICT(k) DO UPDATE SET v=EXCLUDED.v`, k, v);
+    }
+    for (const tm of cleanTeams) {
+      await t.run(`INSERT INTO ${TEAMS}(id,name,short,color) VALUES($1,$2,$3,$4)`, tm.id, tm.name, tm.short, tm.color);
+    }
+    for (const m of cleanMatches) {
+      await t.run(`INSERT INTO ${MATCHES}(id,week,home_id,away_id,hs,aws,played,updated,note) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+        m.id, m.week, m.home_id, m.away_id, m.hs, m.aws, m.played, m.updated, m.note);
+    }
+    for (const g of cleanGoals) {
+      await t.run(`INSERT INTO ${GOALS}(id,match_id,team_id,player,goals,assists) VALUES($1,$2,$3,$4,$5,$6)`,
+        g.id, g.match_id, g.team_id, g.player, g.goals, g.assists);
+    }
+    for (const a of cleanArchives) {
+      await t.run(`INSERT INTO ${ARCHIVES}(id,season,champion,data,archived_at) VALUES($1,$2,$3,$4,$5)`,
+        a.id, a.season, a.champion, a.data, a.archived_at);
+    }
+    for (const tbl of [TEAMS, MATCHES, GOALS, ARCHIVES]) {
+      await t.run(`SELECT setval(pg_get_serial_sequence('${tbl}', 'id'), COALESCE((SELECT MAX(id) FROM ${tbl}), 1), (SELECT MAX(id) IS NOT NULL FROM ${tbl}))`);
+    }
+  });
+}
+
 const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon' };
 const send = (res, code, obj, h = {}) => { res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...h }); res.end(JSON.stringify(obj)); };
-const body = req => new Promise((ok, no) => { let d = ''; req.on('data', c => { d += c; if (d.length > 1e6) { no(E(413, 'Çok büyük')); req.destroy(); } }); req.on('end', () => { try { ok(d ? JSON.parse(d) : {}); } catch { no(E(400, 'Geçersiz JSON')); } }); });
+const body = req => new Promise((ok, no) => { let d = ''; req.on('data', c => { d += c; if (d.length > 2e6) { no(E(413, 'Çok büyük')); req.destroy(); } }); req.on('end', () => { try { ok(d ? JSON.parse(d) : {}); } catch { no(E(400, 'Geçersiz JSON')); } }); });
 const cookie = (v, age) => `kl_s=${v}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${age}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
 
 async function api(req, res, u) {
@@ -131,6 +222,7 @@ async function api(req, res, u) {
   const seg = P.split('/'), id = +seg[4], kind = seg[3];
   if (M === 'GET' && kind === 'backup') return send(res, 200, await league(), { 'Content-Disposition': 'attachment; filename="kardesler-ligi-yedek.json"' });
   const b = M === 'DELETE' ? {} : await body(req);
+  if (M === 'POST' && kind === 'restore') { await restoreBackup(b); return send(res, 200, { ok: 1 }); }
   if (kind === 'password') {
     const a = await one(`SELECT * FROM ${ADMIN} WHERE id=1`); if (!eq(hashPw(String(b.current || ''), a.salt), a.hash)) throw E(403, 'Mevcut şifre yanlış'); if (!pwOk(b.next)) throw E(400, 'Yeni şifre en az 8 karakter olmalı');
     const salt = crypto.randomBytes(16).toString('hex'); await run(`UPDATE ${ADMIN} SET salt=$1,hash=$2 WHERE id=1`, salt, hashPw(b.next, salt)); return send(res, 200, { ok: 1 });
@@ -222,6 +314,20 @@ const server = http.createServer(async (req, res) => {
     }
     let f = path.normalize(path.join(PUB, u.pathname === '/' ? 'index.html' : u.pathname));
     if (!f.startsWith(PUB) || !fs.existsSync(f) || !fs.statSync(f).isFile()) f = path.join(PUB, 'index.html');
+    if (path.basename(f) === 'index.html') {
+      let html = fs.readFileSync(f, 'utf8');
+      try {
+        const s = await settings();
+        const ogTitle = escHtml(`${s.name || DEF.name} — ${s.season || DEF.season}`);
+        const ogDesc = escHtml(`${s.name || DEF.name} canlı puan durumu, fikstür, kafa kafaya rekabet ve gol krallığı istatistikleri.`);
+        html = html.replace(/__OG_TITLE__/g, ogTitle).replace(/__OG_DESC__/g, ogDesc);
+      } catch {
+        html = html.replace(/__OG_TITLE__/g, 'Kardeşler Ligi').replace(/__OG_DESC__/g, 'Canlı puan durumu, fikstür ve istatistikler.');
+      }
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
+      res.end(html);
+      return;
+    }
     res.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream' }); fs.createReadStream(f).on('error', () => res.destroy()).pipe(res);
   } catch (e) { const mine = Number.isInteger(e.code); if (!mine) console.error(e); if (!res.headersSent) send(res, mine ? e.code : 500, { error: mine ? e.message : 'Sunucu hatası' }); }
 });

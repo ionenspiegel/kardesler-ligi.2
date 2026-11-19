@@ -1,6 +1,16 @@
 <!doctype html>
 <html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kardeşler Ligi</title>
+<title>__OG_TITLE__</title>
+<meta name="description" content="__OG_DESC__">
+<meta name="theme-color" content="#0f7a4f">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kardeşler Ligi">
+<meta property="og:title" content="__OG_TITLE__">
+<meta property="og:description" content="__OG_DESC__">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="__OG_TITLE__">
+<meta name="twitter:description" content="__OG_DESC__">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
 <style>
 :root{--bg:#070b16;--card:#111a2e;--card2:#16223c;--line:#24345a;--tx:#eaf0ff;--mut:#8fa0c8;--g:#22e08a;--y:#ffd23f;--r:#ff4d6d;--b:#4da3ff}
 *{box-sizing:border-box}body{margin:0;font:16px/1.4 system-ui,Segoe UI,Roboto,sans-serif;color:var(--tx);background:radial-gradient(1200px 600px at 80% -10%,#1b3a8a55,transparent),radial-gradient(900px 500px at -10% 10%,#0e8f5a44,transparent),var(--bg);min-height:100vh}
@@ -103,7 +113,7 @@ function toggleSfx(){sfxOn=!sfxOn;localStorage.setItem('kl_sfx',sfxOn?'1':'0');t
 async function api(m,u,b){const r=await fetch(u,{method:m,headers:{'Content-Type':'application/json','X-KL':'1'},body:b?JSON.stringify(b):undefined});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Hata');return d}
 function toast(t,err){const e=$('#toast');e.textContent=t;e.className='show'+(err?' err':'');clearTimeout(toast.t);toast.t=setTimeout(()=>e.className='',2600)}
 async function act(f,ok){try{await f();if(ok)toast(ok);await load();render()}catch(e){toast(e.message,1)}}
-async function load(){[S,ME]=await Promise.all([api('GET','/api/league'),api('GET','/api/me')])}
+async function load(){[S,ME]=await Promise.all([api('GET','/api/league'),api('GET','/api/me')]);if(S.settings?.name)document.title=`${S.settings.name} — ${S.settings.season||''}`}
 const T=id=>S.teams.find(t=>t.id===id)||{name:'?',color:'#888'};
 const badge=(t,sz)=>`<span class="b" style="--c:${esc(t.color)};${sz?`min-width:${sz}px;width:${sz}px;height:${sz}px;font-size:${Math.max(9,Math.round(sz*.34))}px;margin-right:6px`:''}">${esc(t.short||t.name.slice(0,3).toUpperCase())}</span>`;
 const badgePure=(t,sz)=>`<span class="b" style="--c:${esc(t.color)};min-width:${sz}px;width:${sz}px;height:${sz}px;font-size:${Math.max(9,Math.round(sz*.34))}px;margin:0">${esc(t.short||t.name.slice(0,3).toUpperCase())}</span>`;
@@ -257,23 +267,23 @@ function storyModal(){
   const st=liveStandings();
   const rows=st.rows;
   const cmp=rows.length>8?' compact':'';
-  inner=`<div class="story-head"><div class="story-sub">SEZON ${esc(S.settings.season)} · ${playedAll.length} MAÇ OYNANDI</div><h3>🏆 ${esc(S.settings.name)}</h3><div class="story-sub">${st.hasLive?'CANLI PUAN DURUMU':'PUAN DURUMU'} (${rows.length} TAKIM)</div></div>
+  inner=`<div class="story-head"><div class="story-sub">${esc(S.settings.season)} · ${playedAll.length} MAÇ OYNANDI</div><h3>🏆 ${esc(S.settings.name)}</h3><div class="story-sub">${st.hasLive?'CANLI PUAN DURUMU':'PUAN DURUMU'} (${rows.length} TAKIM)</div></div>
   <div class="story-list">${rows.map((t,i)=>`<div class="story-row${cmp}"><span class="story-tname"><b style="min-width:20px">${i+1}.</b>${badge(t,rows.length>8?20:24)}<span style="overflow:hidden;text-overflow:ellipsis">${esc(t.name)}</span></span><span style="white-space:nowrap;flex-shrink:0"><span class="mut" style="margin-right:6px">${t.p}O</span><span class="mut" style="margin-right:7px">${t.gd>0?'+':''}${t.gd}</span><b style="color:var(--g)">${t.pts}P</b></span></div>`).join('')}</div>`;
  }else if(story.type==='matches'){
   const sw=story.week||'recent';
   const list=sw==='recent'?playedAll.slice(0,8):S.matches.filter(m=>m.week===sw&&m.played).sort((a,b)=>a.id-b.id);
   const title=sw==='recent'?'SON OYNANAN MAÇLAR':`HAFTA ${sw} SONUÇLARI`;
-  inner=`<div class="story-head"><div class="story-sub">SEZON ${esc(S.settings.season)} · ${playedAll.length} MAÇ</div><h3>🏆 ${esc(S.settings.name)}</h3><div class="story-sub">${title}</div></div>
+  inner=`<div class="story-head"><div class="story-sub">${esc(S.settings.season)} · ${playedAll.length} MAÇ</div><h3>🏆 ${esc(S.settings.name)}</h3><div class="story-sub">${title}</div></div>
   <div class="story-list">${list.length?list.map(m=>{const h=T(m.home_id),a=T(m.away_id);return `<div class="story-mrow"><div class="st-side">${badgePure(h,22)}<span class="st-txt">${esc(h.name)}</span></div><div class="st-sc">${m.hs} - ${m.aws}</div><div class="st-side r"><span class="st-txt">${esc(a.name)}</span>${badgePure(a,22)}</div></div>`}).join(''):'<div class="empty">Bu haftada oynanmış maç yok.</div>'}</div>`;
  }else if(story.type==='scorers'){
   const top=sb.slice(0,8);
-  inner=`<div class="story-head"><div class="story-sub">SEZON ${esc(S.settings.season)} · HAFTA ${maxPlayedW}</div><h3>🏆 ${esc(S.settings.name)}</h3><div class="story-sub">GOL & ASİST KRALLIĞI</div></div>
+  inner=`<div class="story-head"><div class="story-sub">${esc(S.settings.season)} · HAFTA ${maxPlayedW}</div><h3>🏆 ${esc(S.settings.name)}</h3><div class="story-sub">GOL & ASİST KRALLIĞI</div></div>
   <div class="story-list">${top.length?top.map((x,i)=>{const tm=T(x.team_id);return `<div class="story-row"><span class="story-tname"><b style="min-width:20px">${i+1}.</b>${badge(tm,22)}<span>${esc(x.player)}</span></span><span style="white-space:nowrap"><b style="color:var(--g)">${x.goals}G</b> <span class="mut">${x.assists}A</span></span></div>`}).join(''):'<div class="empty">Henüz gol kaydı girilmemiş.</div>'}</div>`;
  }else if(story.type==='match'){
   const m=S.matches.find(x=>x.id===story.id);if(!m){story=null;return ''}
   const h=T(m.home_id),a=T(m.away_id);
   const mg=(S.goals||[]).filter(x=>x.match_id===m.id);
-  inner=`<div class="story-head"><div class="story-sub">SEZON ${esc(S.settings.season)} · HAFTA ${m.week}</div><h3>🏆 ${esc(S.settings.name)}</h3></div>
+  inner=`<div class="story-head"><div class="story-sub">${esc(S.settings.season)} · HAFTA ${m.week}</div><h3>🏆 ${esc(S.settings.name)}</h3></div>
   <div class="story-match"><div class="tag">${m.played?'MAÇ SONUCU':'CANLI SKOR'}</div>
    <div class="story-teams">
     <div>${badgePure(h,54)}<div style="margin-top:8px;font-weight:700;font-size:14px">${esc(h.name)}</div></div>
@@ -293,7 +303,7 @@ function storyModal(){
     ${weeks.map(w=>`<button class="xs ${story.type==='matches'&&story.week===w?'pri':''}" onclick="story={type:'matches',week:${w}};render()">H${w}</button>`).join('')}
     ${sb.length?`<button class="xs ${story.type==='scorers'?'pri':''}" onclick="story={type:'scorers'};render()">Gol Krallığı</button>`:''}
    </div>
-   <div class="story">${inner}<div class="story-foot">KARDEŞLER LİGİ · EKRAN GÖRÜNTÜSÜ AL</div></div>
+   <div class="story">${inner}<div class="story-foot">${esc(S.settings.name)} · EKRAN GÖRÜNTÜSÜ AL</div></div>
    <button class="sm" onclick="story=null;render()">✕ Kapat</button>
   </div>
  </div>`;
@@ -321,7 +331,7 @@ function home(){const s=S.settings,pl=S.matches.filter(m=>m.played).sort((a,b)=>
   const list=htab==='all'?S.matches:S.matches.filter(m=>m.week===htab);
   mSec=list.length?`<div class="grid">${list.map(m=>mcard(m)).join('')}</div>`:'<div class="card empty">Bu seçimde maç yok.</div>';
  }
- return `<div class="hero"><h1>🏆 ${esc(s.name)}</h1><p>Sezon ${esc(s.season)}</p><div class="chips"><span class="chip">Hafta ${esc(s.week)}</span><span class="chip">${S.teams.length} takım</span><span class="chip">${S.matches.filter(m=>m.played).length} maç oynandı</span></div></div>
+ return `<div class="hero"><h1>🏆 ${esc(s.name)}</h1><p>${esc(s.season)}</p><div class="chips"><span class="chip">Hafta ${esc(s.week)}</span><span class="chip">${S.teams.length} takım</span><span class="chip">${S.matches.filter(m=>m.played).length} maç oynandı</span></div></div>
  ${statsBar()}
  <div class="sh"><h2>Puan Durumu</h2>${S.table.length?'<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="sm" onclick="story={type:\'table\'};render()">📱 Hikâye Kartı</button><button class="sm" onclick="copyTable()">📋 Kopyala</button></div>':''}</div>
  ${st.hasLive?'<div class="live-banner"><span class="tag live">CANLI</span> Devam eden maçların anlık skoruna göre canlı puan durumu gösteriliyor.</div>':''}
@@ -329,7 +339,7 @@ function home(){const s=S.settings,pl=S.matches.filter(m=>m.played).sort((a,b)=>
  ${sb.length?`<div class="sh"><h2>Gol & Asist Krallığı</h2></div><div class="card tw"><table><thead><tr><th>#<th class="n">Oyuncu<th class="n">Takım<th>Gol<th>Asist<th>Katkı</tr></thead><tbody>${sb.map((x,i)=>{const tm=T(x.team_id);return `<tr><td><span class="pos">${i+1}</span><td class="n"><b>${esc(x.player)}</b><td class="n">${badge(tm,24)}${esc(tm.name)}<td class="pts">${x.goals}<td>${x.assists}<td><b>${x.goals+x.assists}</b></tr>`}).join('')}</tbody></table></div>`:''}
  ${h2hSection()}
  ${weeks.length?`<div class="sh"><h2>Maçlar & Fikstür</h2></div><div class="tabs"><button class="${htab==='ozet'?'on':''}" onclick="htab='ozet';render()">Özet</button><button class="${htab==='all'?'on':''}" onclick="htab='all';render()">Tümü (${S.matches.length})</button>${weeks.map(w=>`<button class="${htab===w?'on':''}" onclick="htab=${w};render()">H${w}</button>`).join('')}</div>${mSec}`:mSec}
- ${ars.length?`<div class="sh"><h2>🏆 Şampiyonlar Müzesi</h2></div><div class="grid">${ars.map(a=>`<div class="champ" onclick="archView=${a.id};render()"><div><div class="mut">SEZON ${esc(a.season)} ŞAMPİYONU</div><b style="font-size:18px;color:var(--y)">🥇 ${esc(a.champion)}</b></div><span class="tag">Tabloyu Gör →</span></div>`).join('')}</div>`:''}
+ ${ars.length?`<div class="sh"><h2>🏆 Şampiyonlar Müzesi</h2></div><div class="grid">${ars.map(a=>`<div class="champ" onclick="archView=${a.id};render()"><div><div class="mut">${esc(a.season)} ŞAMPİYONU</div><b style="font-size:18px;color:var(--y)">🥇 ${esc(a.champion)}</b></div><span class="tag">Tabloyu Gör →</span></div>`).join('')}</div>`:''}
  <p class="mut" style="text-align:center;margin-top:30px"><a href="#/yonetici">Yönetici girişi</a></p>${teamModal()}${storyModal()}${archiveModal()}`}
 
 function login(){if(ME.needsSetup)return `<div class="login"><form class="card" onsubmit="return setup(event)"><h2 style="margin:0">🔐 İlk Kurulum</h2><p class="mut">Sunucu konsolunda yazan kurulum kodunu gir ve Yusuf için şifre belirle.</p><label>Kurulum kodu<input name="c" required autocomplete="off"></label><label>Yusuf'un şifresi (en az 8)<input name="p" type="password" minlength="8" required autocomplete="new-password"></label><button class="pri">Yönetici hesabını oluştur</button><a class="mut" href="#/">← Lige dön</a></form></div>`;
@@ -343,12 +353,26 @@ function panel(){const weeks=[...new Set(S.matches.map(m=>m.week))].sort((a,b)=>
  <div class="sh"><h2>Maç Ekle</h2></div><form class="card row" onsubmit="return addM(event)"><input name="w" type="number" min="1" value="${wk}" title="Hafta"><select name="h">${S.teams.map(t=>`<option value="${t.id}">${esc(t.name)}`).join('')}</select><select name="a">${S.teams.map((t,i)=>`<option value="${t.id}" ${i==1?'selected':''}>${esc(t.name)}`).join('')}</select><button class="pri">Ekle</button></form>${goalModal()}`;
  if(tab==='t')c=`<form class="card row" onsubmit="return addT(event)"><input name="n" placeholder="Takım adı" required maxlength="40"><input name="s" placeholder="Kısa ad" maxlength="4" style="max-width:100px"><input name="c" type="color" value="#22c55e"><button class="pri">Takım ekle</button></form><div class="grid" style="margin-top:12px">${S.teams.map(t=>`<form class="card row" onsubmit="return editT(event,${t.id})">${badge(t)}<input name="n" value="${esc(t.name)}" required maxlength="40"><input name="s" value="${esc(t.short||'')}" maxlength="4" style="max-width:80px"><input name="c" type="color" value="${esc(t.color)}"><button>💾</button><button type="button" class="dng" onclick="delT(${t.id},'${esc(t.name).replace(/'/g,'')}')">🗑</button></form>`).join('')||'<div class="card empty">Takım yok.</div>'}</div>`;
  if(tab==='f')c=`<div class="card" style="display:grid;gap:10px"><b>Otomatik Fikstür</b><p class="mut" style="margin:0">Tüm takımlar birbiriyle oynar. Mevcut (oynanmamış) fikstürün yerine yenisi yazılır; oynanmış maç varsa engellenir.</p><div class="row"><button class="pri" onclick="fx(false)">Tek devre</button><button class="pri" onclick="fx(true)">Çift devre</button></div></div>
- <div class="sh"><h2>Yeni Sezon</h2></div><form class="card row" onsubmit="return ns(event)"><input name="n" placeholder="Yeni sezon adı (örn. 2027)" required><button class="dng">Mevcut Sezonu Arşivle ve Yeni Sezona Geç</button></form><p class="mut">Mevcut sezonun şampiyonu ve puan durumu Şampiyonlar Müzesi'ne kaydedilir, takımlar korunur ve yeni fikstür için maçlar temizlenir.</p>
- ${(S.archives||[]).length?`<div class="sh"><h2>Arşivlenen Sezonlar</h2></div><div style="display:grid;gap:8px">${S.archives.map(a=>`<div class="card row"><span><b>Sezon ${esc(a.season)}</b> — Şampiyon: <b>${esc(a.champion)}</b></span><button class="xs dng" onclick="delArch(${a.id})">Arşivden Sil</button></div>`).join('')}</div>`:''}`;
+ <div class="sh"><h2>Yeni Sezon</h2></div><form class="card row" onsubmit="return ns(event)"><input name="n" placeholder="Yeni sezon adı (örn. Sezon 2028)" required><button class="dng">Mevcut Sezonu Arşivle ve Yeni Sezona Geç</button></form><p class="mut">Mevcut sezonun şampiyonu ve puan durumu Şampiyonlar Müzesi'ne kaydedilir, takımlar korunur ve yeni fikstür için maçlar temizlenir.</p>
+ ${(S.archives||[]).length?`<div class="sh"><h2>Arşivlenen Sezonlar</h2></div><div style="display:grid;gap:8px">${S.archives.map(a=>`<div class="card row"><span><b>${esc(a.season)}</b> — Şampiyon: <b>${esc(a.champion)}</b></span><button class="xs dng" onclick="delArch(${a.id})">Arşivden Sil</button></div>`).join('')}</div>`:''}`;
  if(tab==='s'){const s=S.settings;c=`<form class="card" style="display:grid;gap:10px" onsubmit="return sv(event)"><div class="row"><label>Lig adı<input name="name" value="${esc(s.name)}" required></label><label>Sezon<input name="season" value="${esc(s.season)}" required></label><label>Güncel hafta<input name="week" type="number" min="1" value="${esc(s.week)}"></label></div><div class="row"><label>Galibiyet puanı<input name="win" type="number" min="0" value="${esc(s.win)}"></label><label>Beraberlik puanı<input name="draw" type="number" min="0" value="${esc(s.draw)}"></label><label>Mağlubiyet puanı<input name="loss" type="number" min="0" value="${esc(s.loss)}"></label></div><button class="pri">Kaydet</button></form>
  <div class="sh"><h2>Şifre Değiştir</h2></div><form class="card row" onsubmit="return pw(event)"><input name="c" type="password" placeholder="Mevcut şifre" required autocomplete="current-password"><input name="n" type="password" placeholder="Yeni şifre (en az 8)" minlength="8" required autocomplete="new-password"><button class="pri">Değiştir</button></form>
- <div class="sh"><h2>Yedek</h2></div><a href="/api/admin/backup"><button>⬇ JSON yedeği indir</button></a>`}
+ <div class="sh"><h2>Yedek & Geri Yükle</h2></div><div class="card row"><a href="/api/admin/backup" style="flex:0 0 auto"><button type="button">⬇ JSON yedeği indir</button></a><button type="button" onclick="$('#impFile').click()">⬆ JSON yedeği yükle</button><input id="impFile" type="file" accept=".json,application/json" style="display:none" onchange="restoreJson(this)"></div>`}
  return `<div class="top"><h2 style="margin:0">🛡 Yönetici Paneli — Yusuf</h2><div style="display:flex;gap:6px"><button class="sm" onclick="toggleSfx()">${sfxOn?'🔊 Ses Açık':'🔇 Ses Kapalı'}</button><a href="#/"><button class="sm">Lig</button></a><button class="sm" onclick="out()">Çıkış</button></div></div><div class="tabs">${tabs.map(([k,l])=>`<button class="${tab===k?'on':''}" onclick="tab='${k}';render()">${l}</button>`).join('')}</div>${c}`}
+
+function restoreJson(inp){
+ const file=inp.files?.[0];if(!file)return;
+ const rd=new FileReader();
+ rd.onload=()=>{
+  try{
+   const data=JSON.parse(rd.result);
+   if(!confirm('Mevcut tüm lig verileri silinip yedek dosyasındaki veriler yüklenecek. Emin misin?')){inp.value='';return}
+   act(()=>api('POST','/api/admin/restore',data),'Yedek başarıyla geri yüklendi');
+  }catch{toast('Geçersiz JSON dosyası',1)}
+  inp.value='';
+ };
+ rd.readAsText(file);
+}
 
 function render(){const r=location.hash.startsWith('#/yonetici');$('#app').innerHTML=!r?home():!ME.admin?login():panel();bump=null}
 const out=()=>act(()=>api('POST','/api/admin/logout'),'Çıkış yapıldı');
