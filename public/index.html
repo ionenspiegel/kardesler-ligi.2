@@ -244,7 +244,7 @@ function remainingSection(){
   const items=rem.map(m=>{
    const isHome=m.home_id===t.id;
    const opp=T(isHome?m.away_id:m.home_id);
-   return `<span class="rem-pill"><b>H${m.week}</b> ${esc(opp.name)} <span class="mut">(${isHome?'E':'D'})</span></span>`;
+   return `<span class="rem-pill"><b>H${m.week}</b> ${esc(opp.name)} <span class="mut">(${it.isHome?'E':'D'})</span></span>`;
   }).join('');
   return `<div class="rem-card">
    <div class="rem-top">
@@ -432,6 +432,23 @@ function downloadStoryPng(){
    ctx.textAlign='right';ctx.fillStyle='#eaf0ff';ctx.font='700 32px system-ui,Segoe UI,sans-serif';
    ctx.fillText(fitText(ctx,a.name,265),W-182,y+rowH/2+11);
   });
+ }else if(story.type==='remaining'){
+  fname='kalan-maclar.png';
+  const list=remainingData().slice(0,10);
+  const startY=345,gap=142,rowH=124;
+  list.forEach((x,i)=>{
+   const y=startY+i*gap;
+   rrect(ctx,74,y,W-148,rowH,24);
+   ctx.fillStyle='rgba(255,255,255,0.06)';ctx.fill();
+   drawBadge(ctx,x.team,126,y+rowH/2,30);
+   ctx.textAlign='left';ctx.fillStyle='#eaf0ff';ctx.font='700 30px system-ui,Segoe UI,sans-serif';
+   ctx.fillText(fitText(ctx,x.team.name,235),172,y+44);
+   ctx.fillStyle='#22e08a';ctx.font='800 26px system-ui,Segoe UI,sans-serif';
+   ctx.fillText(`${x.rem.length} maç kaldı`,172,y+86);
+   const txt=x.items.length?x.items.map(it=>`H${it.week} ${it.opp.short||it.opp.name.slice(0,5)}(${it.isHome?'E':'D'})`).join(' · '):'Maç kalmadı';
+   ctx.textAlign='right';ctx.fillStyle='#8fa0c8';ctx.font='600 24px system-ui,Segoe UI,sans-serif';
+   ctx.fillText(fitText(ctx,txt,525),W-102,y+rowH/2+9);
+  });
  }else if(story.type==='scorers'){
   fname='gol-kralligi.png';
   const top=scorerBoard().slice(0,10);
@@ -500,6 +517,23 @@ function storyModal(){
   const title=sw==='recent'?'SON OYNANAN MAÇLAR':`HAFTA ${sw} SONUÇLARI`;
   inner=`<div class="story-head"><div class="story-sub">${esc(S.settings.season)} · ${playedAll.length} MAÇ</div><h3>🏆 ${esc(S.settings.name)}</h3><div class="story-sub">${title}</div></div>
   <div class="story-list">${list.length?list.map(m=>{const h=T(m.home_id),a=T(m.away_id);return `<div class="story-mrow"><div class="st-side">${badgePure(h,22)}<span class="st-txt">${esc(h.name)}</span></div><div class="st-sc">${m.hs} - ${m.aws}</div><div class="st-side r"><span class="st-txt">${esc(a.name)}</span>${badgePure(a,22)}</div></div>`}).join(''):'<div class="empty">Bu haftada oynanmış maç yok.</div>'}</div>`;
+ }else if(story.type==='remaining'){
+  fname='kalan-maclar.png';
+  const list=remainingData().slice(0,10);
+  const startY=345,gap=142,rowH=124;
+  list.forEach((x,i)=>{
+   const y=startY+i*gap;
+   rrect(ctx,74,y,W-148,rowH,24);
+   ctx.fillStyle='rgba(255,255,255,0.06)';ctx.fill();
+   drawBadge(ctx,x.team,126,y+rowH/2,30);
+   ctx.textAlign='left';ctx.fillStyle='#eaf0ff';ctx.font='700 30px system-ui,Segoe UI,sans-serif';
+   ctx.fillText(fitText(ctx,x.team.name,235),172,y+44);
+   ctx.fillStyle='#22e08a';ctx.font='800 26px system-ui,Segoe UI,sans-serif';
+   ctx.fillText(`${x.rem.length} maç kaldı`,172,y+86);
+   const txt=x.items.length?x.items.map(it=>`H${it.week} ${it.opp.short||it.opp.name.slice(0,5)}(${it.isHome?'E':'D'})`).join(' · '):'Maç kalmadı';
+   ctx.textAlign='right';ctx.fillStyle='#8fa0c8';ctx.font='600 24px system-ui,Segoe UI,sans-serif';
+   ctx.fillText(fitText(ctx,txt,525),W-102,y+rowH/2+9);
+  });
  }else if(story.type==='scorers'){
   const top=sb.slice(0,8);
   inner=`<div class="story-head"><div class="story-sub">${esc(S.settings.season)} · HAFTA ${maxPlayedW}</div><h3>🏆 ${esc(S.settings.name)}</h3><div class="story-sub">GOL & ASİST KRALLIĞI</div></div>
@@ -527,6 +561,7 @@ function storyModal(){
     <button class="xs ${story.type==='matches'&&(!story.week||story.week==='recent')?'pri':''}" onclick="story={type:'matches',week:'recent'};render()">Son Maçlar</button>
     ${weeks.map(w=>`<button class="xs ${story.type==='matches'&&story.week===w?'pri':''}" onclick="story={type:'matches',week:${w}};render()">H${w}</button>`).join('')}
     ${sb.length?`<button class="xs ${story.type==='scorers'?'pri':''}" onclick="story={type:'scorers'};render()">Gol Krallığı</button>`:''}
+    <button class="xs ${story.type==='remaining'?'pri':''}" onclick="story={type:'remaining'};render()">Kalan Maçlar</button>
    </div>
    <div class="story">${inner}<div class="story-foot">${esc(S.settings.name)} · 9:16 HİKÂYE KARTI</div></div>
    <div style="display:flex;gap:8px"><button class="sm pri" onclick="downloadStoryPng()">📥 PNG İndir</button><button class="sm" onclick="story=null;render()">✕ Kapat</button></div>
@@ -564,6 +599,7 @@ function home(){const s=S.settings,pl=S.matches.filter(m=>m.played).sort((a,b)=>
  <div class="card tw">${st.rows.length?`<table><thead><tr><th>#<th class="n">Takım<th>O<th>G<th>B<th>M<th>AG<th>YG<th>Av<th>P<th>Son 5</tr></thead><tbody>${st.rows.map((t,i)=>{const fm=formOf(t.id),mv=t.diff>0?`<span class="mv up">▲${t.diff}</span>`:t.diff<0?`<span class="mv dn">▼${Math.abs(t.diff)}</span>`:'';return `<tr style="animation-delay:${i*60}ms"><td><span class="pos">${i+1}</span>${mv}<td class="n"><span class="tlink" onclick="selTeam=${t.id};render()">${badge(t)}${esc(t.name)}</span><td>${t.p}<td>${t.w}<td>${t.d}<td>${t.l}<td>${t.gf}<td>${t.ga}<td>${t.gd>0?'+':''}${t.gd}<td class="pts">${t.pts}<td><span class="form">${fm.length?fm.map(x=>`<span class="fb ${x}">${x}</span>`).join(''):'<span class="mut">—</span>'}</span></tr>`}).join('')}</tbody></table>`:'<div class="empty">Henüz takım yok.</div>'}</div>
  ${sb.length?`<div class="sh"><h2>Gol & Asist Krallığı</h2></div><div class="card tw"><table><thead><tr><th>#<th class="n">Oyuncu<th class="n">Takım<th>Gol<th>Asist<th>Katkı</tr></thead><tbody>${sb.map((x,i)=>{const tm=T(x.team_id);return `<tr><td><span class="pos">${i+1}</span><td class="n"><b>${esc(x.player)}</b><td class="n"><span class="tlink">${badge(tm,24)}${esc(tm.name)}</span><td class="pts">${x.goals}<td>${x.assists}<td><b>${x.goals+x.assists}</b></tr>`}).join('')}</tbody></table></div>`:''}
  ${h2hSection()}
+ 
  
  ${weeks.length?`<div class="sh"><h2>Maçlar & Fikstür</h2></div><div class="tabs"><button class="${htab==='ozet'?'on':''}" onclick="htab='ozet';render()">Özet</button><button class="${htab==='all'?'on':''}" onclick="htab='all';render()">Tümü (${S.matches.length})</button>${weeks.map(w=>`<button class="${htab===w?'on':''}" onclick="htab=${w};render()">H${w}</button>`).join('')}</div>${mSec}`:mSec}
  ${ars.length?`<div class="sh"><h2>🏆 Şampiyonlar Müzesi</h2></div><div class="grid">${ars.map(a=>`<div class="champ" onclick="archView=${a.id};render()"><div><div class="mut">${esc(a.season)} ŞAMPİYONU</div><b style="font-size:18px;color:var(--y)">🥇 ${esc(a.champion)}</b></div><span class="tag">Tabloyu Gör →</span></div>`).join('')}</div>`:''}
