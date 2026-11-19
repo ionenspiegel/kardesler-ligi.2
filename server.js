@@ -1,8 +1,8 @@
-﻿'use strict';
+'use strict';
 // Kardeşler Ligi — takım tabanlı lig. Veritabanı: PostgreSQL (Neon), bağlantı: DATABASE_URL.
 const http = require('http'), fs = require('fs'), path = require('path'), crypto = require('crypto');
 const { Pool } = require('pg');
-const { ADMIN, TEAMS, MATCHES, SETTINGS, SECRETS, DDL } = require('./schema')(process.env.KL_PREFIX || 'kl_');
+const { ADMIN, TEAMS, MATCHES, SETTINGS, SECRETS, GOALS, ARCHIVES, DDL } = require('./schema')(process.env.KL_PREFIX || 'kl_');
 const PORT = +process.env.PORT || 3000;
 const DB_URL = process.env.DATABASE_URL;
 if (!DB_URL) { console.error('HATA: DATABASE_URL tanımlı değil. Yerelde: node --env-file=.env.local server.js — Render\'da: Environment bölümüne ekleyin.'); process.exit(1); }
@@ -10,7 +10,6 @@ const needSsl = !/sslmode=/.test(DB_URL) && !/@(localhost|127\.0\.0\.1|\[::1\])[
 const pool = new Pool({ connectionString: DB_URL, max: +process.env.PG_POOL_MAX || 5, idleTimeoutMillis: 30000, connectionTimeoutMillis: 20000, ...(needSsl ? { ssl: true } : {}) });
 pool.on('error', e => console.error('PG havuz hatası:', e.message));
 
-// Veri erişimi: q = satırlar, one = ilk satır, run = ham sonuç. Parametreler $1,$2,...
 const bind = ex => ({ q: async (s, ...p) => (await ex(s, p)).rows, one: async (s, ...p) => (await ex(s, p)).rows[0], run: (s, ...p) => ex(s, p) });
 const { q, one, run } = bind((s, p) => pool.query(s, p));
 async function tx(f) {
@@ -23,13 +22,12 @@ async function tx(f) {
 const DEF = { name: 'Kardeşler Ligi', season: '2026', win: '3', draw: '1', loss: '0', week: '1' };
 async function init() {
   await tx(async t => {
-    await t.run('SELECT pg_advisory_xact_lock(724119)'); // aynı anda iki örnek şema kurmasın
+    await t.run('SELECT pg_advisory_xact_lock(724119)');
     for (const s of DDL) await t.run(s);
     for (const [k, v] of Object.entries(DEF)) await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES($1,$2) ON CONFLICT DO NOTHING`, k, v);
   });
 }
 
-// Güvenlik: scrypt parola, HMAC imzalı oturum çerezi, tek seferlik kurulum kodu.
 let SECRET = '';
 async function loadSecret() {
   if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
@@ -49,7 +47,6 @@ const limited = ip => { const f = fails.get(ip); return f && f.n >= 8 && Date.no
 const fail = ip => { const f = fails.get(ip) || { n: 0 }; fails.set(ip, { n: f.n + 1, t: Date.now() }); };
 const pwOk = p => typeof p === 'string' && p.length >= 8 && p.length <= 100;
 
-// Lig mantığı
 const MAXID = 2147483647;
 const E = (code, msg) => Object.assign(new Error(msg), { code });
 const int = (v, lo, hi, name) => { v = Number(v); if (!Number.isInteger(v) || v < lo || v > hi) throw E(400, `${name} geçersiz`); return v; };
@@ -66,8 +63,15 @@ async function standings() {
   }
   return Object.values(T).map(t => ({ ...t, gd: t.gf - t.ga })).sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || a.name.localeCompare(b.name, 'tr'));
 }
-const league = async () => ({ settings: await settings(), teams: await q(`SELECT * FROM ${TEAMS} ORDER BY name`), matches: await q(`SELECT * FROM ${MATCHES} ORDER BY week,id`), table: await standings() });
-async function insertMatches(t, rows) { // [hafta, ev, deplasman] — toplu ekleme (Neon'da gidiş-dönüş sayısını azaltır)
+const league = async () => ({
+  settings: await settings(),
+  teams: await q(`SELECT * FROM ${TEAMS} ORDER BY name`),
+  matches: await q(`SELECT * FROM ${MATCHES} ORDER BY week,id`),
+  table: await standings(),
+  goals: await q(`SELECT * FROM ${GOALS} ORDER BY id`),
+  archives: await q(`SELECT * FROM ${ARCHIVES} ORDER BY id DESC`)
+});
+async function insertMatches(t, rows) {
   for (let i = 0; i < rows.length; i += 500) {
     const ch = rows.slice(i, i + 500);
     await t.run(`INSERT INTO ${MATCHES}(week,home_id,away_id) VALUES ${ch.map((_, j) => `($${j * 3 + 1},$${j * 3 + 2},$${j * 3 + 3})`).join(',')}`, ...ch.flat());
@@ -90,14 +94,14 @@ const teamData = b => {
   return [name, short, color];
 };
 async function matchData(b, old = {}) {
-  const m = { week: old.week ?? 1, home_id: old.home_id, away_id: old.away_id, hs: old.hs ?? 0, aws: old.aws ?? 0, played: old.played ?? 0, ...b };
+  const m = { week: old.week ?? 1, home_id: old.home_id, away_id: old.away_id, hs: old.hs ?? 0, aws: old.aws ?? 0, played: old.played ?? 0, note: old.note ?? '', ...b };
   m.week = int(m.week, 1, 200, 'Hafta'); m.hs = int(m.hs, 0, 99, 'Skor'); m.aws = int(m.aws, 0, 99, 'Skor'); m.played = m.played ? 1 : 0;
+  m.note = clean(m.note).slice(0, 80);
   m.home_id = int(m.home_id, 1, MAXID, 'Takım'); m.away_id = int(m.away_id, 1, MAXID, 'Takım');
   if (!(await one(`SELECT 1 x FROM ${TEAMS} WHERE id=$1`, m.home_id)) || !(await one(`SELECT 1 x FROM ${TEAMS} WHERE id=$1`, m.away_id))) throw E(400, 'Takım bulunamadı');
   if (m.home_id === m.away_id) throw E(400, 'Bir takım kendisiyle oynayamaz'); return m;
 }
 
-// HTTP
 const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon' };
 const send = (res, code, obj, h = {}) => { res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...h }); res.end(JSON.stringify(obj)); };
 const body = req => new Promise((ok, no) => { let d = ''; req.on('data', c => { d += c; if (d.length > 1e6) { no(E(413, 'Çok büyük')); req.destroy(); } }); req.on('end', () => { try { ok(d ? JSON.parse(d) : {}); } catch { no(E(400, 'Geçersiz JSON')); } }); });
@@ -140,14 +144,46 @@ async function api(req, res, u) {
     } catch (e) { if (e.code === '23505') throw E(409, 'Bu isimde takım var'); throw e; }
   }
   if (kind === 'matches') {
-    if (M === 'POST') { const m = await matchData(b); const r = await run(`INSERT INTO ${MATCHES}(week,home_id,away_id,hs,aws,played,updated) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id`, m.week, m.home_id, m.away_id, m.hs, m.aws, m.played, new Date().toISOString()); return send(res, 200, { id: Number(r.rows[0].id) }); }
+    if (M === 'POST') { const m = await matchData(b); const r = await run(`INSERT INTO ${MATCHES}(week,home_id,away_id,hs,aws,played,updated,note) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`, m.week, m.home_id, m.away_id, m.hs, m.aws, m.played, new Date().toISOString(), m.note); return send(res, 200, { id: Number(r.rows[0].id) }); }
     if (!okId(id)) throw E(404, 'Maç yok');
     const old = await one(`SELECT * FROM ${MATCHES} WHERE id=$1`, id); if (!old) throw E(404, 'Maç yok');
-    if (M === 'PUT') { const m = await matchData(b, old); await run(`UPDATE ${MATCHES} SET week=$1,home_id=$2,away_id=$3,hs=$4,aws=$5,played=$6,updated=$7 WHERE id=$8`, m.week, m.home_id, m.away_id, m.hs, m.aws, m.played, new Date().toISOString(), id); return send(res, 200, { ok: 1 }); }
+    if (M === 'PUT') { const m = await matchData(b, old); await run(`UPDATE ${MATCHES} SET week=$1,home_id=$2,away_id=$3,hs=$4,aws=$5,played=$6,updated=$7,note=$8 WHERE id=$9`, m.week, m.home_id, m.away_id, m.hs, m.aws, m.played, new Date().toISOString(), m.note, id); return send(res, 200, { ok: 1 }); }
     if (M === 'DELETE') { await run(`DELETE FROM ${MATCHES} WHERE id=$1`, id); return send(res, 200, { ok: 1 }); }
   }
+  if (kind === 'goals') {
+    if (M === 'POST') {
+      const mid = int(b.match_id, 1, MAXID, 'Maç'), tid = int(b.team_id, 1, MAXID, 'Takım');
+      const player = clean(b.player).slice(0, 40); if (!player) throw E(400, 'Oyuncu adı gerekli');
+      const goals = int(b.goals ?? 1, 0, 50, 'Gol'), assists = int(b.assists ?? 0, 0, 50, 'Asist');
+      if (goals + assists < 1) throw E(400, 'En az 1 gol veya asist girilmeli');
+      const m = await one(`SELECT * FROM ${MATCHES} WHERE id=$1`, mid); if (!m) throw E(404, 'Maç bulunamadı');
+      if (tid !== m.home_id && tid !== m.away_id) throw E(400, 'Takım bu maçta oynamıyor');
+      const r = await run(`INSERT INTO ${GOALS}(match_id,team_id,player,goals,assists) VALUES($1,$2,$3,$4,$5) RETURNING id`, mid, tid, player, goals, assists);
+      return send(res, 200, { id: Number(r.rows[0].id) });
+    }
+    if (M === 'DELETE') { if (!okId(id)) throw E(404, 'Kayıt yok'); await run(`DELETE FROM ${GOALS} WHERE id=$1`, id); return send(res, 200, { ok: 1 }); }
+  }
+  if (kind === 'archives' && M === 'DELETE') {
+    if (!okId(id)) throw E(404, 'Arşiv yok');
+    await run(`DELETE FROM ${ARCHIVES} WHERE id=$1`, id);
+    return send(res, 200, { ok: 1 });
+  }
   if (kind === 'fixture' && M === 'POST') return send(res, 200, { weeks: await fixture(!!b.double) });
-  if (kind === 'season' && M === 'POST') { const n = clean(b.name); if (!n) throw E(400, 'Sezon adı gerekli'); await tx(async t => { await t.run(`DELETE FROM ${MATCHES}`); await t.run(`UPDATE ${SETTINGS} SET v=$1 WHERE k='season'`, n); await t.run(`UPDATE ${SETTINGS} SET v='1' WHERE k='week'`); }); return send(res, 200, { ok: 1 }); }
+  if (kind === 'season' && M === 'POST') {
+    const n = clean(b.name); if (!n) throw E(400, 'Sezon adı gerekli');
+    const curS = (await settings()).season || '2026';
+    const tbl = await standings();
+    const hasPlayed = await one(`SELECT 1 x FROM ${MATCHES} WHERE played=1`);
+    await tx(async t => {
+      if (hasPlayed && tbl.length) {
+        await t.run(`INSERT INTO ${ARCHIVES}(season,champion,data,archived_at) VALUES($1,$2,$3,$4)`, curS, tbl[0].name, JSON.stringify(tbl), new Date().toISOString());
+      }
+      await t.run(`DELETE FROM ${MATCHES}`);
+      await t.run(`UPDATE ${SETTINGS} SET v=$1 WHERE k='season'`, n);
+      await t.run(`UPDATE ${SETTINGS} SET v='1' WHERE k='week'`);
+    });
+    return send(res, 200, { ok: 1 });
+  }
   if (kind === 'settings' && M === 'PUT') {
     const v = { name: clean(b.name).slice(0, 40), season: clean(b.season).slice(0, 20), win: int(b.win, 0, 10, 'Puan'), draw: int(b.draw, 0, 10, 'Puan'), loss: int(b.loss, 0, 10, 'Puan'), week: int(b.week, 1, 200, 'Hafta') };
     if (!v.name || !v.season) throw E(400, 'Lig ve sezon adı gerekli'); await tx(async t => { for (const [k, x] of Object.entries(v)) await t.run(`UPDATE ${SETTINGS} SET v=$1 WHERE k=$2`, String(x), k); }); return send(res, 200, { ok: 1 });
