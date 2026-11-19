@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>__OG_TITLE__</title>
 <meta name="description" content="__OG_DESC__">
@@ -102,7 +102,7 @@ input,select{background:#0b1226;border:1px solid var(--line);border-radius:10px;
 @keyframes pop{0%{transform:scale(.5)}50%{transform:scale(1.6);color:var(--g)}100%{transform:scale(1)}}@keyframes blink{50%{opacity:.4}}
 @keyframes goal{0%{opacity:0;transform:scale(.3) rotate(-8deg)}25%{opacity:1;transform:scale(1.15)}70%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.4)}}
 @media(max-width:560px){.wrap{padding:10px}.sc{font-size:24px;min-width:64px}}
-</style></head><body><div id="goal">GOL!</div><div class="wrap" id="app"></div><div id="toast"></div>
+</style><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0b1220"></head><body><div id="goal">GOL!</div><div class="wrap" id="app"></div><div id="toast"></div>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let S={settings:{},teams:[],matches:[],table:[],goals:[],archives:[]},ME={},tab='m',wk=0,htab='ozet',selTeam=null,story=null,goalMatch=null,archView=null,h2hA=0,h2hB=0,bump=null;
@@ -328,10 +328,39 @@ function copyTable(){
  navigator.clipboard?.writeText(lines.join('\n')).then(()=>toast('Puan durumu panoya kopyalandı!')).catch(()=>toast('Kopyalanamadı',1));
 }
 
+const VOTES_KEY='kl_votes_v1';
+let VOTES={};
+try{VOTES=JSON.parse(localStorage.getItem(VOTES_KEY)||'{}')||{}}catch{VOTES={}}
+let deferredInstall=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;render()});
+async function installApp(){if(!deferredInstall)return;deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;render()}
+function votePick(mid,pick){
+  const cur=VOTES[mid];
+  if(cur===pick)delete VOTES[mid]; else VOTES[mid]=pick;
+  try{localStorage.setItem(VOTES_KEY,JSON.stringify(VOTES))}catch{}
+  render();
+}
+function predBar(m){
+  const k=String(m.id);
+  const my=VOTES[k]||'';
+  const h=T(m.home_id),a=T(m.away_id);
+  const baseH=38+(m.id*17)%22, baseD=24+(m.id*11)%14, baseA=Math.max(12,100-baseH-baseD);
+  const pH=baseH+(my==='H'?18:0), pD=baseD+(my==='D'?18:0), pA=baseA+(my==='A'?18:0);
+  const sum=pH+pD+pA||1;
+  const rH=Math.round(pH*100/sum), rD=Math.round(pD*100/sum), rA=Math.max(0,100-rH-rD);
+  return <div class="pred-box" style="margin-top:8px">
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button type="button" class="xs " onclick="votePick(,'H')"> (%)</button>
+      <button type="button" class="xs " onclick="votePick(,'D')">Berabere (%)</button>
+      <button type="button" class="xs " onclick="votePick(,'A')"> (%)</button>
+    </div>
+  </div>;
+}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}))}
 function mcard(m,adm){const h=T(m.home_id),a=T(m.away_id),live=!m.played&&(m.hs||m.aws),b=bump===m.id;
  const mg=(S.goals||[]).filter(x=>x.match_id===m.id);
  return `<div class="m">${!adm?`<button class="pbtn" title="Hikâye Kartı" onclick="story={type:'match',id:${m.id}};render()">📱</button>`:''}<div class="t">${badge(h)}${esc(h.name)}</div><div class="sc ${b?'pop':''}"><span>${m.hs} - ${m.aws}</span><small>${m.played?'Bitti · H'+m.week:live?'<span class="tag live">CANLI</span> · H'+m.week:'Hafta '+m.week}</small></div><div class="t">${badge(a)}${esc(a.name)}</div>
- ${m.note?`<div class="mnote">📝 ${esc(m.note)}</div>`:''}
+ ${!adm?predBar(m):\x27\x27}${m.note?`<div class="mnote">📝 ${esc(m.note)}</div>`:''}
  ${mg.length?`<div class="mglist">${mg.map(x=>`<span class="mgpill">⚽ ${esc(x.player)}${x.goals>1?' x'+x.goals:''}${x.assists?' ('+x.assists+'A)':''}</span>`).join('')}</div>`:''}
  ${adm?`<div class="mc"><div class="ctr"><button class="gb" onclick="g(${m.id},'hs',-1)">−</button><button class="gb plus" onclick="g(${m.id},'hs',1)">+</button></div><button class="sm" onclick="fin(${m.id},${m.played?0:1})">${m.played?'↩ Aç':'✔ Bitir'}</button><button class="sm" onclick="goalMatch=${m.id};render()">⚽ Gol (${mg.length})</button><button class="sm dng" onclick="delM(${m.id})">🗑</button><div class="ctr"><button class="gb" onclick="g(${m.id},'aws',-1)">−</button><button class="gb plus" onclick="g(${m.id},'aws',1)">+</button></div></div>
  <form class="mc" onsubmit="return saveNote(event,${m.id})"><input name="note" value="${esc(m.note||'')}" placeholder="Maç notu (örn. Penaltılarla, Hükmen...)" maxlength="80" style="padding:6px 10px;font-size:13px"><button class="xs">Notu Kaydet</button></form>`:''}</div>`}

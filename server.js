@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 // Kardeşler Ligi — takım tabanlı lig. Veritabanı: PostgreSQL (Neon), bağlantı: DATABASE_URL.
 const http = require('http'), fs = require('fs'), path = require('path'), crypto = require('crypto');
 const { Pool } = require('pg');
@@ -309,6 +309,7 @@ function notifyClients() {
 }
 const server = http.createServer(async (req, res) => {
   res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('X-Frame-Options', 'DENY'); res.setHeader('Referrer-Policy', 'same-origin');
+  if (req.url.startsWith('/sw.js')) res.setHeader('Service-Worker-Allowed', '/');
   try {
     const u = new URL(req.url, 'http://x');
     if (u.pathname === '/api/events' && req.method === 'GET') {
