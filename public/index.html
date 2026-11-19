@@ -360,7 +360,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.se
 function mcard(m,adm){const h=T(m.home_id),a=T(m.away_id),live=!m.played&&(m.hs||m.aws),b=bump===m.id;
  const mg=(S.goals||[]).filter(x=>x.match_id===m.id);
  return `<div class="m">${!adm?`<button class="pbtn" title="Hikâye Kartı" onclick="story={type:'match',id:${m.id}};render()">📱</button>`:''}<div class="t">${badge(h)}${esc(h.name)}</div><div class="sc ${b?'pop':''}"><span>${m.hs} - ${m.aws}</span><small>${m.played?'Bitti · H'+m.week:live?'<span class="tag live">CANLI</span> · H'+m.week:'Hafta '+m.week}</small></div><div class="t">${badge(a)}${esc(a.name)}</div>
- ${!adm?predBar(m):\x27\x27}${m.note?`<div class="mnote">📝 ${esc(m.note)}</div>`:''}
+ ${!adm?predBar(m):''}${m.note?`<div class="mnote">📝 ${esc(m.note)}</div>`:''}
  ${mg.length?`<div class="mglist">${mg.map(x=>`<span class="mgpill">⚽ ${esc(x.player)}${x.goals>1?' x'+x.goals:''}${x.assists?' ('+x.assists+'A)':''}</span>`).join('')}</div>`:''}
  ${adm?`<div class="mc"><div class="ctr"><button class="gb" onclick="g(${m.id},'hs',-1)">−</button><button class="gb plus" onclick="g(${m.id},'hs',1)">+</button></div><button class="sm" onclick="fin(${m.id},${m.played?0:1})">${m.played?'↩ Aç':'✔ Bitir'}</button><button class="sm" onclick="goalMatch=${m.id};render()">⚽ Gol (${mg.length})</button><button class="sm dng" onclick="delM(${m.id})">🗑</button><div class="ctr"><button class="gb" onclick="g(${m.id},'aws',-1)">−</button><button class="gb plus" onclick="g(${m.id},'aws',1)">+</button></div></div>
  <form class="mc" onsubmit="return saveNote(event,${m.id})"><input name="note" value="${esc(m.note||'')}" placeholder="Maç notu (örn. Penaltılarla, Hükmen...)" maxlength="80" style="padding:6px 10px;font-size:13px"><button class="xs">Notu Kaydet</button></form>`:''}</div>`}
@@ -653,3 +653,4 @@ events.onmessage = async () => {
   }
 };
 </script></body></html>
+
