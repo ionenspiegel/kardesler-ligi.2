@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>__OG_TITLE__</title>
 <meta name="description" content="__OG_DESC__">
@@ -348,15 +348,14 @@ function predBar(m){
   const pH=baseH+(my==='H'?18:0), pD=baseD+(my==='D'?18:0), pA=baseA+(my==='A'?18:0);
   const sum=pH+pD+pA||1;
   const rH=Math.round(pH*100/sum), rD=Math.round(pD*100/sum), rA=Math.max(0,100-rH-rD);
-  return <div class="pred-box" style="margin-top:8px">
-    <div style="display:flex;gap:6px;flex-wrap:wrap">
-      <button type="button" class="xs " onclick="votePick(,'H')"> (%)</button>
-      <button type="button" class="xs " onclick="votePick(,'D')">Berabere (%)</button>
-      <button type="button" class="xs " onclick="votePick(,'A')"> (%)</button>
-    </div>
-  </div>;
+  return '<div class="pred-box" style="grid-column:1/-1;margin-top:6px"><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">'
+    +'<button type="button" class="xs '+(my==='H'?'pri':'')+'" onclick="votePick('+m.id+',\'H\')">'+esc(h.short||h.name)+' (%'+rH+')</button>'
+    +'<button type="button" class="xs '+(my==='D'?'pri':'')+'" onclick="votePick('+m.id+',\'D\')">Berabere (%'+rD+')</button>'
+    +'<button type="button" class="xs '+(my==='A'?'pri':'')+'" onclick="votePick('+m.id+',\'A\')">'+esc(a.short||a.name)+' (%'+rA+')</button>'
+    +'</div></div>';
 }
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}))}
+
 function mcard(m,adm){const h=T(m.home_id),a=T(m.away_id),live=!m.played&&(m.hs||m.aws),b=bump===m.id;
  const mg=(S.goals||[]).filter(x=>x.match_id===m.id);
  return `<div class="m">${!adm?`<button class="pbtn" title="Hikâye Kartı" onclick="story={type:'match',id:${m.id}};render()">📱</button>`:''}<div class="t">${badge(h)}${esc(h.name)}</div><div class="sc ${b?'pop':''}"><span>${m.hs} - ${m.aws}</span><small>${m.played?'Bitti · H'+m.week:live?'<span class="tag live">CANLI</span> · H'+m.week:'Hafta '+m.week}</small></div><div class="t">${badge(a)}${esc(a.name)}</div>
@@ -601,7 +600,7 @@ function panel(){const weeks=[...new Set(S.matches.map(m=>m.week))].sort((a,b)=>
  if(tab==='s'){const s=S.settings;c=`<form class="card" style="display:grid;gap:10px" onsubmit="return sv(event)"><div class="row"><label>Lig adı<input name="name" value="${esc(s.name)}" required></label><label>Sezon<input name="season" value="${esc(s.season)}" required></label><label>Güncel hafta<input name="week" type="number" min="1" value="${esc(s.week)}"></label></div><div class="row"><label>Galibiyet puanı<input name="win" type="number" min="0" value="${esc(s.win)}"></label><label>Beraberlik puanı<input name="draw" type="number" min="0" value="${esc(s.draw)}"></label><label>Mağlubiyet puanı<input name="loss" type="number" min="0" value="${esc(s.loss)}"></label></div><button class="pri">Kaydet</button></form>
  <div class="sh"><h2>Şifre Değiştir</h2></div><form class="card row" onsubmit="return pw(event)"><input name="c" type="password" placeholder="Mevcut şifre" required autocomplete="current-password"><input name="n" type="password" placeholder="Yeni şifre (en az 8)" minlength="8" required autocomplete="new-password"><button class="pri">Değiştir</button></form>
  <div class="sh"><h2>Yedek & Geri Yükle</h2></div><div class="card row"><a href="/api/admin/backup" style="flex:0 0 auto"><button type="button">⬇ JSON yedeği indir</button></a><button type="button" onclick="$('#impFile').click()">⬆ JSON yedeği yükle</button><input id="impFile" type="file" accept=".json,application/json" style="display:none" onchange="restoreJson(this)"></div>`}
- return `<div class="top"><h2 style="margin:0">🛡 Yönetici Paneli — Yusuf</h2><div style="display:flex;gap:6px"><button class="sm" onclick="toggleSfx()">${sfxOn?'🔊 Ses Açık':'🔇 Ses Kapalı'}</button><a href="#/"><button class="sm">Lig</button></a><button class="sm" onclick="out()">Çıkış</button></div></div><div class="tabs">${tabs.map(([k,l])=>`<button class="${tab===k?'on':''}" onclick="tab='${k}';render()">${l}</button>`).join('')}</div>${c}`}
+ return `<div class="top"><h2 style="margin:0">🛡 Yönetici Paneli — Yusuf</h2><div style="display:flex;gap:6px"><button type="button" class="sm pri" id="pwaBtn" style="${deferredInstall?'':'display:none'}" onclick="installApp()">📲 Uygulamayı Yükle</button><button class="sm" onclick="toggleSfx()">${sfxOn?'🔊 Ses Açık':'🔇 Ses Kapalı'}</button><a href="#/"><button class="sm">Lig</button></a><button class="sm" onclick="out()">Çıkış</button></div></div><div class="tabs">${tabs.map(([k,l])=>`<button class="${tab===k?'on':''}" onclick="tab='${k}';render()">${l}</button>`).join('')}</div>${c}`}
 
 function restoreJson(inp){
  const file=inp.files?.[0];if(!file)return;
