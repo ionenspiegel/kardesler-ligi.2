@@ -324,6 +324,28 @@ const server = http.createServer(async (req, res) => {
       res.on('close', () => sseClients.delete(res));
       return;
     }
+    if (u.pathname === '/api/admin/extras' && req.method === 'POST') {
+      if (!isAdmin(req)) throw E(401, 'Yetkisiz');
+      const raw = await new Promise((resolve, reject) => {
+        let d = '';
+        req.on('data', ch => { d += ch; if (d.length > 65536) reject(E(413, 'Veri çok büyük')); });
+        req.on('end', () => resolve(d));
+        req.on('error', reject);
+      });
+      let b = {};
+      try { b = JSON.parse(raw || '{}'); } catch { throw E(400, 'Geçersiz JSON'); }
+      const allowed = ['playoff_cfg', 'custom_news', 'predictions'];
+      const key = String(b.key || '');
+      if (!allowed.includes(key)) throw E(400, 'Geçersiz ayar anahtarı');
+      const val = typeof b.value === 'string' ? b.value : JSON.stringify(b.value ?? {});
+      await tx(async t => {
+        await t.run(`DELETE FROM ${SETTINGS} WHERE k=$1`, key);
+        await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES($1,$2)`, key, val);
+      });
+      send(res, 200, { ok: 1 });
+      notifyClients();
+      return;
+    }
     if (u.pathname === '/api/predictions' && req.method === 'POST') {
       const raw = await new Promise((resolve, reject) => {
         let d = '';
