@@ -50,10 +50,14 @@ td.n,th.n{text-align:left}tbody tr{animation:row .5s both}tbody tr:hover{backgro
 .rem-list{display:flex;flex-wrap:wrap;gap:5px}
 .rem-pill{background:#ffffff0d;border:1px solid #ffffff14;border-radius:8px;padding:3px 7px;font-size:12px;color:var(--tx)}
 .rem-pill b{color:var(--y)}
-.story-rem-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.story-rem-box{background:#ffffff0d;border:1px solid #ffffff14;border-radius:10px;padding:7px 8px;display:grid;gap:4px;align-content:start}
-.story-rem-head{display:flex;justify-content:space-between;align-items:center;gap:4px;font-size:11px;font-weight:800}
-.story-rem-sub{font-size:10px;color:var(--mut);line-height:1.3}
+.story-rem-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.story-rem-box{background:#ffffff0d;border:1px solid #ffffff18;border-radius:11px;padding:7px 8px;display:flex;flex-direction:column;gap:5px}
+.story-rem-head{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:11px;font-weight:800;border-bottom:1px solid #ffffff12;padding-bottom:4px}
+.story-rem-left{display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden}
+.story-rem-left span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.story-rem-pills{display:flex;flex-wrap:wrap;gap:3px}
+.story-rem-pill{background:#ffffff10;border-radius:5px;padding:1.5px 4.5px;font-size:9px;color:#d6e1ff;white-space:nowrap}
+.story-rem-pill b{color:#ffd23f}
 .h2h-mid{display:grid;gap:6px}.h2h-nums{display:flex;gap:12px;justify-content:center;font-weight:900;font-size:22px}
 .champ{background:linear-gradient(135deg,#272009,#141d35);border:1px solid #ffd23f55;border-radius:16px;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;transition:.2s}
 .champ:hover{transform:translateY(-2px);border-color:var(--y)}
@@ -297,7 +301,7 @@ function archiveModal(){
 
 function rrect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
 function fitText(ctx,t,m){let s=String(t??'');if(ctx.measureText(s).width<=m)return s;while(s.length>1&&ctx.measureText(s+'…').width>m)s=s.slice(0,-1);return s+'…'}
-function drawBadge(ctx,tm,cx,cy,rad){ctx.save();ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);ctx.fillStyle=tm.color||'#22c55e';ctx.fill();ctx.lineWidth=3;ctx.strokeStyle='rgba(255,255,255,.22)';ctx.stroke();ctx.fillStyle=fgColor(tm.color);ctx.font=`800 ${Math.round(rad*.72)}px system-ui,Segoe UI,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(tm.short||tm.name.slice(0,3)).toUpperCase(),cx,cy+2);ctx.restore()}
+function drawBadge(ctx,tm,cx,cy,rad){const bg=tm.color||"#22c55e",h=bg.replace("#","");const r=parseInt(h.slice(0,2),16)||34,g=parseInt(h.slice(2,4),16)||197,b=parseInt(h.slice(4,6),16)||94;const fg=(r*299+g*587+b*114)/1000>150?"#08101f":"#ffffff";ctx.save();ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);ctx.fillStyle=bg;ctx.fill();ctx.lineWidth=3;ctx.strokeStyle="rgba(255,255,255,.22)";ctx.stroke();ctx.fillStyle=fg;ctx.font=`800 ${Math.round(rad*.72)}px system-ui,Segoe UI,sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(String(tm.short||tm.name.slice(0,3)).toUpperCase(),cx,cy+2);ctx.restore()}
 
 function downloadStoryPng(){
  if(!story)return;
@@ -323,8 +327,23 @@ function downloadStoryPng(){
   const sw=story.week||'recent',list=(sw==='recent'?playedAll.slice(0,9):S.matches.filter(m=>m.week===sw&&m.played).sort((a,b)=>a.id-b.id)).slice(0,9);
   list.forEach((m,i)=>{const y=360+i*148,h=T(m.home_id),a=T(m.away_id);rrect(ctx,74,y,W-148,124,28);ctx.fillStyle='rgba(255,255,255,.06)';ctx.fill();drawBadge(ctx,h,132,y+62,32);ctx.textAlign='left';ctx.fillStyle='#eaf0ff';ctx.font='700 32px system-ui,Segoe UI,sans-serif';ctx.fillText(fitText(ctx,h.name,265),182,y+73);rrect(ctx,W/2-82,y+24,164,76,20);ctx.fillStyle='rgba(255,255,255,.12)';ctx.fill();ctx.textAlign='center';ctx.fillStyle='#ffffff';ctx.font='900 40px system-ui,Segoe UI,sans-serif';ctx.fillText(`${m.hs} - ${m.aws}`,W/2,y+76);drawBadge(ctx,a,W-132,y+62,32);ctx.textAlign='right';ctx.fillStyle='#eaf0ff';ctx.font='700 32px system-ui,Segoe UI,sans-serif';ctx.fillText(fitText(ctx,a.name,265),W-182,y+73)});
  }else if(story.type==='remaining'){
-  const list=remainingData().slice(0,10),cols=2,padX=68,gapX=24,boxW=(W-padX*2-gapX)/cols,startY=335,gapY=286,boxH=262;
-  list.forEach((x,i)=>{const col=i%cols,row=Math.floor(i/cols),bx=padX+col*(boxW+gapX),by=startY+row*gapY;rrect(ctx,bx,by,boxW,boxH,24);ctx.fillStyle='rgba(255,255,255,.06)';ctx.fill();ctx.strokeStyle='rgba(255,255,255,.12)';ctx.lineWidth=2;ctx.stroke();drawBadge(ctx,x.team,bx+44,by+46,24);ctx.textAlign='left';ctx.fillStyle='#ffffff';ctx.font='800 26px system-ui,Segoe UI,sans-serif';ctx.fillText(fitText(ctx,x.team.name,245),bx+80,by+54);ctx.textAlign='right';ctx.fillStyle='#22e08a';ctx.font='800 24px system-ui,Segoe UI,sans-serif';ctx.fillText(`${x.rem.length} maç`,bx+boxW-20,by+54);const oppList=x.items.length?x.items.map(it=>`H${it.week} ${it.opp.short||it.opp.name.slice(0,5)}(${it.isHome?'E':'D'})`):['Kalan maç yok'];ctx.textAlign='left';ctx.fillStyle='#c4d1ee';ctx.font='600 21px system-ui,Segoe UI,sans-serif';oppList.slice(0,4).forEach((line,li)=>ctx.fillText(fitText(ctx,line,boxW-36),bx+22,by+106+li*34));if(oppList.length>4){ctx.fillStyle='#ffd23f';ctx.fillText(`+${oppList.length-4} maç daha`,bx+22,by+242)}});
+  const list=remainingData().filter(x=>x.rem.length>0).slice(0,8),cols=2,padX=64,gapX=24,boxW=(W-padX*2-gapX)/cols,startY=335,gapY=358,boxH=336;
+  list.forEach((x,i)=>{
+   const col=i%cols,row=Math.floor(i/cols),bx=padX+col*(boxW+gapX),by=startY+row*gapY;
+   rrect(ctx,bx,by,boxW,boxH,24);ctx.fillStyle='rgba(255,255,255,.06)';ctx.fill();ctx.strokeStyle='rgba(255,255,255,.14)';ctx.lineWidth=2;ctx.stroke();
+   drawBadge(ctx,x.team,bx+42,by+44,23);
+   ctx.textAlign='left';ctx.fillStyle='#ffffff';ctx.font='800 25px system-ui,Segoe UI,sans-serif';ctx.fillText(fitText(ctx,x.team.name,245),bx+78,by+52);
+   ctx.textAlign='right';ctx.fillStyle='#22e08a';ctx.font='800 23px system-ui,Segoe UI,sans-serif';ctx.fillText(`${x.rem.length}M`,bx+boxW-20,by+52);
+   ctx.strokeStyle='rgba(255,255,255,.1)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(bx+18,by+80);ctx.lineTo(bx+boxW-18,by+80);ctx.stroke();
+   const oppList=x.items.map(it=>`H${it.week} ${it.opp.short||it.opp.name.slice(0,5)}(${it.isHome?'E':'D'})`);
+   ctx.textAlign='left';ctx.font='600 19px system-ui,Segoe UI,sans-serif';
+   oppList.slice(0,12).forEach((line,li)=>{
+    const c2=li%2,r2=Math.floor(li/2);
+    ctx.fillStyle='#d6e1ff';
+    ctx.fillText(fitText(ctx,line,(boxW-44)/2),bx+20+c2*((boxW-32)/2),by+114+r2*35);
+   });
+   if(oppList.length>12){ctx.fillStyle='#ffd23f';ctx.fillText(`+${oppList.length-12} maç daha`,bx+20,by+324);}
+  });
  }else if(story.type==='match'){
   const m=S.matches.find(x=>x.id===story.id);if(m){const h=T(m.home_id),a=T(m.away_id);rrect(ctx,84,520,W-168,720,44);ctx.fillStyle='rgba(255,255,255,.06)';ctx.fill();drawBadge(ctx,h,275,780,96);ctx.textAlign='center';ctx.fillStyle='#ffffff';ctx.font='800 40px system-ui,Segoe UI,sans-serif';ctx.fillText(fitText(ctx,h.name,330),275,935);ctx.font='900 104px system-ui,Segoe UI,sans-serif';ctx.fillText(`${m.hs} - ${m.aws}`,W/2,810);drawBadge(ctx,a,W-275,780,96);ctx.font='800 40px system-ui,Segoe UI,sans-serif';ctx.fillText(fitText(ctx,a.name,330),W-275,935);if(m.note){ctx.fillStyle='#ffd23f';ctx.font='700 32px system-ui,Segoe UI,sans-serif';ctx.fillText('📝 '+fitText(ctx,m.note,760),W/2,1070)}}
  }
@@ -356,11 +375,11 @@ function storyModal(){
   inner=`<div class="story-head"><div class="story-sub">${esc(S.settings.season)} · HAFTA ${maxPlayedW}</div><h3>🏆 ${esc(S.settings.name)}</h3><div class="story-sub">GOL & ASİST KRALLIĞI</div></div>
   <div class="story-list">${top.length?top.map((x,i)=>{const tm=T(x.team_id);return `<div class="story-row"><span class="story-tname"><b style="min-width:20px">${i+1}.</b>${badge(tm,22)}<span>${esc(x.player)}</span></span><span style="white-space:nowrap"><b style="color:var(--g)">${x.goals}G</b> <span class="mut">${x.assists}A</span></span></div>`}).join(''):'<div class="empty">Henüz gol kaydı girilmemiş.</div>'}</div>`;
  }else if(story.type==='remaining'){
-  const list=remainingData();
+  const list=remainingData().filter(x=>x.rem.length>0);
   inner=`<div class="story-head"><div class="story-sub">${esc(S.settings.season)} · KALAN FİKSTÜR</div><h3>🏆 ${esc(S.settings.name)}</h3><div class="story-sub">HERKESİN KALAN MAÇI</div></div>
   <div class="story-rem-grid">${list.map(x=>{
-   const lines=x.items.length?x.items.map(it=>`H${it.week} ${esc(it.opp.short||it.opp.name.slice(0,5))}(${it.isHome?'E':'D'})`).join(' · '):'Kalan maç yok';
-   return `<div class="story-rem-box"><div class="story-rem-head"><span class="story-tname">${badgePure(x.team,18)}<span>${esc(x.team.name)}</span></span><span style="color:var(--g);white-space:nowrap">${x.rem.length}M</span></div><div class="story-rem-sub">${lines}</div></div>`;
+   const pills=x.items.map(it=>`<span class="story-rem-pill"><b>H${it.week}</b> ${esc(it.opp.short||it.opp.name.slice(0,5))}(${it.isHome?'E':'D'})</span>`).join('');
+   return `<div class="story-rem-box"><div class="story-rem-head"><div class="story-rem-left">${badgePure(x.team,18)}<span>${esc(x.team.name)}</span></div><span style="color:var(--g);white-space:nowrap">${x.rem.length}M</span></div><div class="story-rem-pills">${pills}</div></div>`;
   }).join('')}</div>`;
  }else if(story.type==='match'){
   const m=S.matches.find(x=>x.id===story.id);if(!m){story=null;return ''}
