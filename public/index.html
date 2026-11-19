@@ -360,6 +360,7 @@ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredIns
 async function installApp(){if(!deferredInstall)return;deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;render()}
 
 function launchConfetti(){
+  if(getPlayoffCfg().no_confetti)return;
   const cols=['#22c55e','#facc15','#38bdf8','#f43f5e','#a855f7','#fb923c'];
   for(let i=0;i<42;i++){
     const el=document.createElement('div');
@@ -448,6 +449,7 @@ function predBar(m){
 }
 
 function predictionLeaderboard(){
+  if(getPlayoffCfg().hide_pred_board)return '';
   const preds=allPredictions();
   const scores={};
   for(const m of S.matches){
@@ -473,7 +475,16 @@ function predictionLeaderboard(){
 function getPlayoffCfg(){
   let cfg={};
   try{cfg=JSON.parse(S.settings.playoff_cfg||'{}')||{}}catch{cfg={}}
-  return Object.assign({hidden:false,mode:'auto',sf1_h:'',sf1_a:'',sf1_hs:'',sf1_aws:'',sf2_h:'',sf2_a:'',sf2_hs:'',sf2_aws:'',fin_h:'',fin_a:'',fin_hs:'',fin_aws:''},cfg);
+  return Object.assign({
+    hidden:false,
+    hide_news:false,
+    hide_pred_board:false,
+    no_confetti:false,
+    mode:'auto',
+    sf1_h:'',sf1_a:'',sf1_hs:'',sf1_aws:'',
+    sf2_h:'',sf2_a:'',sf2_hs:'',sf2_aws:'',
+    fin_h:'',fin_a:'',fin_hs:'',fin_aws:''
+  },cfg);
 }
 
 function getCustomNews(){
@@ -483,6 +494,7 @@ function getCustomNews(){
 }
 
 function headlinesSection(){
+  if(getPlayoffCfg().hide_news)return '';
   const pl=S.matches.filter(m=>m.played).sort((a,b)=>(b.updated||'').localeCompare(a.updated||'')||b.id-a.id);
   const st=liveStandings();
   const items=[];
@@ -580,7 +592,10 @@ async function saveAdminExtra(key,obj){
 function savePlayoffForm(){
   const g=id=>document.getElementById(id)?.value??'';
   const cfg={
-    hidden:!!document.getElementById('po_hidden')?.checked,
+    hidden:!document.getElementById('po_show_po')?.checked,
+    hide_news:!document.getElementById('po_show_news')?.checked,
+    hide_pred_board:!document.getElementById('po_show_pred')?.checked,
+    no_confetti:!document.getElementById('po_show_conf')?.checked,
     mode:g('po_mode')||'auto',
     sf1_h:g('po_sf1_h'),sf1_a:g('po_sf1_a'),sf1_hs:g('po_sf1_hs'),sf1_aws:g('po_sf1_aws'),
     sf2_h:g('po_sf2_h'),sf2_a:g('po_sf2_a'),sf2_hs:g('po_sf2_hs'),sf2_aws:g('po_sf2_aws'),
@@ -625,10 +640,16 @@ function adminExtrasTab(){
   const preds=allPredictions();
   const users=[...new Set(Object.values(preds).flatMap(m=>Object.keys(m||{})))];
   const teamOpts=(sel,emptyLbl)=>'<option value="">'+emptyLbl+'</option>'+S.teams.map(t=>'<option value="'+t.id+'" '+(String(sel)===String(t.id)?'selected':'')+'>'+esc(t.name)+'</option>').join('');
-  return '<div class="card"><h3>🏆 Kupa / Play-Off Yönetimi (Oto & Manuel)</h3>'
-    +'<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px">'
-    +'<label>Mod: <select id="po_mode"><option value="auto" '+(cfg.mode==='auto'?'selected':'')+'>Otomatik (Puan Durumu İlk 4)</option><option value="manual" '+(cfg.mode==='manual'?'selected':'')+'>Manuel (Yönetici Seçimi)</option></select></label>'
-    +'<label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="po_hidden" '+(cfg.hidden?'checked':'')+'> Ana sayfada gizle</label>'
+  return '<div class="card"><h3>🎨 Eklemeler ve Görüntü Ayarları</h3>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-bottom:12px">'
+    +'<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04)"><input type="checkbox" id="po_show_news" '+(!cfg.hide_news?'checked':'')+'> 📰 Spor Gazetesi Manşetleri</label>'
+    +'<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04)"><input type="checkbox" id="po_show_pred" '+(!cfg.hide_pred_board?'checked':'')+'> 🎯 Tahmin Kralı Tablosu</label>'
+    +'<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04)"><input type="checkbox" id="po_show_po" '+(!cfg.hidden?'checked':'')+'> 🏆 Kupa / Play-Off Ağacı</label>'
+    +'<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04)"><input type="checkbox" id="po_show_conf" '+(!cfg.no_confetti?'checked':'')+'> 🎉 Gol / Maç Sonu Konfetisi</label>'
+    +'</div>'
+    +'<h4 style="margin:12px 0 8px">🏆 Kupa / Play-Off Modu (Otomatik & Manuel)</h4>'
+    +'<div style="margin-bottom:12px">'
+    +'<select id="po_mode"><option value="auto" '+(cfg.mode==='auto'?'selected':'')+'>Otomatik (Puan Durumu İlk 4)</option><option value="manual" '+(cfg.mode==='manual'?'selected':'')+'>Manuel (Yönetici Seçimi)</option></select>'
     +'</div>'
     +'<div class="grid" style="margin-bottom:12px">'
     +'<div class="card" style="margin:0"><b>Yarı Final 1</b><div style="display:grid;gap:6px;margin-top:8px">'
@@ -644,14 +665,14 @@ function adminExtrasTab(){
     +'<div style="display:flex;gap:6px"><select id="po_fin_a" style="flex:1">'+teamOpts(cfg.fin_a,'Yarı Final 2 Galibi')+'</select><input id="po_fin_aws" value="'+esc(cfg.fin_aws)+'" placeholder="Skor" style="width:64px"></div>'
     +'</div></div>'
     +'</div>'
-    +'<button type="button" class="pri" onclick="savePlayoffForm()">💾 Play-Off Ayarlarını Kaydet</button></div>'
+    +'<button type="button" class="pri" onclick="savePlayoffForm()">💾 Görüntü ve Play-Off Ayarlarını Kaydet</button></div>'
     +'<div class="card"><h3>📰 Özel Spor Gazetesi Manşeti</h3>'
     +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'
     +'<input id="cn_kicker" placeholder="Etiket (örn: SON DAKİKA)" style="width:170px">'
     +'<input id="cn_title" placeholder="Manşet metni..." style="flex:1;min-width:200px">'
     +'<button type="button" class="pri" onclick="addCustomHeadline()">+ Manşet Ekle</button>'
     +'</div>'
-    +(news.length?news.map((n,i)=>'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid rgba(255,255,255,.08)"><span><b style="color:#fbbf24">['+esc(n.kicker)+']</b> '+esc(n.title)+'</span><button type="button" class="xs bad" onclick="delCustomHeadline('+i+')">Sil</button></div>').join(''):'<div class="mut" style="font-size:12px">Henüz özel manşet eklenmedi (otomatik manşetler çalışıyor).</div>')
+    +(news.length?news.map((n,i)=>'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid rgba(255,255,255,.08)"><span><b style="color:#fbbf24">['+esc(n.kicker)+']</b> '+esc(n.title)+'</span><button type="button" class="xs bad" onclick="delCustomHeadline('+i+')">Sil</button></div>').join(''):'<div class="mut" style="font-size:12px">Henüz özel manşet eklenmedi (otomatik manşetler aktif).</div>')
     +'</div>'
     +'<div class="card"><h3>🎯 Tahmin Kralı & Oy Yönetimi</h3>'
     +(users.length?'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+users.map(u=>'<span class="tag" style="display:inline-flex;align-items:center;gap:6px">👤 '+esc(u)+' <button type="button" class="xs bad" data-user="'+esc(u)+'" onclick="delPredictorUser(this.dataset.user)">×</button></span>').join('')+'</div>':'<div class="mut" style="font-size:12px;margin-bottom:10px">Henüz kayıtlı tahminci yok.</div>')
@@ -854,7 +875,7 @@ const setup=e=>{e.preventDefault();const f=e.target;act(()=>api('POST','/api/adm
 const doLogin=e=>{e.preventDefault();const f=e.target;act(()=>api('POST','/api/admin/login',{username:f.u.value,password:f.p.value}),'Hoş geldin Yusuf');return false};
 
 function panel(){const weeks=[...new Set(S.matches.map(m=>m.week))].sort((a,b)=>a-b);if(!wk||!weeks.includes(wk))wk=+S.settings.week&&weeks.includes(+S.settings.week)?+S.settings.week:weeks[0]||1;
- const tabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['s','⚙ Ayarlar']];let c='';
+ const tabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler ve Görüntü']];let c='';
  if(tab==='kupa')c=adminExtrasTab();else if(tab==='m')c=`<div class="tabs">${weeks.map(w=>`<button class="${w===wk?'on':''}" onclick="wk=${w};render()">H${w}</button>`).join('')}</div>${S.matches.some(m=>m.week===wk)?`<div class="grid">${S.matches.filter(m=>m.week===wk).map(m=>mcard(m,1)).join('')}</div>`:'<div class="card empty">Bu haftada maç yok. Aşağıdan ekle ya da fikstür oluştur.</div>'}
  <div class="sh"><h2>Maç Ekle</h2></div><form class="card row" onsubmit="return addM(event)"><input name="w" type="number" min="1" value="${wk}" title="Hafta"><select name="h">${S.teams.map(t=>`<option value="${t.id}">${esc(t.name)}`).join('')}</select><select name="a">${S.teams.map((t,i)=>`<option value="${t.id}" ${i==1?'selected':''}>${esc(t.name)}`).join('')}</select><button class="pri">Ekle</button></form>${goalModal()}`;
  if(tab==='t')c=`<form class="card row" onsubmit="return addT(event)"><input name="n" placeholder="Takım adı" required maxlength="40"><input name="s" placeholder="Kısa ad" maxlength="4" style="max-width:100px"><input name="c" type="color" value="#22c55e"><button class="pri">Takım ekle</button></form><div class="grid" style="margin-top:12px">${S.teams.map(t=>`<form class="card row" onsubmit="return editT(event,${t.id})">${badge(t)}<input name="n" value="${esc(t.name)}" required maxlength="40"><input name="s" value="${esc(t.short||'')}" maxlength="4" style="max-width:80px"><input name="c" type="color" value="${esc(t.color)}"><button>💾</button><button type="button" class="dng" onclick="delT(${t.id},'${esc(t.name).replace(/'/g,'')}')">🗑</button></form>`).join('')||'<div class="card empty">Takım yok.</div>'}</div>`;
