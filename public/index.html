@@ -102,6 +102,27 @@ input,select{background:#0b1226;border:1px solid var(--line);border-radius:10px;
 @keyframes pop{0%{transform:scale(.5)}50%{transform:scale(1.6);color:var(--g)}100%{transform:scale(1)}}@keyframes blink{50%{opacity:.4}}
 @keyframes goal{0%{opacity:0;transform:scale(.3) rotate(-8deg)}25%{opacity:1;transform:scale(1.15)}70%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.4)}}
 @media(max-width:560px){.wrap{padding:10px}.sc{font-size:24px;min-width:64px}}
+
+.pred-box{grid-column:1/-1;margin-top:8px;padding-top:8px;border-top:1px dashed rgba(255,255,255,.1)}
+.pred-row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.pred-btn{flex:1 1 88px;justify-content:center;font-weight:700;border:1px solid rgba(255,255,255,.14);transition:.15s}
+.pred-btn.win{background:rgba(34,197,94,.22);border-color:#22c55e;color:#86efac}
+.pred-btn.picked{box-shadow:0 0 0 2px #38bdf8}
+.pred-res{margin-top:6px;text-align:center;font-size:12px;font-weight:800;padding:4px 8px;border-radius:8px}
+.pred-res.ok{background:rgba(34,197,94,.16);color:#4ade80;border:1px solid rgba(34,197,94,.35)}
+.pred-res.no{background:rgba(248,113,113,.14);color:#fca5a5;border:1px solid rgba(248,113,113,.3)}
+.nick-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:10px 14px;margin-bottom:12px;border-radius:14px;background:rgba(30,41,59,.65);border:1px solid rgba(255,255,255,.1)}
+.news-ticker{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin:12px 0}
+.news-item{padding:12px 14px;border-radius:14px;background:linear-gradient(135deg,rgba(30,41,59,.85),rgba(15,23,42,.92));border-left:4px solid #f59e0b;box-shadow:0 6px 18px rgba(0,0,0,.22)}
+.news-kicker{font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#fbbf24;margin-bottom:4px}
+.news-title{font-size:14px;font-weight:800;line-height:1.35}
+.po-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;align-items:center}
+.po-col{display:grid;gap:12px}
+.po-match{padding:12px;border-radius:14px;background:rgba(15,23,42,.75);border:1px solid rgba(255,255,255,.12)}
+.po-team{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.04);margin-top:6px}
+.po-final{border:1px solid rgba(250,204,21,.45);background:linear-gradient(145deg,rgba(250,204,21,.1),rgba(15,23,42,.85))}
+.confetti-p{position:fixed;top:-12px;width:9px;height:14px;border-radius:2px;pointer-events:none;z-index:9999;animation:cfall 2.6s linear forwards}
+@keyframes cfall{to{transform:translateY(105vh) rotate(720deg);opacity:0}}
 </style><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0b1220"></head><body><div id="goal">GOL!</div><div class="wrap" id="app"></div><div id="toast"></div>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -329,31 +350,189 @@ function copyTable(){
 }
 
 const VOTES_KEY='kl_votes_v1';
+const NICK_KEY='kl_nick_v1';
 let VOTES={};
 try{VOTES=JSON.parse(localStorage.getItem(VOTES_KEY)||'{}')||{}}catch{VOTES={}}
+let MY_NICK='';
+try{MY_NICK=(localStorage.getItem(NICK_KEY)||'').trim()}catch{MY_NICK=''}
 let deferredInstall=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;render()});
 async function installApp(){if(!deferredInstall)return;deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;render()}
-function votePick(mid,pick){
-  const cur=VOTES[mid];
-  if(cur===pick)delete VOTES[mid]; else VOTES[mid]=pick;
-  try{localStorage.setItem(VOTES_KEY,JSON.stringify(VOTES))}catch{}
-  render();
+
+function launchConfetti(){
+  const cols=['#22c55e','#facc15','#38bdf8','#f43f5e','#a855f7','#fb923c'];
+  for(let i=0;i<42;i++){
+    const el=document.createElement('div');
+    el.className='confetti-p';
+    el.style.left=(Math.random()*100)+'vw';
+    el.style.background=cols[i%cols.length];
+    el.style.animationDelay=(Math.random()*0.45)+'s';
+    el.style.animationDuration=(2.1+Math.random()*1.1)+'s';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),3600);
+  }
 }
+
+function setNick(val){
+  const n=(val!==undefined?val:prompt('Tahmin sıralamasında görünecek adın / rumuzun:',MY_NICK||'')).trim().slice(0,24);
+  if(!n)return false;
+  MY_NICK=n;
+  try{localStorage.setItem(NICK_KEY,MY_NICK)}catch{}
+  render();
+  return true;
+}
+
+function allPredictions(){
+  let srvPreds={};
+  try{srvPreds=JSON.parse(S.settings.predictions||'{}')||{}}catch{srvPreds={}}
+  return srvPreds;
+}
+
+function matchOutcome(m){
+  if(!m.played)return '';
+  if(m.hs>m.aws)return 'H';
+  if(m.hs<m.aws)return 'A';
+  return 'D';
+}
+
+async function votePick(mid,pick){
+  const m=S.matches.find(x=>x.id===mid);
+  if(!m||m.played)return;
+  if(!MY_NICK && !setNick())return;
+  const k=String(mid);
+  const preds=allPredictions();
+  const cur=(preds[k]&&preds[k][MY_NICK])||VOTES[k]||'';
+  const next=cur===pick?'':pick;
+  if(next)VOTES[k]=next; else delete VOTES[k];
+  try{localStorage.setItem(VOTES_KEY,JSON.stringify(VOTES))}catch{}
+  if(!preds[k])preds[k]={};
+  if(next)preds[k][MY_NICK]=next; else delete preds[k][MY_NICK];
+  S.settings.predictions=JSON.stringify(preds);
+  render();
+  try{
+    const r=await api('POST','/api/predictions',{match_id:mid,user:MY_NICK,pick:next});
+    if(r&&r.predictions)S.settings.predictions=JSON.stringify(r.predictions);
+    render();
+  }catch(e){toast(e.message||'Oy kaydedilemedi',1)}
+}
+
 function predBar(m){
   const k=String(m.id);
-  const my=VOTES[k]||'';
+  const preds=allPredictions();
+  const map=preds[k]||{};
+  const entries=Object.entries(map);
+  let cH=0,cD=0,cA=0;
+  for(const [,v] of entries){if(v==='H')cH++;else if(v==='D')cD++;else if(v==='A')cA++;}
+  const my=(MY_NICK&&map[MY_NICK])||VOTES[k]||'';
+  if(my && !entries.some(([u])=>u===MY_NICK)){
+    if(my==='H')cH++;else if(my==='D')cD++;else if(my==='A')cA++;
+  }
+  const tot=cH+cD+cA;
+  const rH=tot?Math.round(cH*100/tot):0;
+  const rD=tot?Math.round(cD*100/tot):0;
+  const rA=tot?Math.max(0,100-rH-rD):0;
   const h=T(m.home_id),a=T(m.away_id);
-  const baseH=38+(m.id*17)%22, baseD=24+(m.id*11)%14, baseA=Math.max(12,100-baseH-baseD);
-  const pH=baseH+(my==='H'?18:0), pD=baseD+(my==='D'?18:0), pA=baseA+(my==='A'?18:0);
-  const sum=pH+pD+pA||1;
-  const rH=Math.round(pH*100/sum), rD=Math.round(pD*100/sum), rA=Math.max(0,100-rH-rD);
-  return '<div class="pred-box" style="grid-column:1/-1;margin-top:6px"><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">'
-    +'<button type="button" class="xs '+(my==='H'?'pri':'')+'" onclick="votePick('+m.id+',\'H\')">'+esc(h.short||h.name)+' (%'+rH+')</button>'
-    +'<button type="button" class="xs '+(my==='D'?'pri':'')+'" onclick="votePick('+m.id+',\'D\')">Berabere (%'+rD+')</button>'
-    +'<button type="button" class="xs '+(my==='A'?'pri':'')+'" onclick="votePick('+m.id+',\'A\')">'+esc(a.short||a.name)+' (%'+rA+')</button>'
+  const out=matchOutcome(m);
+  const dis=m.played?'disabled':'';
+  let statusHtml='';
+  if(m.played){
+    if(my){
+      statusHtml=my===out
+        ?'<div class="pred-res ok">✅ Tahminin Tuttu! (+3 Puan)</div>'
+        :'<div class="pred-res no">❌ Tahminin Yattı</div>';
+    }else{
+      statusHtml='<div class="mut" style="text-align:center;font-size:11px;margin-top:5px">🔒 Maç tamamlandı · Oylama kilitli ('+tot+' oy)</div>';
+    }
+  }else{
+    statusHtml='<div class="mut" style="text-align:center;font-size:11px;margin-top:5px">'+(tot?tot+' kişi oy verdi':'İlk tahmini sen yap!')+(MY_NICK?' · 👤 '+esc(MY_NICK):'')+'</div>';
+  }
+  return '<div class="pred-box"><div class="pred-row">'
+    +'<button type="button" '+dis+' class="xs pred-btn '+(my==='H'?'pri picked':'')+' '+(out==='H'?'win':'')+'" onclick="votePick('+m.id+',\'H\')">'+esc(h.short||h.name)+' '+(tot?'(%'+rH+')':'')+'</button>'
+    +'<button type="button" '+dis+' class="xs pred-btn '+(my==='D'?'pri picked':'')+' '+(out==='D'?'win':'')+'" onclick="votePick('+m.id+',\'D\')">Berabere '+(tot?'(%'+rD+')':'')+'</button>'
+    +'<button type="button" '+dis+' class="xs pred-btn '+(my==='A'?'pri picked':'')+' '+(out==='A'?'win':'')+'" onclick="votePick('+m.id+',\'A\')">'+esc(a.short||a.name)+' '+(tot?'(%'+rA+')':'')+'</button>'
+    +'</div>'+statusHtml+'</div>';
+}
+
+function predictionLeaderboard(){
+  const preds=allPredictions();
+  const scores={};
+  for(const m of S.matches){
+    if(!m.played)continue;
+    const out=matchOutcome(m);
+    const map=preds[String(m.id)]||{};
+    for(const [user,pick] of Object.entries(map)){
+      if(!scores[user])scores[user]={user,pts:0,hit:0,tot:0};
+      scores[user].tot++;
+      if(pick===out){scores[user].hit++;scores[user].pts+=3;}
+    }
+  }
+  const rows=Object.values(scores).sort((a,b)=>b.pts-a.pts||b.hit-a.hit||a.tot-b.tot);
+  const nickStrip='<div class="nick-bar"><span>🎯 <b>1v1 Tahmin Oyunu</b> '+(MY_NICK?'— Aktif Oyuncu: <b style="color:#4ade80">'+esc(MY_NICK)+'</b>':'— Oy vermek için rumuzunu seç')+'</span><button type="button" class="sm" onclick="setNick()">'+(MY_NICK?'✏️ İsmi Değiştir':'👤 İsim Gir')+'</button></div>';
+  if(!rows.length){
+    return '<div class="sh"><h2>🎯 Tahmin Kralı Sıralaması</h2></div><div class="card">'+nickStrip+'<div class="mut" style="font-size:13px">Henüz sonuçlanan maçlarda puan kazanan tahmin yok. Sıradaki maçlara oy ver, maçlar bittikçe doğru tahmin başına <b>+3 puan</b> kazan!</div></div>';
+  }
+  return '<div class="sh"><h2>🎯 Tahmin Kralı Sıralaması</h2></div><div class="card tw">'+nickStrip+'<table><thead><tr><th>#<th class="n">Tahminci<th>Oynanan<th>İsabet<th>Oran<th>Puan</tr></thead><tbody>'
+    +rows.map((r,i)=>'<tr><td><span class="pos">'+(i+1)+'</span><td class="n"><b>'+(i===0?'👑 ':'')+esc(r.user)+'</b><td>'+r.tot+'<td>'+r.hit+'<td>%'+Math.round(r.hit*100/Math.max(1,r.tot))+'<td class="pts">'+r.pts+'</tr>').join('')
+    +'</tbody></table></div>';
+}
+
+function headlinesSection(){
+  const pl=S.matches.filter(m=>m.played).sort((a,b)=>(b.updated||'').localeCompare(a.updated||'')||b.id-a.id);
+  const st=liveStandings();
+  const items=[];
+  if(st.rows.length>=2){
+    const l1=st.rows[0],l2=st.rows[1];
+    const gap=(l1.pts||0)-(l2.pts||0);
+    items.push({k:'ZİRVE RAPORU',t:gap===0?esc(l1.name)+' ve '+esc(l2.name)+' zirvede puan puana çarpışıyor!':esc(l1.name)+', en yakın rakibi '+esc(l2.name)+' önünde '+gap+' puan farkla lider!'});
+  }
+  const blowout=[...pl].sort((a,b)=>Math.abs(b.hs-b.aws)-Math.abs(a.hs-a.aws))[0];
+  if(blowout && Math.abs(blowout.hs-blowout.aws)>=3){
+    const w=blowout.hs>blowout.aws?T(blowout.home_id):T(blowout.away_id);
+    const l=blowout.hs>blowout.aws?T(blowout.away_id):T(blowout.home_id);
+    items.push({k:'HAFTANIN ŞOVU · H'+blowout.week,t:'TARİHİ TARİFE! '+esc(w.name)+', '+esc(l.name)+' karşısında sahayı dar etti ('+blowout.hs+'-'+blowout.aws+')!'});
+  }
+  const latest=pl[0];
+  if(latest && latest!==blowout){
+    const h=T(latest.home_id),a=T(latest.away_id);
+    if(latest.hs===latest.aws){
+      items.push({k:'SON DÜDÜK · H'+latest.week,t:'NEFES KESEN DÜELLO: '+esc(h.name)+' ile '+esc(a.name)+' yenişemedi ('+latest.hs+'-'+latest.aws+').'});
+    }else{
+      const w=latest.hs>latest.aws?h:a;
+      items.push({k:'SON MAÇ MANŞETİ · H'+latest.week,t:esc(w.name)+' kritik virajı kayıpsız geçti ('+latest.hs+'-'+latest.aws+')!'});
+    }
+  }
+  if(!items.length)return '';
+  return '<div class="sh"><h2>📰 Spor Gazetesi Manşetleri</h2></div><div class="news-ticker">'
+    +items.slice(0,3).map(x=>'<div class="news-item"><div class="news-kicker">'+x.k+'</div><div class="news-title">'+x.t+'</div></div>').join('')
+    +'</div>';
+}
+
+function playoffSection(){
+  const st=liveStandings();
+  if(st.rows.length<4)return '';
+  const top4=st.rows.slice(0,4);
+  const t1=top4[0],t2=top4[1],t3=top4[2],t4=top4[3];
+  const findLatest=(idA,idB)=>S.matches.filter(m=>m.played&&((m.home_id===idA&&m.away_id===idB)||(m.home_id===idB&&m.away_id===idA))).sort((a,b)=>b.id-a.id)[0];
+  const sf1=findLatest(t1.id,t4.id);
+  const sf2=findLatest(t2.id,t3.id);
+  const scOf=(m,tid)=>!m?'-':(m.home_id===tid?m.hs:m.aws);
+  return '<div class="sh"><h2>🏆 Kupa / Play-Off Ağacı (İlk 4)</h2><span class="mut">Canlı sıralamaya göre otomatik eşleşme</span></div>'
+    +'<div class="card"><div class="po-grid">'
+    +'<div class="po-col">'
+    +'<div class="po-match"><div class="mut" style="font-size:11px;font-weight:800">YARI FİNAL 1 (1. vs 4.)</div>'
+    +'<div class="po-team"><span>'+badgePure(t1,22)+' <b>1. '+esc(t1.name)+'</b></span><b>'+scOf(sf1,t1.id)+'</b></div>'
+    +'<div class="po-team"><span>'+badgePure(t4,22)+' <b>4. '+esc(t4.name)+'</b></span><b>'+scOf(sf1,t4.id)+'</b></div></div>'
+    +'<div class="po-match"><div class="mut" style="font-size:11px;font-weight:800">YARI FİNAL 2 (2. vs 3.)</div>'
+    +'<div class="po-team"><span>'+badgePure(t2,22)+' <b>2. '+esc(t2.name)+'</b></span><b>'+scOf(sf2,t2.id)+'</b></div>'
+    +'<div class="po-team"><span>'+badgePure(t3,22)+' <b>3. '+esc(t3.name)+'</b></span><b>'+scOf(sf2,t3.id)+'</b></div></div>'
+    +'</div>'
+    +'<div class="po-col"><div class="po-match po-final"><div style="font-size:11px;font-weight:900;color:#facc15">🏆 BÜYÜK FİNAL</div>'
+    +'<div class="po-team"><span>Yarı Final 1 Galibi</span><span class="tag">Finalist</span></div>'
+    +'<div class="po-team"><span>Yarı Final 2 Galibi</span><span class="tag">Finalist</span></div>'
+    +'<div class="mut" style="font-size:11px;margin-top:8px">Lig sıralaması değiştikçe eşleşmeler otomatik güncellenir.</div></div></div>'
     +'</div></div>';
 }
+
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}))}
 
 function mcard(m,adm){const h=T(m.home_id),a=T(m.away_id),live=!m.played&&(m.hs||m.aws),b=bump===m.id;
@@ -533,12 +712,12 @@ function home(){const s=S.settings,pl=S.matches.filter(m=>m.played).sort((a,b)=>
   mSec=list.length?`<div class="grid">${list.map(m=>mcard(m)).join('')}</div>`:'<div class="card empty">Bu seçimde maç yok.</div>';
  }
  return `<div class="hero"><h1>🏆 ${esc(s.name)}</h1><p>${esc(s.season)}</p><div class="chips"><span class="chip">Hafta ${esc(s.week)}</span><span class="chip">${S.teams.length} takım</span><span class="chip">${S.matches.filter(m=>m.played).length} maç oynandı</span></div></div>
- ${statsBar()}
+ ${statsBar()}${headlinesSection()}
  <div class="sh"><h2>Puan Durumu</h2>${S.table.length?'<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="sm" onclick="story={type:\'table\'};render()">📱 Hikâye Kartı</button><button class="sm" onclick="copyTable()">📋 Kopyala</button></div>':''}</div>
  ${st.hasLive?'<div class="live-banner"><span class="tag live">CANLI</span> Devam eden maçların anlık skoruna göre canlı puan durumu gösteriliyor.</div>':''}
  <div class="card tw">${st.rows.length?`<table><thead><tr><th>#<th class="n">Takım<th>O<th>G<th>B<th>M<th>AG<th>YG<th>Av<th>P<th>Son 5</tr></thead><tbody>${st.rows.map((t,i)=>{const fm=formOf(t.id),mv=t.diff>0?`<span class="mv up">▲${t.diff}</span>`:t.diff<0?`<span class="mv dn">▼${Math.abs(t.diff)}</span>`:'';return `<tr style="animation-delay:${i*60}ms"><td><span class="pos">${i+1}</span>${mv}<td class="n"><span class="tlink" onclick="selTeam=${t.id};render()">${badge(t)}${esc(t.name)}</span><td>${t.p}<td>${t.w}<td>${t.d}<td>${t.l}<td>${t.gf}<td>${t.ga}<td>${t.gd>0?'+':''}${t.gd}<td class="pts">${t.pts}<td><span class="form">${fm.length?fm.map(x=>`<span class="fb ${x}">${x}</span>`).join(''):'<span class="mut">—</span>'}</span></tr>`}).join('')}</tbody></table>`:'<div class="empty">Henüz takım yok.</div>'}</div>
  ${sb.length?`<div class="sh"><h2>Gol & Asist Krallığı</h2></div><div class="card tw"><table><thead><tr><th>#<th class="n">Oyuncu<th class="n">Takım<th>Gol<th>Asist<th>Katkı</tr></thead><tbody>${sb.map((x,i)=>{const tm=T(x.team_id);return `<tr><td><span class="pos">${i+1}</span><td class="n"><b>${esc(x.player)}</b><td class="n">${badge(tm,24)}${esc(tm.name)}<td class="pts">${x.goals}<td>${x.assists}<td><b>${x.goals+x.assists}</b></tr>`}).join('')}</tbody></table></div>`:''}
- ${h2hSection()}
+ ${h2hSection()}${predictionLeaderboard()}${playoffSection()}
  
  ${weeks.length?`<div class="sh"><h2>Maçlar & Fikstür</h2></div><div class="tabs"><button class="${htab==='ozet'?'on':''}" onclick="htab='ozet';render()">Özet</button><button class="${htab==='all'?'on':''}" onclick="htab='all';render()">Tümü (${S.matches.length})</button>${weeks.map(w=>`<button class="${htab===w?'on':''}" onclick="htab=${w};render()">H${w}</button>`).join('')}</div>${mSec}`:mSec}
  ${ars.length?`<div class="sh"><h2>🏆 Şampiyonlar Müzesi</h2></div><div class="grid">${ars.map(a=>`<div class="champ" onclick="archView=${a.id};render()"><div><div class="mut">${esc(a.season)} ŞAMPİYONU</div><b style="font-size:18px;color:var(--y)">🥇 ${esc(a.champion)}</b></div><span class="tag">Tabloyu Gör →</span></div>`).join('')}</div>`:''}
@@ -619,9 +798,9 @@ function restoreJson(inp){
 function render(){const r=location.hash.startsWith('#/yonetici');$('#app').innerHTML=!r?home():!ME.admin?login():panel();bump=null}
 const out=()=>act(()=>api('POST','/api/admin/logout'),'Çıkış yapıldı');
 const f=e=>(e.preventDefault(),e.target);
-async function g(id,k,d){const m=S.matches.find(x=>x.id===id),v=Math.max(0,m[k]+d);if(v===m[k])return;bump=id;if(d>0){playSfx('goal');const e=$('#goal');e.className='';void e.offsetWidth;e.className='go'}
+async function g(id,k,d){const m=S.matches.find(x=>x.id===id),v=Math.max(0,m[k]+d);if(v===m[k])return;bump=id;if(d>0){playSfx('goal');launchConfetti();const e=$('#goal');e.className='';void e.offsetWidth;e.className='go'}
  try{await api('PUT','/api/admin/matches/'+id,{[k]:v});await load();render()}catch(e){toast(e.message,1)}}
-const fin=(id,p)=>act(async()=>{if(p)playSfx('whistle');await api('PUT','/api/admin/matches/'+id,{played:p})},p?'Maç bitti, tablo güncellendi':'Maç yeniden açıldı');
+const fin=(id,p)=>act(async()=>{if(p){playSfx('whistle');launchConfetti();}await api('PUT','/api/admin/matches/'+id,{played:p})},p?'Maç bitti, tablo güncellendi':'Maç yeniden açıldı');
 const saveNote=(e,id)=>{const x=f(e);act(()=>api('PUT','/api/admin/matches/'+id,{note:x.note.value}),'Maç notu kaydedildi');return false};
 const addGoal=(e,mid)=>{const x=f(e);act(()=>api('POST','/api/admin/goals',{match_id:mid,team_id:+x.tid.value,player:x.player.value,goals:+x.goals.value,assists:+x.assists.value}),'Oyuncu istatistiği eklendi');return false};
 const delGoal=id=>act(()=>api('DELETE','/api/admin/goals/'+id),'Kayıt silindi');

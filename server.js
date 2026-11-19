@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 // Kardeşler Ligi — takım tabanlı lig. Veritabanı: PostgreSQL (Neon), bağlantı: DATABASE_URL.
 const http = require('http'), fs = require('fs'), path = require('path'), crypto = require('crypto');
 const { Pool } = require('pg');
@@ -322,6 +322,34 @@ const server = http.createServer(async (req, res) => {
       res.write(': connected\n\n');
       sseClients.add(res);
       res.on('close', () => sseClients.delete(res));
+      return;
+    }
+    if (u.pathname === '/api/predictions' && req.method === 'POST') {
+      const raw = await new Promise((resolve, reject) => {
+        let d = '';
+        req.on('data', ch => { d += ch; if (d.length > 32768) reject(E(413, 'Veri çok büyük')); });
+        req.on('end', () => resolve(d));
+        req.on('error', reject);
+      });
+      let b = {};
+      try { b = JSON.parse(raw || '{}'); } catch { throw E(400, 'Geçersiz JSON'); }
+      const mid = String(parseInt(b.match_id, 10) || '');
+      const user = clean(String(b.user || '')).slice(0, 24);
+      const pick = String(b.pick || '');
+      if (!mid || !user) throw E(400, 'İsim ve maç bilgisi gerekli');
+      if (!['H', 'D', 'A', ''].includes(pick)) throw E(400, 'Geçersiz tahmin');
+      const s = await settings();
+      let preds = {};
+      try { preds = JSON.parse(s.predictions || '{}') || {}; } catch { preds = {}; }
+      if (!preds[mid] || typeof preds[mid] !== 'object') preds[mid] = {};
+      if (pick === '') delete preds[mid][user];
+      else preds[mid][user] = pick;
+      await tx(async t => {
+        await t.run(`DELETE FROM ${SETTINGS} WHERE k='predictions'`);
+        await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES('predictions',$1)`, JSON.stringify(preds));
+      });
+      send(res, 200, { ok: 1, predictions: preds });
+      notifyClients();
       return;
     }
     if (u.pathname.startsWith('/api/')) {
