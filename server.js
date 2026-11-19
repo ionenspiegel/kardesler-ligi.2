@@ -62,6 +62,12 @@ async function standings() {
     h.p++; a.p++; h.gf += m.hs; h.ga += m.aws; a.gf += m.aws; a.ga += m.hs;
     if (m.hs > m.aws) { h.w++; a.l++; h.pts += W; a.pts += L; } else if (m.hs < m.aws) { a.w++; h.l++; a.pts += W; h.pts += L; } else { h.d++; a.d++; h.pts += D; a.pts += D; }
   }
+  let penList = [];
+  try { penList = JSON.parse(s.penalties || '[]'); } catch {}
+  for (const x of penList) {
+    const tm = T[x.team_id];
+    if (tm) { const d = Number(x.pts) || 0; tm.pts += d; tm.adj = (tm.adj || 0) + d; }
+  }
   return Object.values(T).map(t => ({ ...t, gd: t.gf - t.ga })).sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || a.name.localeCompare(b.name, 'tr'));
 }
 const league = async () => ({

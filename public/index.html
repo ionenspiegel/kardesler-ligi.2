@@ -58,6 +58,14 @@ td.n,th.n{text-align:left}tbody tr{animation:row .5s both}tbody tr:hover{backgro
 .story-rem-pills{display:flex;flex-wrap:wrap;gap:3px}
 .story-rem-pill{background:#ffffff10;border-radius:5px;padding:1.5px 4.5px;font-size:9px;color:#d6e1ff;white-space:nowrap}
 .story-rem-pill b{color:#ffd23f}
+.disc-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
+.disc-card{background:var(--card2);border:1px solid #ffffff14;border-radius:14px;padding:12px;display:grid;gap:6px}
+.disc-card.neg{border-left:4px solid #ef4444}
+.disc-card.pos{border-left:4px solid #22c55e}
+.disc-card.warn{border-left:4px solid #f59e0b}
+.adj-badge{font-size:10px;font-weight:800;padding:1px 5px;border-radius:5px;margin-left:5px;vertical-align:middle}
+.adj-neg{background:#ef444426;color:#f87171}
+.adj-pos{background:#22c55e26;color:#4ade80}
 .h2h-mid{display:grid;gap:6px}.h2h-nums{display:flex;gap:12px;justify-content:center;font-weight:900;font-size:22px}
 .champ{background:linear-gradient(135deg,#272009,#141d35);border:1px solid #ffd23f55;border-radius:16px;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;transition:.2s}
 .champ:hover{transform:translateY(-2px);border-color:var(--y)}
@@ -223,6 +231,68 @@ function remainingSection(){
  }).join('');
  return `<div class="sh"><h2>📅 Herkesin Kalan Maçı</h2><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="mut">E: Ev · D: Deplasman</span><button class="sm" onclick="story={type:'remaining'};render()">📱 Kalan Maç Kartı</button></div></div><div class="card"><div class="rem-grid">${cards}</div></div>`;
 }
+function getPenalties(){
+ try{const a=JSON.parse(S.settings.penalties||'[]');return Array.isArray(a)?a:[]}catch{return []}
+}
+
+function disciplineSection(){
+ const list=getPenalties();
+ if(!list.length)return '';
+ const cards=list.slice().reverse().map(x=>{
+  const tm=T(x.team_id);
+  const pts=Number(x.pts)||0;
+  const cls=pts<0?'neg':pts>0?'pos':'warn';
+  const badgeTxt=pts<0?`${pts} Puan`:pts>0?`+${pts} Puan`:'Uyarı / Yaptırım';
+  const badgeCol=pts<0?'#f87171':pts>0?'#4ade80':'#fbbf24';
+  return `<div class="disc-card ${cls}">
+   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+    <span class="tlink" onclick="selTeam=${tm.id};render()">${badgePure(tm,26)}<span style="margin-left:6px">${esc(tm.name)}</span></span>
+    <span style="font-weight:900;font-size:13px;color:${badgeCol};white-space:nowrap">${badgeTxt}</span>
+   </div>
+   <div style="font-size:13px;font-weight:700">${esc(x.reason)}</div>
+   ${x.sanction?`<div style="font-size:11px;color:#ffd23f">⚠️ Ek Yaptırım: ${esc(x.sanction)}</div>`:''}
+   <div class="mut" style="font-size:11px">${esc(x.date||'')}</div>
+  </div>`;
+ }).join('');
+ return `<div class="sh"><h2>⚖️ Disiplin Kurulu & Puan İşlemleri</h2><span class="mut">${list.length} kayıt</span></div><div class="card"><div class="disc-grid">${cards}</div></div>`;
+}
+
+async function addPenalty(e){
+ e.preventDefault();
+ const f=e.target;
+ const team_id=+f.team_id.value;
+ const pts=Number(f.pts.value)||0;
+ const reason=f.reason.value.trim();
+ const sanction=f.sanction.value.trim();
+ if(!team_id||!reason)return false;
+ const list=getPenalties();
+ const now=new Date().toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+ list.push({id:Date.now(),team_id,pts,reason,sanction,date:now});
+ await act(()=>api('PUT','/api/admin/settings',{penalties:JSON.stringify(list)}),pts<0?'Ceza puanı işlendi':pts>0?'Ödül puanı eklendi':'Disiplin kaydı eklendi');
+ return false;
+}
+
+async function delPenalty(id){
+ if(!confirm('Bu ceza/puan kaydını silip puanı geri almak istiyor musun?'))return;
+ const list=getPenalties().filter(x=>x.id!==id);
+ await act(()=>api('PUT','/api/admin/settings',{penalties:JSON.stringify(list)}),'Kayıt silindi ve puan güncellendi');
+}
+
+function applyPreset(sel){
+ const f=sel.form;
+ const map={
+  hile3:[-3,'Hile / Kural İhlali',''],
+  hile6:[-6,'Ağır Hile / Şike Girişimi','1 Hafta Turnuva Gözetimi'],
+  kacma:[-3,'Maçtan Kaçma / Sebepsiz Çıkış',''],
+  sportmen:[-2,'Sportmenlik Dışı Davranış',''],
+  uyari:[0,'Resmi Uyarı / Sarı Kart','Tekrarında -3 Puan'],
+  fairplay:[2,'Fair-Play & Örnek Davranış Ödülü',''],
+  bonus:[3,'Özel Turnuva / Performans Bonusu','']
+ };
+ const v=map[sel.value];
+ if(v){f.pts.value=v[0];f.reason.value=v[1];f.sanction.value=v[2];}
+}
+
 function h2hSection(){
  if(S.teams.length<2)return '';
  if(!h2hA||!S.teams.some(t=>t.id===h2hA))h2hA=S.teams[0].id;
@@ -452,10 +522,50 @@ const setup=e=>{e.preventDefault();const f=e.target;act(()=>api('POST','/api/adm
 const doLogin=e=>{e.preventDefault();const f=e.target;act(()=>api('POST','/api/admin/login',{username:f.u.value,password:f.p.value}),'Hoş geldin Yusuf');return false};
 
 function panel(){const weeks=[...new Set(S.matches.map(m=>m.week))].sort((a,b)=>a-b);if(!wk||!weeks.includes(wk))wk=+S.settings.week&&weeks.includes(+S.settings.week)?+S.settings.week:weeks[0]||1;
- const tabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['f','📅 Fikstür'],['s','⚙ Ayarlar']];let c='';
+ const tabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['s','⚙ Ayarlar']];let c='';
  if(tab==='m')c=`<div class="tabs">${weeks.map(w=>`<button class="${w===wk?'on':''}" onclick="wk=${w};render()">H${w}</button>`).join('')}</div>${S.matches.some(m=>m.week===wk)?`<div class="grid">${S.matches.filter(m=>m.week===wk).map(m=>mcard(m,1)).join('')}</div>`:'<div class="card empty">Bu haftada maç yok. Aşağıdan ekle ya da fikstür oluştur.</div>'}
  <div class="sh"><h2>Maç Ekle</h2></div><form class="card row" onsubmit="return addM(event)"><input name="w" type="number" min="1" value="${wk}" title="Hafta"><select name="h">${S.teams.map(t=>`<option value="${t.id}">${esc(t.name)}`).join('')}</select><select name="a">${S.teams.map((t,i)=>`<option value="${t.id}" ${i==1?'selected':''}>${esc(t.name)}`).join('')}</select><button class="pri">Ekle</button></form>${goalModal()}`;
  if(tab==='t')c=`<form class="card row" onsubmit="return addT(event)"><input name="n" placeholder="Takım adı" required maxlength="40"><input name="s" placeholder="Kısa ad" maxlength="4" style="max-width:100px"><input name="c" type="color" value="#22c55e"><button class="pri">Takım ekle</button></form><div class="grid" style="margin-top:12px">${S.teams.map(t=>`<form class="card row" onsubmit="return editT(event,${t.id})">${badge(t)}<input name="n" value="${esc(t.name)}" required maxlength="40"><input name="s" value="${esc(t.short||'')}" maxlength="4" style="max-width:80px"><input name="c" type="color" value="${esc(t.color)}"><button>💾</button><button type="button" class="dng" onclick="delT(${t.id},'${esc(t.name).replace(/'/g,'')}')">🗑</button></form>`).join('')||'<div class="card empty">Takım yok.</div>'}</div>`;
+ if(tab==='c'){
+  const list=getPenalties().slice().reverse();
+  c=`<form class="card" style="display:grid;gap:10px" onsubmit="return addPenalty(event)">
+   <b>⚖️ Puan Silme / Ekleme & Disiplin İşlemi</b>
+   <div class="row">
+    <label>Takım<select name="team_id">${S.teams.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select></label>
+    <label>Hazır Şablon<select onchange="applyPreset(this)">
+     <option value="">-- Özel Giriş --</option>
+     <option value="hile3">🚨 Hile / Kural İhlali (-3 Puan)</option>
+     <option value="hile6">⛔ Ağır Hile / Şike (-6 Puan)</option>
+     <option value="kacma">🏃 Maçtan Kaçma (-3 Puan)</option>
+     <option value="sportmen">🤬 Sportmenlik Dışı Hareket (-2 Puan)</option>
+     <option value="uyari">🟨 Resmi Uyarı / Sicil Kaydı (0 Puan)</option>
+     <option value="fairplay">🤝 Fair-Play Ödülü (+2 Puan)</option>
+     <option value="bonus">🌟 Özel Performans Bonusu (+3 Puan)</option>
+    </select></label>
+    <label style="max-width:130px">Puan (+/-)<input name="pts" type="number" value="-3" required></label>
+   </div>
+   <div class="row">
+    <label>Gerekçe / Açıklama<input name="reason" placeholder="Örn: Hile tespiti, maçtan çıkma, fair-play..." required maxlength="120"></label>
+    <label>Ek Yaptırım (İsteğe bağlı)<input name="sanction" placeholder="Örn: Deplasman cezası, son uyarı..." maxlength="80"></label>
+   </div>
+   <button class="pri">İşlemi Uygula ve Puan Durumuna Yansıt</button>
+  </form>
+  <div class="sh"><h2>📋 Uygulanan Ceza & Ödül Geçmişi (${list.length})</h2></div>
+  <div style="display:grid;gap:8px">${list.length?list.map(x=>{
+   const tm=T(x.team_id),pts=Number(x.pts)||0;
+   const col=pts<0?'#f87171':pts>0?'#4ade80':'#fbbf24';
+   return `<div class="card row" style="justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+     ${badgePure(tm,24)}<b>${esc(tm.name)}</b>
+     <span style="font-weight:900;color:${col}">${pts>0?'+'+pts:pts}P</span>
+     <span>— ${esc(x.reason)}</span>
+     ${x.sanction?`<span class="tag">${esc(x.sanction)}</span>`:''}
+     <span class="mut" style="font-size:11px">(${esc(x.date||'')})</span>
+    </div>
+    <button type="button" class="xs dng" onclick="delPenalty(${x.id})">Geri Al / Sil</button>
+   </div>`;
+  }).join(''):'<div class="card empty">Henüz ceza veya puan işlemi yapılmamış.</div>'}</div>`;
+ }
  if(tab==='f')c=`<div class="card" style="display:grid;gap:10px"><b>Otomatik Fikstür</b><p class="mut" style="margin:0">Tüm takımlar birbiriyle oynar. Mevcut (oynanmamış) fikstürün yerine yenisi yazılır; oynanmış maç varsa engellenir.</p><div class="row"><button class="pri" onclick="fx(false)">Tek devre</button><button class="pri" onclick="fx(true)">Çift devre</button></div></div>
  <div class="sh"><h2>Yeni Sezon</h2></div><form class="card row" onsubmit="return ns(event)"><input name="n" placeholder="Yeni sezon adı (örn. Sezon 2028)" required><button class="dng">Mevcut Sezonu Arşivle ve Yeni Sezona Geç</button></form><p class="mut">Mevcut sezonun şampiyonu ve puan durumu Şampiyonlar Müzesi'ne kaydedilir, takımlar korunur ve yeni fikstür için maçlar temizlenir.</p>
  ${(S.archives||[]).length?`<div class="sh"><h2>Arşivlenen Sezonlar</h2></div><div style="display:grid;gap:8px">${S.archives.map(a=>`<div class="card row"><span><b>${esc(a.season)}</b> — Şampiyon: <b>${esc(a.champion)}</b></span><button class="xs dng" onclick="delArch(${a.id})">Arşivden Sil</button></div>`).join('')}</div>`:''}`;
