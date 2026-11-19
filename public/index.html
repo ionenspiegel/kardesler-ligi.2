@@ -47,6 +47,12 @@ td.n,th.n{text-align:left}tbody tr{animation:row .5s both}tbody tr:hover{backgro
 .tag{font-size:11px;padding:2px 8px;border-radius:99px;background:#ffffff14;color:var(--mut)}.tag.live{background:#ff4d6d33;color:var(--r);animation:blink 1.2s infinite}
 .pbtn{position:absolute;top:7px;right:7px;padding:3px 7px;font-size:11px;border-radius:7px;opacity:.75}
 .h2h-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;text-align:center;margin-top:12px;padding:12px;background:var(--card2);border-radius:14px}
+.rem-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(275px,1fr))}
+.rem-card{background:var(--card2);border:1px solid #ffffff12;border-radius:14px;padding:12px;display:grid;gap:8px}
+.rem-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.rem-list{display:flex;flex-wrap:wrap;gap:5px}
+.rem-pill{background:#ffffff0d;border:1px solid #ffffff14;border-radius:8px;padding:3px 7px;font-size:12px;color:var(--tx)}
+.rem-pill b{color:var(--y)}
 .h2h-mid{display:grid;gap:6px}.h2h-nums{display:flex;gap:12px;justify-content:center;font-weight:900;font-size:22px}
 .champ{background:linear-gradient(135deg,#272009,#141d35);border:1px solid #ffd23f55;border-radius:16px;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;transition:.2s}
 .champ:hover{transform:translateY(-2px);border-color:var(--y)}
@@ -229,6 +235,27 @@ function weekReportSection(){
  </div>`;
 }
 
+function remainingSection(){
+ if(!S.teams.length||!S.matches.length)return '';
+ const unplayed=S.matches.filter(m=>!m.played);
+ if(!unplayed.length)return `<div class="sh"><h2>📅 Herkesin Kalan Maçı</h2></div><div class="card empty">Tüm maçlar tamamlandı!</div>`;
+ const cards=S.teams.map(t=>{
+  const rem=unplayed.filter(m=>m.home_id===t.id||m.away_id===t.id).sort((a,b)=>a.week-b.week||a.id-b.id);
+  const items=rem.map(m=>{
+   const isHome=m.home_id===t.id;
+   const opp=T(isHome?m.away_id:m.home_id);
+   return `<span class="rem-pill"><b>H${m.week}</b> ${esc(opp.name)} <span class="mut">(${isHome?'E':'D'})</span></span>`;
+  }).join('');
+  return `<div class="rem-card">
+   <div class="rem-top">
+    <span class="tlink" onclick="selTeam=${t.id};render()">${badgePure(t,30)}<span style="margin-left:7px">${esc(t.name)}</span></span>
+    <span class="tag">${rem.length} maç kaldı</span>
+   </div>
+   <div class="rem-list">${items||'<span class="mut">Kalan maçı yok</span>'}</div>
+  </div>`;
+ }).join('');
+ return `<div class="sh"><h2>📅 Herkesin Kalan Maçı</h2><span class="mut">E: Ev · D: Deplasman</span></div><div class="card"><div class="rem-grid">${cards}</div></div>`;
+}
 function h2hSection(){
  if(S.teams.length<2)return '';
  if(!h2hA||!S.teams.some(t=>t.id===h2hA))h2hA=S.teams[0].id;
@@ -537,6 +564,7 @@ function home(){const s=S.settings,pl=S.matches.filter(m=>m.played).sort((a,b)=>
  <div class="card tw">${st.rows.length?`<table><thead><tr><th>#<th class="n">Takım<th>O<th>G<th>B<th>M<th>AG<th>YG<th>Av<th>P<th>Son 5</tr></thead><tbody>${st.rows.map((t,i)=>{const fm=formOf(t.id),mv=t.diff>0?`<span class="mv up">▲${t.diff}</span>`:t.diff<0?`<span class="mv dn">▼${Math.abs(t.diff)}</span>`:'';return `<tr style="animation-delay:${i*60}ms"><td><span class="pos">${i+1}</span>${mv}<td class="n"><span class="tlink" onclick="selTeam=${t.id};render()">${badge(t)}${esc(t.name)}</span><td>${t.p}<td>${t.w}<td>${t.d}<td>${t.l}<td>${t.gf}<td>${t.ga}<td>${t.gd>0?'+':''}${t.gd}<td class="pts">${t.pts}<td><span class="form">${fm.length?fm.map(x=>`<span class="fb ${x}">${x}</span>`).join(''):'<span class="mut">—</span>'}</span></tr>`}).join('')}</tbody></table>`:'<div class="empty">Henüz takım yok.</div>'}</div>
  ${sb.length?`<div class="sh"><h2>Gol & Asist Krallığı</h2></div><div class="card tw"><table><thead><tr><th>#<th class="n">Oyuncu<th class="n">Takım<th>Gol<th>Asist<th>Katkı</tr></thead><tbody>${sb.map((x,i)=>{const tm=T(x.team_id);return `<tr><td><span class="pos">${i+1}</span><td class="n"><b>${esc(x.player)}</b><td class="n"><span class="tlink">${badge(tm,24)}${esc(tm.name)}</span><td class="pts">${x.goals}<td>${x.assists}<td><b>${x.goals+x.assists}</b></tr>`}).join('')}</tbody></table></div>`:''}
  ${h2hSection()}
+ 
  ${weeks.length?`<div class="sh"><h2>Maçlar & Fikstür</h2></div><div class="tabs"><button class="${htab==='ozet'?'on':''}" onclick="htab='ozet';render()">Özet</button><button class="${htab==='all'?'on':''}" onclick="htab='all';render()">Tümü (${S.matches.length})</button>${weeks.map(w=>`<button class="${htab===w?'on':''}" onclick="htab=${w};render()">H${w}</button>`).join('')}</div>${mSec}`:mSec}
  ${ars.length?`<div class="sh"><h2>🏆 Şampiyonlar Müzesi</h2></div><div class="grid">${ars.map(a=>`<div class="champ" onclick="archView=${a.id};render()"><div><div class="mut">${esc(a.season)} ŞAMPİYONU</div><b style="font-size:18px;color:var(--y)">🥇 ${esc(a.champion)}</b></div><span class="tag">Tabloyu Gör →</span></div>`).join('')}</div>`:''}
  <p class="mut" style="text-align:center;margin-top:30px"><a href="#/yonetici">Yönetici girişi</a></p>${teamModal()}${storyModal()}${archiveModal()}`}
