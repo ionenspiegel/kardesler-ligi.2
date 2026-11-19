@@ -23,7 +23,7 @@ td.n,th.n{text-align:left}tbody tr{animation:row .5s both}tbody tr:hover{backgro
 .form{display:inline-flex;gap:3px;justify-content:center}.fb{width:19px;height:19px;border-radius:5px;display:inline-grid;place-items:center;font-size:10px;font-weight:800}
 .fb.G{background:#22e08a26;color:var(--g);border:1px solid #22e08a55}.fb.B{background:#ffd23f26;color:var(--y);border:1px solid #ffd23f55}.fb.M{background:#ff4d6d26;color:var(--r);border:1px solid #ff4d6d55}
 .pos{width:26px;height:26px;display:inline-grid;place-items:center;border-radius:8px;background:var(--card2);font-weight:700;font-size:13px}tr:nth-child(1) .pos{background:var(--y);color:#222}
-.b{display:inline-grid;place-items:center;min-width:34px;height:34px;padding:0 4px;border-radius:50%;background:var(--c);color:#fff;font-weight:800;font-size:11px;box-shadow:0 0 0 3px #ffffff18,0 4px 14px color-mix(in srgb,var(--c) 50%,transparent);vertical-align:middle;margin-right:8px}
+.b{display:inline-grid;place-items:center;min-width:34px;width:34px;height:34px;padding:0 3px;border-radius:50%;background:var(--c);color:#fff;font-weight:800;font-size:11px;box-shadow:0 0 0 2px #ffffff22,0 4px 12px color-mix(in srgb,var(--c) 45%,transparent);vertical-align:middle;margin-right:8px;flex-shrink:0}
 .grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(290px,1fr))}
 .m{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;background:var(--card2);border-radius:14px;padding:12px;animation:in .5s both;transition:transform .2s;position:relative}.m:hover{transform:translateY(-3px)}
 .m .t{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;text-align:center}.m .t .b{margin:0;width:44px;height:44px;font-size:13px}
@@ -49,9 +49,18 @@ input,select{background:#0b1226;border:1px solid var(--line);border-radius:10px;
 .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px;flex-wrap:wrap}.mut{color:var(--mut);font-size:13px}.empty{text-align:center;color:var(--mut);padding:24px}
 .modal{position:fixed;inset:0;background:#030610dd;backdrop-filter:blur(6px);display:grid;place-items:center;padding:14px;z-index:10;overflow-y:auto}
 .mbox{background:var(--card);border:1px solid var(--line);border-radius:18px;max-width:620px;width:100%;max-height:88vh;overflow-y:auto;padding:18px;animation:in .25s both}
-.story{width:min(360px,92vw);aspect-ratio:9/16;background:radial-gradient(circle at 20% 10%,#199c6355,transparent 55%),radial-gradient(circle at 85% 90%,#2557d666,transparent 55%),#080e1f;border:2px solid #ffffff26;border-radius:26px;padding:22px 18px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 20px 60px #000a;position:relative}
-.story-head{text-align:center}.story-head h3{margin:4px 0 2px;font-size:22px;letter-spacing:.4px}.story-sub{font-size:12px;color:var(--mut)}
-.story-row{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:12px;background:#ffffff0d;margin-bottom:6px;font-size:14px}
+.story-tools{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:380px}
+.story{width:min(365px,92vw);min-height:610px;background:radial-gradient(circle at 20% 10%,#199c6355,transparent 55%),radial-gradient(circle at 85% 90%,#2557d666,transparent 55%),#080e1f;border:2px solid #ffffff26;border-radius:26px;padding:20px 16px;display:flex;flex-direction:column;justify-content:space-between;gap:12px;box-shadow:0 20px 60px #000a;position:relative}
+.story-head{text-align:center}.story-head h3{margin:3px 0;font-size:21px;letter-spacing:.4px}.story-sub{font-size:11px;color:var(--mut);letter-spacing:.6px;text-transform:uppercase}
+.story-list{display:grid;gap:5px}
+.story-row{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:7px 9px;border-radius:11px;background:#ffffff0d;font-size:13px}
+.story-row.compact{padding:5px 8px;font-size:12px}
+.story-tname{display:flex;align-items:center;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.story-mrow{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;padding:7px 9px;border-radius:11px;background:#ffffff0d;font-size:12px}
+.story-mrow .st-side{display:flex;align-items:center;gap:5px;min-width:0}
+.story-mrow .st-side.r{justify-content:flex-end;text-align:right}
+.story-mrow .st-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.story-mrow .st-sc{font-weight:900;font-size:14px;background:#ffffff14;padding:2px 8px;border-radius:8px;white-space:nowrap}
 .story-match{text-align:center;padding:18px 10px;background:#ffffff0d;border-radius:20px;border:1px solid #ffffff1a}
 .story-teams{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin:14px 0}
 .story-foot{text-align:center;font-size:11px;color:var(--mut);letter-spacing:1px}
@@ -96,7 +105,8 @@ function toast(t,err){const e=$('#toast');e.textContent=t;e.className='show'+(er
 async function act(f,ok){try{await f();if(ok)toast(ok);await load();render()}catch(e){toast(e.message,1)}}
 async function load(){[S,ME]=await Promise.all([api('GET','/api/league'),api('GET','/api/me')])}
 const T=id=>S.teams.find(t=>t.id===id)||{name:'?',color:'#888'};
-const badge=(t,sz)=>`<span class="b" style="--c:${esc(t.color)};${sz?`width:${sz}px;height:${sz}px;font-size:${Math.round(sz*.32)}px`:''}">${esc(t.short||t.name.slice(0,3).toUpperCase())}</span>`;
+const badge=(t,sz)=>`<span class="b" style="--c:${esc(t.color)};${sz?`min-width:${sz}px;width:${sz}px;height:${sz}px;font-size:${Math.max(9,Math.round(sz*.34))}px;margin-right:6px`:''}">${esc(t.short||t.name.slice(0,3).toUpperCase())}</span>`;
+const badgePure=(t,sz)=>`<span class="b" style="--c:${esc(t.color)};min-width:${sz}px;width:${sz}px;height:${sz}px;font-size:${Math.max(9,Math.round(sz*.34))}px;margin:0">${esc(t.short||t.name.slice(0,3).toUpperCase())}</span>`;
 
 function scorerBoard(){
  const playedIds=new Set(S.matches.filter(m=>m.played).map(m=>m.id));
@@ -177,19 +187,20 @@ function h2hSection(){
    <select onchange="h2hB=+this.value;render()">${S.teams.map(t=>`<option value="${t.id}" ${t.id===h2hB?'selected':''}>${esc(t.name)}`).join('')}</select>
   </div>
   <div class="h2h-grid">
-   <div>${badge(tA,46)}<div style="margin-top:6px;font-weight:700">${esc(tA.name)}</div><div class="mut">Toplam ${gA} gol</div></div>
+   <div>${badgePure(tA,46)}<div style="margin-top:6px;font-weight:700">${esc(tA.name)}</div><div class="mut">Toplam ${gA} gol</div></div>
    <div class="h2h-mid">
     <div class="h2h-nums"><span style="color:var(--g)">${wA}</span><span class="mut">-</span><span>${dr}</span><span class="mut">-</span><span style="color:var(--b)">${wB}</span></div>
     <div class="mut">${duos.length?`${duos.length} maç (G - B - G)`:'Henüz karşılaşmadılar'}</div>
    </div>
-   <div>${badge(tB,46)}<div style="margin-top:6px;font-weight:700">${esc(tB.name)}</div><div class="mut">Toplam ${gB} gol</div></div>
+   <div>${badgePure(tB,46)}<div style="margin-top:6px;font-weight:700">${esc(tB.name)}</div><div class="mut">Toplam ${gB} gol</div></div>
   </div>
  </div>`;
 }
 
 function copyTable(){
- const lines=[`🏆 ${S.settings.name} — Puan Durumu (Hafta ${S.settings.week})`,''];
- S.table.forEach((t,i)=>lines.push(`${i+1}. ${t.name} | O:${t.p} G:${t.w} B:${t.d} M:${t.l} Av:${t.gd>0?'+':''}${t.gd} P:${t.pts}`));
+ const rows=liveStandings().rows;
+ const lines=[`🏆 ${S.settings.name} — Puan Durumu (${S.matches.filter(m=>m.played).length} Maç Oynandı)`,''];
+ rows.forEach((t,i)=>lines.push(`${i+1}. ${t.name} | O:${t.p} G:${t.w} B:${t.d} M:${t.l} Av:${t.gd>0?'+':''}${t.gd} P:${t.pts}`));
  navigator.clipboard?.writeText(lines.join('\n')).then(()=>toast('Puan durumu panoya kopyalandı!')).catch(()=>toast('Kopyalanamadı',1));
 }
 
@@ -201,61 +212,54 @@ function mcard(m,adm){const h=T(m.home_id),a=T(m.away_id),live=!m.played&&(m.hs|
  ${adm?`<div class="mc"><div class="ctr"><button class="gb" onclick="g(${m.id},'hs',-1)">−</button><button class="gb plus" onclick="g(${m.id},'hs',1)">+</button></div><button class="sm" onclick="fin(${m.id},${m.played?0:1})">${m.played?'↩ Aç':'✔ Bitir'}</button><button class="sm" onclick="goalMatch=${m.id};render()">⚽ Gol (${mg.length})</button><button class="sm dng" onclick="delM(${m.id})">🗑</button><div class="ctr"><button class="gb" onclick="g(${m.id},'aws',-1)">−</button><button class="gb plus" onclick="g(${m.id},'aws',1)">+</button></div></div>
  <form class="mc" onsubmit="return saveNote(event,${m.id})"><input name="note" value="${esc(m.note||'')}" placeholder="Maç notu (örn. Penaltılarla, Hükmen...)" maxlength="80" style="padding:6px 10px;font-size:13px"><button class="xs">Notu Kaydet</button></form>`:''}</div>`}
 
-function goalModal(){
- if(!goalMatch)return '';
- const m=S.matches.find(x=>x.id===goalMatch);if(!m){goalMatch=null;return ''}
- const h=T(m.home_id),a=T(m.away_id);
- const mg=(S.goals||[]).filter(x=>x.match_id===m.id);
- const knownPlayers=[...new Set((S.goals||[]).map(x=>x.player))];
- return `<div class="modal" onclick="if(event.target===this){goalMatch=null;render()}"><div class="mbox">
-  <div class="top"><b>⚽ Gol & Asist Ekle — ${esc(h.name)} ${m.hs}-${m.aws} ${esc(a.name)}</b><button class="sm" onclick="goalMatch=null;render()">✕</button></div>
-  <form class="card row" onsubmit="return addGoal(event,${m.id})">
-   <select name="tid"><option value="${h.id}">${esc(h.name)}</option><option value="${a.id}">${esc(a.name)}</option></select>
-   <input name="player" list="plist" placeholder="Oyuncu adı" required maxlength="40">
-   <datalist id="plist">${knownPlayers.map(p=>`<option value="${esc(p)}">`).join('')}</datalist>
-   <input name="goals" type="number" min="0" max="50" value="1" title="Gol" style="max-width:75px">
-   <input name="assists" type="number" min="0" max="50" value="0" title="Asist" style="max-width:75px">
-   <button class="pri">Ekle</button>
-  </form>
-  <p class="mut" style="margin:6px 0 12px">Sol kutu: Gol sayısı · Sağ kutu: Asist sayısı</p>
-  ${mg.length?`<div style="display:grid;gap:6px">${mg.map(x=>`<div class="story-row"><span>${badge(T(x.team_id),24)}<b>${esc(x.player)}</b> · ${x.goals} Gol, ${x.assists} Asist</span><button class="xs dng" onclick="delGoal(${x.id})">Sil</button></div>`).join('')}</div>`:'<div class="empty">Bu maç için henüz oyuncu kaydı girilmemiş.</div>'}
- </div></div>`;
-}
-
-function archiveModal(){
- if(!archView)return '';
- const ar=(S.archives||[]).find(x=>x.id===archView);if(!ar){archView=null;return ''}
- let rows=[];try{rows=JSON.parse(ar.data)||[]}catch{}
- return `<div class="modal" onclick="if(event.target===this){archView=null;render()}"><div class="mbox">
-  <div class="top"><b>🏆 Sezon ${esc(ar.season)} — Final Puan Durumu</b><button class="sm" onclick="archView=null;render()">✕</button></div>
-  <div class="tw"><table><thead><tr><th>#<th class="n">Takım<th>O<th>G<th>B<th>M<th>AG<th>YG<th>Av<th>P</tr></thead><tbody>
-  ${rows.map((t,i)=>`<tr><td><span class="pos">${i+1}</span><td class="n">${badge(t)}${esc(t.name)}<td>${t.p}<td>${t.w}<td>${t.d}<td>${t.l}<td>${t.gf}<td>${t.ga}<td>${t.gd>0?'+':''}${t.gd}<td class="pts">${t.pts}</tr>`).join('')}
-  </tbody></table></div>
- </div></div>`;
-}
-
 function storyModal(){
  if(!story)return '';
+ const playedAll=S.matches.filter(m=>m.played).sort((a,b)=>(b.updated||'').localeCompare(a.updated||'')||b.week-a.week||b.id-a.id);
+ const weeks=[...new Set(playedAll.map(m=>m.week))].sort((a,b)=>a-b);
+ const maxPlayedW=weeks.length?weeks[weeks.length-1]:(+S.settings.week||1);
+ const sb=scorerBoard();
  let inner='';
+
  if(story.type==='table'){
-  const rows=S.table.slice(0,8);
-  inner=`<div class="story-head"><div class="story-sub">SEZON ${esc(S.settings.season)} · HAFTA ${esc(S.settings.week)}</div><h3>🏆 ${esc(S.settings.name)}</h3><div class="story-sub">PUAN DURUMU</div></div>
-  <div>${rows.map((t,i)=>`<div class="story-row"><span><b>${i+1}.</b> ${badge(t,24)}${esc(t.name)}</span><span><span class="mut" style="margin-right:8px">${t.p}O</span><b style="color:var(--g)">${t.pts} P</b></span></div>`).join('')}</div>`;
+  const st=liveStandings();
+  const rows=st.rows;
+  const cmp=rows.length>8?' compact':'';
+  inner=`<div class="story-head"><div class="story-sub">SEZON ${esc(S.settings.season)} · ${playedAll.length} MAÇ OYNANDI</div><h3>🏆 ${esc(S.settings.name)}</h3><div class="story-sub">${st.hasLive?'CANLI PUAN DURUMU':'PUAN DURUMU'} (${rows.length} TAKIM)</div></div>
+  <div class="story-list">${rows.map((t,i)=>`<div class="story-row${cmp}"><span class="story-tname"><b style="min-width:20px">${i+1}.</b>${badge(t,rows.length>8?20:24)}<span style="overflow:hidden;text-overflow:ellipsis">${esc(t.name)}</span></span><span style="white-space:nowrap;flex-shrink:0"><span class="mut" style="margin-right:6px">${t.p}O</span><span class="mut" style="margin-right:7px">${t.gd>0?'+':''}${t.gd}</span><b style="color:var(--g)">${t.pts}P</b></span></div>`).join('')}</div>`;
+ }else if(story.type==='matches'){
+  const sw=story.week||'recent';
+  const list=sw==='recent'?playedAll.slice(0,8):S.matches.filter(m=>m.week===sw&&m.played).sort((a,b)=>a.id-b.id);
+  const title=sw==='recent'?'SON OYNANAN MAÇLAR':`HAFTA ${sw} SONUÇLARI`;
+  inner=`<div class="story-head"><div class="story-sub">SEZON ${esc(S.settings.season)} · ${playedAll.length} MAÇ</div><h3>🏆 ${esc(S.settings.name)}</h3><div class="story-sub">${title}</div></div>
+  <div class="story-list">${list.length?list.map(m=>{const h=T(m.home_id),a=T(m.away_id);return `<div class="story-mrow"><div class="st-side">${badgePure(h,22)}<span class="st-txt">${esc(h.name)}</span></div><div class="st-sc">${m.hs} - ${m.aws}</div><div class="st-side r"><span class="st-txt">${esc(a.name)}</span>${badgePure(a,22)}</div></div>`}).join(''):'<div class="empty">Bu haftada oynanmış maç yok.</div>'}</div>`;
+ }else if(story.type==='scorers'){
+  const top=sb.slice(0,8);
+  inner=`<div class="story-head"><div class="story-sub">SEZON ${esc(S.settings.season)} · HAFTA ${maxPlayedW}</div><h3>🏆 ${esc(S.settings.name)}</h3><div class="story-sub">GOL & ASİST KRALLIĞI</div></div>
+  <div class="story-list">${top.length?top.map((x,i)=>{const tm=T(x.team_id);return `<div class="story-row"><span class="story-tname"><b style="min-width:20px">${i+1}.</b>${badge(tm,22)}<span>${esc(x.player)}</span></span><span style="white-space:nowrap"><b style="color:var(--g)">${x.goals}G</b> <span class="mut">${x.assists}A</span></span></div>`}).join(''):'<div class="empty">Henüz gol kaydı girilmemiş.</div>'}</div>`;
  }else if(story.type==='match'){
   const m=S.matches.find(x=>x.id===story.id);if(!m){story=null;return ''}
   const h=T(m.home_id),a=T(m.away_id);
+  const mg=(S.goals||[]).filter(x=>x.match_id===m.id);
   inner=`<div class="story-head"><div class="story-sub">SEZON ${esc(S.settings.season)} · HAFTA ${m.week}</div><h3>🏆 ${esc(S.settings.name)}</h3></div>
   <div class="story-match"><div class="tag">${m.played?'MAÇ SONUCU':'CANLI SKOR'}</div>
    <div class="story-teams">
-    <div>${badge(h,54)}<div style="margin-top:8px;font-weight:700;font-size:14px">${esc(h.name)}</div></div>
+    <div>${badgePure(h,54)}<div style="margin-top:8px;font-weight:700;font-size:14px">${esc(h.name)}</div></div>
     <div style="font-size:36px;font-weight:900;letter-spacing:2px">${m.hs} - ${m.aws}</div>
-    <div>${badge(a,54)}<div style="margin-top:8px;font-weight:700;font-size:14px">${esc(a.name)}</div></div>
+    <div>${badgePure(a,54)}<div style="margin-top:8px;font-weight:700;font-size:14px">${esc(a.name)}</div></div>
    </div>
-   ${m.note?`<div class="mut">📝 ${esc(m.note)}</div>`:''}
+   ${mg.length?`<div class="mglist" style="margin-top:8px">${mg.map(x=>`<span class="mgpill">⚽ ${esc(x.player)}${x.goals>1?' x'+x.goals:''}${x.assists?' ('+x.assists+'A)':''}</span>`).join('')}</div>`:''}
+   ${m.note?`<div class="mut" style="margin-top:8px">📝 ${esc(m.note)}</div>`:''}
   </div>`;
  }
+
  return `<div class="modal" onclick="if(event.target===this){story=null;render()}">
   <div style="display:grid;gap:10px;justify-items:center">
+   <div class="story-tools">
+    <button class="xs ${story.type==='table'?'pri':''}" onclick="story={type:'table'};render()">Puan Durumu</button>
+    <button class="xs ${story.type==='matches'&&(!story.week||story.week==='recent')?'pri':''}" onclick="story={type:'matches',week:'recent'};render()">Son Maçlar</button>
+    ${weeks.map(w=>`<button class="xs ${story.type==='matches'&&story.week===w?'pri':''}" onclick="story={type:'matches',week:${w}};render()">H${w}</button>`).join('')}
+    ${sb.length?`<button class="xs ${story.type==='scorers'?'pri':''}" onclick="story={type:'scorers'};render()">Gol Krallığı</button>`:''}
+   </div>
    <div class="story">${inner}<div class="story-foot">KARDEŞLER LİGİ · EKRAN GÖRÜNTÜSÜ AL</div></div>
    <button class="sm" onclick="story=null;render()">✕ Kapat</button>
   </div>
