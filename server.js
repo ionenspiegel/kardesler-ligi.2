@@ -283,6 +283,16 @@ async function api(req, res, u) {
     return send(res, 200, { ok: 1 });
   }
   if (kind === 'settings' && M === 'PUT') {
+    if (b.penalties !== undefined) {
+      let arr = [];
+      try { arr = JSON.parse(String(b.penalties)); } catch { throw E(400, 'Ceza verisi geçersiz'); }
+      if (!Array.isArray(arr)) throw E(400, 'Ceza verisi geçersiz');
+      await tx(async t => {
+        await t.run(`DELETE FROM ${SETTINGS} WHERE k='penalties'`);
+        await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES('penalties',$1)`, JSON.stringify(arr));
+      });
+      return send(res, 200, { ok: 1 });
+    }
     const v = { name: clean(b.name).slice(0, 40), season: clean(b.season).slice(0, 20), win: int(b.win, 0, 10, 'Puan'), draw: int(b.draw, 0, 10, 'Puan'), loss: int(b.loss, 0, 10, 'Puan'), week: int(b.week, 1, 200, 'Hafta') };
     if (!v.name || !v.season) throw E(400, 'Lig ve sezon adı gerekli'); await tx(async t => { for (const [k, x] of Object.entries(v)) await t.run(`UPDATE ${SETTINGS} SET v=$1 WHERE k=$2`, String(x), k); }); return send(res, 200, { ok: 1 });
   }
