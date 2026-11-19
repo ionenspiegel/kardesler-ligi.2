@@ -212,6 +212,39 @@ function mcard(m,adm){const h=T(m.home_id),a=T(m.away_id),live=!m.played&&(m.hs|
  ${adm?`<div class="mc"><div class="ctr"><button class="gb" onclick="g(${m.id},'hs',-1)">−</button><button class="gb plus" onclick="g(${m.id},'hs',1)">+</button></div><button class="sm" onclick="fin(${m.id},${m.played?0:1})">${m.played?'↩ Aç':'✔ Bitir'}</button><button class="sm" onclick="goalMatch=${m.id};render()">⚽ Gol (${mg.length})</button><button class="sm dng" onclick="delM(${m.id})">🗑</button><div class="ctr"><button class="gb" onclick="g(${m.id},'aws',-1)">−</button><button class="gb plus" onclick="g(${m.id},'aws',1)">+</button></div></div>
  <form class="mc" onsubmit="return saveNote(event,${m.id})"><input name="note" value="${esc(m.note||'')}" placeholder="Maç notu (örn. Penaltılarla, Hükmen...)" maxlength="80" style="padding:6px 10px;font-size:13px"><button class="xs">Notu Kaydet</button></form>`:''}</div>`}
 
+function goalModal(){
+ if(!goalMatch)return '';
+ const m=S.matches.find(x=>x.id===goalMatch);if(!m){goalMatch=null;return ''}
+ const h=T(m.home_id),a=T(m.away_id);
+ const mg=(S.goals||[]).filter(x=>x.match_id===m.id);
+ const knownPlayers=[...new Set((S.goals||[]).map(x=>x.player))];
+ return `<div class="modal" onclick="if(event.target===this){goalMatch=null;render()}"><div class="mbox">
+  <div class="top"><b>⚽ Gol & Asist Ekle — ${esc(h.name)} ${m.hs}-${m.aws} ${esc(a.name)}</b><button class="sm" onclick="goalMatch=null;render()">✕</button></div>
+  <form class="card row" onsubmit="return addGoal(event,${m.id})">
+   <select name="tid"><option value="${h.id}">${esc(h.name)}</option><option value="${a.id}">${esc(a.name)}</option></select>
+   <input name="player" list="plist" placeholder="Oyuncu adı" required maxlength="40">
+   <datalist id="plist">${knownPlayers.map(p=>`<option value="${esc(p)}">`).join('')}</datalist>
+   <input name="goals" type="number" min="0" max="50" value="1" title="Gol" style="max-width:75px">
+   <input name="assists" type="number" min="0" max="50" value="0" title="Asist" style="max-width:75px">
+   <button class="pri">Ekle</button>
+  </form>
+  <p class="mut" style="margin:6px 0 12px">Sol kutu: Gol sayısı · Sağ kutu: Asist sayısı</p>
+  ${mg.length?`<div style="display:grid;gap:6px">${mg.map(x=>`<div class="story-row"><span>${badge(T(x.team_id),24)}<b>${esc(x.player)}</b> · ${x.goals} Gol, ${x.assists} Asist</span><button class="xs dng" onclick="delGoal(${x.id})">Sil</button></div>`).join('')}</div>`:'<div class="empty">Bu maç için henüz oyuncu kaydı girilmemiş.</div>'}
+ </div></div>`;
+}
+
+function archiveModal(){
+ if(!archView)return '';
+ const ar=(S.archives||[]).find(x=>x.id===archView);if(!ar){archView=null;return ''}
+ let rows=[];try{rows=JSON.parse(ar.data)||[]}catch{}
+ return `<div class="modal" onclick="if(event.target===this){archView=null;render()}"><div class="mbox">
+  <div class="top"><b>🏆 Sezon ${esc(ar.season)} — Final Puan Durumu</b><button class="sm" onclick="archView=null;render()">✕</button></div>
+  <div class="tw"><table><thead><tr><th>#<th class="n">Takım<th>O<th>G<th>B<th>M<th>AG<th>YG<th>Av<th>P</tr></thead><tbody>
+  ${rows.map((t,i)=>`<tr><td><span class="pos">${i+1}</span><td class="n">${badge(t)}${esc(t.name)}<td>${t.p}<td>${t.w}<td>${t.d}<td>${t.l}<td>${t.gf}<td>${t.ga}<td>${t.gd>0?'+':''}${t.gd}<td class="pts">${t.pts}</tr>`).join('')}
+  </tbody></table></div>
+ </div></div>`;
+}
+
 function storyModal(){
  if(!story)return '';
  const playedAll=S.matches.filter(m=>m.played).sort((a,b)=>(b.updated||'').localeCompare(a.updated||'')||b.week-a.week||b.id-a.id);
