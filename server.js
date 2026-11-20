@@ -378,12 +378,24 @@ const server = http.createServer(async (req, res) => {
     const u = new URL(req.url, 'http://x');
     
     
-    if (u.pathname === '/api/push/test' && req.method === 'POST') {
+    if (u.pathname === '/api/admin/announce' && req.method === 'POST') {
+      if (!isAdmin(req)) throw E(401, 'Yönetici girişi gerekli');
+      const raw = await new Promise((resolve, reject) => {
+        let d = '';
+        req.on('data', ch => { d += ch; if (d.length > 16384) reject(E(413, 'Veri çok büyük')); });
+        req.on('end', () => resolve(d));
+        req.on('error', reject);
+      });
+      let b = {};
+      try { b = JSON.parse(raw || '{}'); } catch { throw E(400, 'Geçersiz JSON'); }
+      const title = clean(String(b.title || '📢 KRD Ligi Duyuru')).slice(0, 60);
+      const body = clean(String(b.body || '')).slice(0, 200);
+      if (!body) throw E(400, 'Duyuru metni boş olamaz');
       const row = await one(`SELECT v FROM ${SETTINGS} WHERE k='push_subs'`);
       let subs = [];
       try { subs = JSON.parse((row && row.v) || '[]'); } catch { subs = []; }
-      await sendPushAll({ title: '🔔 Test Bildirimi — KRD Ligi', body: 'Canlı bildirim sistemi sorunsuz çalışıyor!' });
-      return send(res, 200, { ok: 1, count: subs.length, ready: !!webpush && !!VAPID_PUBLIC });
+      await sendPushAll({ title, body });
+      return send(res, 200, { ok: 1, count: subs.length });
     }
 
     if (u.pathname === '/api/push/key' && req.method === 'GET') {

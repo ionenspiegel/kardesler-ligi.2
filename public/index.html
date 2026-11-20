@@ -1049,7 +1049,7 @@ events.onmessage = async () => {
   .krd-form-M { background: #dc2626; color: #fff; }
 </style>
 
-<div style="position:fixed;right:14px;bottom:16px;z-index:9990;display:flex;gap:8px;align-items:center;"><button id="krdPushTestBtn" type="button" style="display:none;background:#1e293b;color:#38bdf8;border:1px solid rgba(56,189,248,0.35);border-radius:999px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.45);">⚡ Test Gönder</button><button id="krdPushBtn" class="krd-push-btn" style="position:static;" type="button">🔔 Bildirimleri Aç</button></div>
+<div style="position:fixed;right:14px;bottom:16px;z-index:9990;display:flex;gap:8px;align-items:center;"><button id="krdPushBtn" class="krd-push-btn" style="position:static;" type="button">🔔 Bildirimleri Aç</button></div>
 
 <div id="krdTeamStatsModal" role="dialog" aria-modal="true">
   <div class="krd-stat-card" id="krdTeamStatsBody"></div>
@@ -1077,7 +1077,7 @@ events.onmessage = async () => {
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
       if (sub && pushBtn) {
-        pushBtn.textContent = '🔔 Bildirimler Açık'; const tb = document.getElementById('krdPushTestBtn'); if (tb) tb.style.display = 'inline-flex';
+        pushBtn.textContent = '🔔 Bildirimler Açık'; 
         pushBtn.classList.add('subscribed');
       }
     }
@@ -1110,24 +1110,6 @@ events.onmessage = async () => {
     }
   }
 
-  
-  const testBtn = document.getElementById('krdPushTestBtn');
-  if (testBtn) {
-    testBtn.addEventListener('click', async () => {
-      testBtn.disabled = true;
-      testBtn.textContent = 'Gönderiliyor...';
-      try {
-        const r = await fetch('/api/push/test', { method: 'POST' });
-        const d = await r.json();
-        alert('Sonuç: ' + (d.count || 0) + ' kayıtlı cihaza bildirim gönderildi. (Motor: ' + (d.ready ? 'Aktif' : 'Kapalı') + ')');
-      } catch (e) {
-        alert('Test hatası: ' + e.message);
-      } finally {
-        testBtn.disabled = false;
-        testBtn.textContent = '⚡ Test Gönder';
-      }
-    });
-  }
   
   if (pushBtn) {
     pushBtn.addEventListener('click', subscribePush);
@@ -1276,6 +1258,78 @@ events.onmessage = async () => {
       }
     });
   }, 1200);
+})();
+</script>
+
+
+<script>
+(function() {
+  let isAdminUser = false;
+  fetch('/api/me').then(r => r.json()).then(d => { isAdminUser = !!d.admin; renderAdminAnnounce(); }).catch(() => {});
+
+  function renderAdminAnnounce() {
+    const onAdminRoute = location.hash.includes('yonetici') || location.pathname.includes('yonetici');
+    let box = document.getElementById('krdAdminAnnounceBox');
+
+    if (!isAdminUser || !onAdminRoute) {
+      if (box) box.style.display = 'none';
+      return;
+    }
+
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'krdAdminAnnounceBox';
+      box.style.cssText = 'max-width:680px;margin:16px auto;padding:16px;background:#0f172a;border:1px solid rgba(56,189,248,0.3);border-radius:14px;color:#f8fafc;box-shadow:0 10px 30px rgba(0,0,0,0.35);';
+      box.innerHTML = `
+        <div style="font-size:15px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+          <span>📢</span> <span>Tüm Telefonlara Anlık Duyuru Gönder</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <input id="krdAnnTitle" type="text" maxlength="60" value="📢 KRD Ligi Duyuru" placeholder="Bildirim Başlığı"
+            style="background:#1e293b;border:1px solid rgba(148,163,184,0.25);color:#fff;padding:9px 12px;border-radius:10px;font-size:13px;" />
+          <textarea id="krdAnnBody" rows="2" maxlength="200" placeholder="Örn: Akşam 21:00'de haftanın kritik maçları başlıyor!"
+            style="background:#1e293b;border:1px solid rgba(148,163,184,0.25);color:#fff;padding:9px 12px;border-radius:10px;font-size:13px;resize:vertical;"></textarea>
+          <button id="krdAnnSendBtn" type="button"
+            style="align-self:flex-start;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;">
+            🚀 Duyuruyu Yayınla & Bildirim At
+          </button>
+        </div>
+      `;
+      const target = document.querySelector('main') || document.body;
+      target.insertBefore(box, target.firstChild);
+
+      document.getElementById('krdAnnSendBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('krdAnnSendBtn');
+        const title = document.getElementById('krdAnnTitle').value.trim();
+        const body = document.getElementById('krdAnnBody').value.trim();
+        if (!body) { alert('Lütfen duyuru metni yaz.'); return; }
+        btn.disabled = true;
+        btn.textContent = 'Gönderiliyor...';
+        try {
+          const r = await fetch('/api/admin/announce', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-kl': '1' },
+            body: JSON.stringify({ title, body })
+          });
+          const res = await r.json();
+          if (!r.ok) throw new Error(res.error || 'Gönderilemedi');
+          document.getElementById('krdAnnBody').value = '';
+          alert('Duyuru yayınlandı! (' + (res.count || 0) + ' kayıtlı cihaza bildirim gönderildi)');
+        } catch (err) {
+          alert('Hata: ' + err.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '🚀 Duyuruyu Yayınla & Bildirim At';
+        }
+      });
+    }
+    box.style.display = 'block';
+  }
+
+  window.addEventListener('hashchange', renderAdminAnnounce);
+  setInterval(() => {
+    fetch('/api/me').then(r => r.json()).then(d => { isAdminUser = !!d.admin; renderAdminAnnounce(); }).catch(() => {});
+  }, 4000);
 })();
 </script>
 
