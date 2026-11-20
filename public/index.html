@@ -1612,5 +1612,173 @@ events.onmessage = async () => {
 })();
 </script>
 
+
+<script id="krdPro4Pack">
+(function() {
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  window.calcFifaCard = function(teamId) {
+    const tbl = (typeof S !== 'undefined' && S.table) ? S.table : [];
+    const row = tbl.find(t => t.id === teamId) || { p:0, w:0, d:0, l:0, gf:0, ga:0, pts:0, name:'Oyuncu' };
+    const winRate = row.p ? (row.w / row.p) : 0.5;
+    const gfAvg = row.p ? (row.gf / row.p) : 1.5;
+    const gaAvg = row.p ? (row.ga / row.p) : 1.5;
+
+    const huc = Math.min(99, Math.max(76, Math.round(78 + gfAvg * 5.2)));
+    const sav = Math.min(99, Math.max(75, Math.round(92 - gaAvg * 4.5)));
+    const bit = Math.min(99, Math.max(76, Math.round(77 + winRate * 14 + gfAvg * 2.2)));
+    const frm = Math.min(99, Math.max(75, Math.round(76 + winRate * 20)));
+    const gen = Math.min(99, Math.max(78, Math.round(huc * 0.3 + sav * 0.25 + bit * 0.25 + frm * 0.2)));
+    return { gen, huc, sav, bit, frm, row };
+  };
+
+  window.resetMatchScore = async function(id) {
+    if (!confirm('Bu maçın skoru sıfırlanıp tekrar "Oynanmadı" durumuna alınsın mı?')) return;
+    await act(() => api('PUT', '/api/admin/matches/' + id, { hs: 0, aws: 0, played: 0, note: '' }), 'Maç sıfırlandı');
+  };
+
+  window.saveMatchVideo = async function(id) {
+    let vids = {};
+    try { vids = JSON.parse((S.settings && S.settings.match_videos) || '{}') || {}; } catch { vids = {}; }
+    const cur = vids[String(id)] || '';
+    const url = prompt('Bu maç için YouTube veya TikTok video/özet linki yapıştır (Silmek için boş bırak):', cur);
+    if (url === null) return;
+    await act(() => api('POST', '/api/admin/match-video', { matchId: id, url: url.trim() }), url.trim() ? 'Video linki kaydedildi' : 'Video linki kaldırıldı');
+  };
+
+  window.saveBulkWeekScores = async function() {
+    const rows = document.querySelectorAll('[data-bulk-mid]');
+    let count = 0;
+    await act(async () => {
+      for (const r of rows) {
+        const id = r.getAttribute('data-bulk-mid');
+        const hsVal = r.querySelector('[data-bhs]').value;
+        const awsVal = r.querySelector('[data-baws]').value;
+        if (hsVal !== '' && awsVal !== '') {
+          await api('PUT', '/api/admin/matches/' + id, { hs: Number(hsVal), aws: Number(awsVal), played: 1 });
+          count++;
+        }
+      }
+    }, count ? count + ' maçın skoru toplu kaydedildi' : 'Girilmiş yeni skor bulunamadı');
+  };
+
+  window.copyPressSummary = function() {
+    let news = {};
+    try { news = JSON.parse((S.settings && S.settings.custom_news) || '{}') || {}; } catch { news = {}; }
+    const top3 = (S.table || []).slice(0, 3).map((t, i) => `${i + 1}. ${t.name} (${t.pts} P)`).join(' | ');
+    const txt = `🏆 KRD LİGİ GÜNCEL RAPOR\n${news.text || 'Ligde heyecan devam ediyor!'}\n📊 Zirve: ${top3}`;
+    if (navigator.clipboard) navigator.clipboard.writeText(txt).then(() => toast('Sosyal medya özeti panoya kopyalandı!'));
+    else prompt('Kopyalamak için seç:', txt);
+  };
+
+  function enhanceUI() {
+    if (typeof S === 'undefined' || !Array.isArray(S.teams)) return;
+
+    // 1. Takim istatistik penceresine eFootball / FIFA GEN Reyting Karti ekle
+    const modal = document.querySelector('.modal.on, .modal[style*="flex"], .modal[style*="block"]');
+    if (modal && !modal.querySelector('.krd-fifa-card')) {
+      const titleEl = modal.querySelector('h2, h3, b');
+      if (titleEl) {
+        const rawTitle = (titleEl.textContent || '').trim().toLowerCase();
+        const tm = S.teams.find(t => rawTitle.includes((t.name || '').toLowerCase()));
+        if (tm) {
+          const st = window.calcFifaCard(tm.id);
+          const card = document.createElement('div');
+          card.className = 'krd-fifa-card';
+          card.style.cssText = 'margin:10px 0 12px 0;padding:12px 14px;border-radius:14px;background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid rgba(250,204,21,0.45);box-shadow:0 8px 24px rgba(0,0,0,0.4);color:#f8fafc;';
+          card.innerHTML = `
+            <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:8px;margin-bottom:8px;">
+              <div>
+                <div style="font-size:10px;letter-spacing:.08em;color:#facc15;font-weight:800;">eFOOTBALL / KRD KARTI</div>
+                <div style="font-size:16px;font-weight:900;">${esc(tm.name)}</div>
+              </div>
+              <div style="text-align:center;background:linear-gradient(135deg,#facc15,#eab308);color:#0f172a;padding:4px 11px;border-radius:10px;">
+                <div style="font-size:20px;font-weight:900;line-height:1;">${st.gen}</div>
+                <div style="font-size:9px;font-weight:800;">GEN</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center;font-size:12px;">
+              <div style="background:rgba(255,255,255,0.05);padding:5px;border-radius:8px;"><div style="color:#94a3b8;font-size:10px;">HÜC</div><b>${st.huc}</b></div>
+              <div style="background:rgba(255,255,255,0.05);padding:5px;border-radius:8px;"><div style="color:#94a3b8;font-size:10px;">SAV</div><b>${st.sav}</b></div>
+              <div style="background:rgba(255,255,255,0.05);padding:5px;border-radius:8px;"><div style="color:#94a3b8;font-size:10px;">BİT</div><b>${st.bit}</b></div>
+              <div style="background:rgba(255,255,255,0.05);padding:5px;border-radius:8px;"><div style="color:#94a3b8;font-size:10px;">FRM</div><b>${st.frm}</b></div>
+            </div>
+          `;
+          titleEl.parentNode.insertBefore(card, titleEl.nextSibling);
+        }
+      }
+    }
+
+    // 2. Video linki eklenmis maclara '▶ Özet' ikonu ekle
+    let vids = {};
+    try { vids = JSON.parse((S.settings && S.settings.match_videos) || '{}') || {}; } catch { vids = {}; }
+    const vidEntries = Object.entries(vids);
+    if (vidEntries.length) {
+      const tMapLow = Object.fromEntries(S.teams.map(t => [t.id, (t.name || '').toLowerCase()]));
+      document.querySelectorAll('.card').forEach(card => {
+        if (card.querySelector('.krd-vid-link') || card.closest('#krdBulkAdminBox')) return;
+        const txt = (card.textContent || '').toLowerCase();
+        for (const [mid, url] of vidEntries) {
+          const m = (S.matches || []).find(x => String(x.id) === String(mid));
+          if (!m || !url) continue;
+          const hn = tMapLow[m.home_id], an = tMapLow[m.away_id];
+          if (hn && an && txt.includes(hn) && txt.includes(an)) {
+            const a = document.createElement('a');
+            a.className = 'krd-vid-link';
+            a.href = url;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.textContent = '▶ Özet İzle';
+            a.style.cssText = 'display:inline-block;margin-top:6px;font-size:11px;font-weight:700;color:#38bdf8;text-decoration:none;background:rgba(56,189,248,0.14);padding:3px 9px;border-radius:6px;';
+            card.appendChild(a);
+            break;
+          }
+        }
+      });
+    }
+
+    // 3. Yonetici paneli Maclar sekmesine Toplu Skor, Video Linki (📺), Sifirlama (↺) ve Gazete Ozeti Kopyala ekle
+    const onAdmin = location.hash.startsWith('#/yonetici');
+    const isMatchTab = (typeof tab !== 'undefined' && tab === 'm');
+    const gridEl = document.querySelector('#app .grid');
+    if (onAdmin && isMatchTab && gridEl && !document.getElementById('krdBulkAdminBox')) {
+      const curWk = typeof wk !== 'undefined' ? wk : 1;
+      const wm = (S.matches || []).filter(m => m.week === curWk);
+      if (wm.length) {
+        const tMap = Object.fromEntries(S.teams.map(t => [t.id, t.name]));
+        const box = document.createElement('details');
+        box.id = 'krdBulkAdminBox';
+        box.className = 'card';
+        box.style.marginBottom = '12px';
+        box.innerHTML = `
+          <summary style="cursor:pointer;font-weight:700;">🔄 H${curWk} Toplu Skor Girişi, Video Linki (📺) & Sıfırlama</summary>
+          <div style="display:grid;gap:8px;margin-top:10px;">
+            ${wm.map(m => `
+              <div data-bulk-mid="${m.id}" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;padding:6px 8px;background:rgba(15,23,42,0.55);border-radius:8px;font-size:12.5px;">
+                <span style="flex:1;min-width:130px;"><b>${esc(tMap[m.home_id] || 'Ev')}</b> vs <b>${esc(tMap[m.away_id] || 'Dep')}</b></span>
+                <div style="display:flex;align-items:center;gap:4px;">
+                  <input data-bhs type="number" min="0" max="99" value="${m.played ? m.hs : ''}" placeholder="-" style="width:44px;text-align:center;padding:4px;">
+                  <span>:</span>
+                  <input data-baws type="number" min="0" max="99" value="${m.played ? m.aws : ''}" placeholder="-" style="width:44px;text-align:center;padding:4px;">
+                  <button type="button" title="Video/Özet Linki" onclick="saveMatchVideo(${m.id})" style="${vids[String(m.id)] ? 'border-color:#22c55e;color:#4ade80;' : ''}">📺</button>
+                  ${m.played ? `<button type="button" title="Maçı Sıfırla" class="dng" onclick="resetMatchScore(${m.id})">↺</button>` : ''}
+                </div>
+              </div>
+            `).join('')}
+            <div class="row" style="justify-content:space-between;margin-top:4px;">
+              <button type="button" onclick="copyPressSummary()">🎙️ Gazete Özetini Kopyala</button>
+              <button type="button" class="pri" onclick="saveBulkWeekScores()">💾 Girilen Skorları Kaydet</button>
+            </div>
+          </div>
+        `;
+        gridEl.parentNode.insertBefore(box, gridEl);
+      }
+    }
+  }
+
+  setInterval(enhanceUI, 900);
+})();
+</script>
+
 </body></html>
 
