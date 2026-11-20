@@ -421,6 +421,29 @@ function getActiveChatUsers() {
   return [...new Set(names)];
 }
 
+
+async function getSettingJson(key, fallback) {
+  const row = await one(`SELECT v FROM ${SETTINGS} WHERE k=$1`, key);
+  if (!row || !row.v) return fallback;
+  try { return JSON.parse(row.v); } catch { return fallback; }
+}
+async function setSettingJson(key, val) {
+  await tx(async t => {
+    await t.run(`DELETE FROM ${SETTINGS} WHERE k=$1`, key);
+    await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES($1,$2)`, key, JSON.stringify(val));
+  });
+}
+async function recordAuditLog(user, action, req) {
+  try {
+    const ip = String((req && req.headers && req.headers['x-forwarded-for']) || (req && req.socket && req.socket.remoteAddress) || '-').split(',')[0].trim();
+    const list = await getSettingJson('admin_logs', []);
+    const arr = Array.isArray(list) ? list : [];
+    arr.unshift({ id: Date.now() + '_' + Math.random().toString(36).slice(2, 5), user: String(user || 'Bilinmiyor'), action, ip, time: new Date().toISOString() });
+    if (arr.length > 80) arr.length = 80;
+    await setSettingJson('admin_logs', arr);
+  } catch {}
+}
+
 const sseClients = new Set();
 function notifyClients() {
   for (const client of sseClients) {
@@ -442,6 +465,103 @@ const server = http.createServer(async (req, res) => {
       let subs = [];
       try { subs = JSON.parse((row && row.v) || '[]'); } catch { subs = []; }
       return send(res, 200, { subscribers: Array.isArray(subs) ? subs.length : 0, pushReady: !!webpush && !!VAPID_PUBLIC });
+    }
+
+    
+    if (u.pathname === '/api/admin/users' && req.method === 'GET') {
+      if (!isAdmin(req)) throw E(401, 'Yönetici yetkisi gerekli');
+      const aRow = await one(`SELECT v FROM ${SETTINGS} WHERE k='admin'`);
+      let mainAdm = {};
+      try { mainAdm = JSON.parse((aRow && aRow.v) || '{}'); } catch {}
+      const extra = await getSettingJson('extra_admins', []);
+      const logs = await getSettingJson('admin_logs', []);
+      const slugRow = await one(`SELECT v FROM ${SETTINGS} WHERE k='admin_slug'`);
+      return send(res, 200, {
+        primary: mainAdm.username || 'Yönetici',
+        admins: (Array.isArray(extra) ? extra : []).map(x => ({ username: x.username, created: x.created || '' })),
+        logs: Array.isArray(logs) ? logs : [],
+        adminSlug: (slugRow && slugRow.v) || 'krd-kontrol'
+      });
+    }
+    if (u.pathname === '/api/admin/users' && req.method === 'POST') {
+      if (!isAdmin(req)) throw E(401, 'Yönetici yetkisi gerekli');
+      const raw = await new Promise((resolve, reject) => {
+        let d = '';
+        req.on('data', ch => { d += ch; if (d.length > 8192) reject(E(413, 'Veri çok büyük')); });
+        req.on('end', () => resolve(d));
+        req.on('error', reject);
+      });
+      let b = {};
+      try { b = JSON.parse(raw || '{}'); } catch { throw E(400, 'Geçersiz JSON'); }
+      const uname = clean(String(b.username || '')).trim().slice(0, 24);
+      const pass = String(b.password || '');
+      if (uname.length < 3 || pass.length < 4) throw E(400, 'Kullanıcı adı en az 3, şifre en az 4 karakter olmalı');
+
+      const aRow = await one(`SELECT v FROM ${SETTINGS} WHERE k='admin'`);
+      let mainAdm = {};
+      try { mainAdm = JSON.parse((aRow && aRow.v) || '{}'); } catch {}
+      if (mainAdm.username && mainAdm.username.toLowerCase() === uname.toLowerCase()) throw E(400, 'Bu kullanıcı adı ana yöneticiye ait');
+
+      const extra = await getSettingJson('extra_admins', []);
+      const filtered = (Array.isArray(extra) ? extra : []).filter(x => x.username.toLowerCase() !== uname.toLowerCase());
+      const hashed = hashPass(pass);
+      filtered.push({ username: uname, ...hashed, created: new Date().toISOString() });
+      await setSettingJson('extra_admins', filtered);
+      await recordAuditLog(uname, '➕ Yönetici Eklendi/Güncellendi', req);
+      return send(res, 200, { ok: 1 });
+    }
+    if (u.pathname === '/api/admin/users/delete' && req.method === 'POST') {
+      if (!isAdmin(req)) throw E(401, 'Yönetici yetkisi gerekli');
+      const raw = await new Promise((resolve, reject) => {
+        let d = '';
+        req.on('data', ch => { d += ch; if (d.length > 4096) reject(E(413, 'Veri çok büyük')); });
+        req.on('end', () => resolve(d));
+        req.on('error', reject);
+      });
+      let b = {};
+      try { b = JSON.parse(raw || '{}'); } catch { throw E(400, 'Geçersiz JSON'); }
+      const uname = clean(String(b.username || '')).trim();
+      const extra = await getSettingJson('extra_admins', []);
+      const filtered = (Array.isArray(extra) ? extra : []).filter(x => x.username.toLowerCase() !== uname.toLowerCase());
+      await setSettingJson('extra_admins', filtered);
+      await recordAuditLog(uname, '🗑️ Yönetici Kaldırıldı', req);
+      return send(res, 200, { ok: 1 });
+    }
+    if (u.pathname === '/api/admin/slug' && req.method === 'POST') {
+      if (!isAdmin(req)) throw E(401, 'Yönetici yetkisi gerekli');
+      const raw = await new Promise((resolve, reject) => {
+        let d = '';
+        req.on('data', ch => { d += ch; if (d.length > 4096) reject(E(413, 'Veri çok büyük')); });
+        req.on('end', () => resolve(d));
+        req.on('error', reject);
+      });
+      let b = {};
+      try { b = JSON.parse(raw || '{}'); } catch { throw E(400, 'Geçersiz JSON'); }
+      const slug = String(b.slug || '').toLowerCase().replace(/[^a-z0-9-_]/g, '').slice(0, 30);
+      if (slug.length < 4) throw E(400, 'Giriş yolu en az 4 karakter (harf/rakam) olmalı');
+      await tx(async t => {
+        await t.run(`DELETE FROM ${SETTINGS} WHERE k='admin_slug'`);
+        await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES('admin_slug',$1)`, slug);
+      });
+      send(res, 200, { ok: 1, slug });
+      notifyClients();
+      return;
+    }
+    if (u.pathname === '/api/admin/live-matches' && req.method === 'POST') {
+      if (!isAdmin(req)) throw E(401, 'Yönetici yetkisi gerekli');
+      const raw = await new Promise((resolve, reject) => {
+        let d = '';
+        req.on('data', ch => { d += ch; if (d.length > 16384) reject(E(413, 'Veri çok büyük')); });
+        req.on('end', () => resolve(d));
+        req.on('error', reject);
+      });
+      let b = {};
+      try { b = JSON.parse(raw || '{}'); } catch { throw E(400, 'Geçersiz JSON'); }
+      const list = Array.isArray(b.live) ? b.live.slice(0, 4) : [];
+      await setSettingJson('live_matches', list);
+      send(res, 200, { ok: 1, live: list });
+      notifyClients();
+      return;
     }
 
     if (u.pathname === '/api/admin/announce' && req.method === 'POST') {

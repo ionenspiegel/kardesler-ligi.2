@@ -869,7 +869,7 @@ function home(){const s=S.settings,pl=S.matches.filter(m=>m.played).sort((a,b)=>
  
  ${weeks.length?`<div class="sh"><h2>Maçlar & Fikstür</h2></div><div class="tabs"><button class="${htab==='ozet'?'on':''}" onclick="htab='ozet';render()">Özet</button><button class="${htab==='all'?'on':''}" onclick="htab='all';render()">Tümü (${S.matches.length})</button>${weeks.map(w=>`<button class="${htab===w?'on':''}" onclick="htab=${w};render()">H${w}</button>`).join('')}</div>${mSec}`:mSec}
  ${ars.length?`<div class="sh"><h2>🏆 Şampiyonlar Müzesi</h2></div><div class="grid">${ars.map(a=>`<div class="champ" onclick="archView=${a.id};render()"><div><div class="mut">${esc(a.season)} ŞAMPİYONU</div><b style="font-size:18px;color:var(--y)">🥇 ${esc(a.champion)}</b></div><span class="tag">Tabloyu Gör →</span></div>`).join('')}</div>`:''}
- <p class="mut" style="text-align:center;margin-top:30px"><a href="#/yonetici">Yönetici girişi</a></p>${teamModal()}${storyModal()}${archiveModal()}`}
+ <p class="mut" style="text-align:center;margin-top:30px"></p>${teamModal()}${storyModal()}${archiveModal()}`}
 
 function login(){if(ME.needsSetup)return `<div class="login"><form class="card" onsubmit="return setup(event)"><h2 style="margin:0">🔐 İlk Kurulum</h2><p class="mut">Sunucu konsolunda yazan kurulum kodunu gir ve Yusuf için şifre belirle.</p><label>Kurulum kodu<input name="c" required autocomplete="off"></label><label>Yusuf'un şifresi (en az 8)<input name="p" type="password" minlength="8" required autocomplete="new-password"></label><button class="pri">Yönetici hesabını oluştur</button><a class="mut" href="#/">← Lige dön</a></form></div>`;
  return `<div class="login"><form class="card" onsubmit="return doLogin(event)"><h2 style="margin:0">🔐 Yönetici Girişi</h2><label>Kullanıcı adı<input name="u" required autocomplete="username"></label><label>Şifre<input name="p" type="password" required autocomplete="current-password"></label><button class="pri">Giriş yap</button><a class="mut" href="#/">← Lige dön</a></form></div>`}
@@ -938,9 +938,166 @@ async function advanceLeagueWeek(nextW){
   await act(()=>api('PUT','/api/admin/settings',{name:s.name,season:s.season,win:s.win,draw:s.draw,loss:s.loss,week:nextW}),`Aktif hafta H${nextW} olarak güncellendi`);
 }
 
+
+let adminUsersData = null;
+async function loadAdminUsersData(){
+  try{
+    const r = await fetch('/api/admin/users');
+    if(r.ok){ adminUsersData = await r.json(); render(); }
+  }catch{}
+}
+function genStrongPass(len=12){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+  let out='';
+  for(let i=0;i<len;i++) out+=chars[Math.floor(Math.random()*chars.length)];
+  const inp=document.getElementById('newAdmPass');
+  if(inp){ inp.value=out; inp.type='text'; }
+  if(navigator.clipboard) navigator.clipboard.writeText(out).catch(()=>{});
+  toast('Güçlü şifre oluşturuldu ve kopyalandı!');
+}
+async function addNewAdminUser(e){
+  e.preventDefault();
+  const u=document.getElementById('newAdmUser').value.trim();
+  const p=document.getElementById('newAdmPass').value;
+  await act(async()=>{
+    await api('POST','/api/admin/users',{username:u,password:p});
+    document.getElementById('newAdmUser').value='';
+    document.getElementById('newAdmPass').value='';
+    adminUsersData=null;
+  },'Yönetici hesabı kaydedildi');
+  return false;
+}
+async function deleteAdminUser(uname){
+  if(!confirm(uname + ' adlı yönetici kaldırılsın mı?')) return;
+  await act(async()=>{
+    await api('POST','/api/admin/users/delete',{username:uname});
+    adminUsersData=null;
+  },'Yönetici kaldırıldı');
+}
+async function updateAdminSlug(e){
+  e.preventDefault();
+  const s=document.getElementById('admSlugInput').value.trim();
+  await act(async()=>{
+    const res=await api('POST','/api/admin/slug',{slug:s});
+    adminUsersData=null;
+    location.hash='#/'+res.slug;
+  },'Yeni gizli yönetici giriş adresi aktif edildi');
+  return false;
+}
+function getLiveMatches(){
+  try{ return JSON.parse((S.settings&&S.settings.live_matches)||'[]')||[]; }catch{ return []; }
+}
+async function addMatchToLive(mid){
+  const list=getLiveMatches();
+  if(list.some(x=>x.id===mid)) return toast('Bu maç zaten canlıda');
+  if(list.length>=4) return toast('Aynı anda en fazla 4 maç canlı olabilir!',1);
+  list.push({id:mid,hs:0,aws:0,min:"1'"});
+  await act(()=>api('POST','/api/admin/live-matches',{live:list}),'Maç canlı yayına alındı (1-4)');
+}
+async function updateLiveMatch(mid,patch){
+  const list=getLiveMatches().map(x=>x.id===mid?{...x,...patch}:x);
+  await act(()=>api('POST','/api/admin/live-matches',{live:list}),'Canlı skor güncellendi');
+}
+async function removeLiveMatch(mid,saveToTable){
+  const list=getLiveMatches();
+  const item=list.find(x=>x.id===mid);
+  const rest=list.filter(x=>x.id!==mid);
+  await act(async()=>{
+    if(saveToTable && item){
+      await api('PUT','/api/admin/matches/'+mid,{hs:Number(item.hs)||0,aws:Number(item.aws)||0,played:1});
+    }
+    await api('POST','/api/admin/live-matches',{live:rest});
+  }, saveToTable ? 'Maç bitirildi ve puan tablosuna işlendi!' : 'Canlı listeden çıkarıldı');
+}
+function adminLiveTab(){
+  const live=getLiveMatches();
+  const tMap=Object.fromEntries(S.teams.map(t=>[t.id,t.name]));
+  const unplayed=S.matches.filter(m=>!m.played && !live.some(l=>l.id===m.id));
+  return `<div class="card" style="display:grid;gap:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <b>🔴 Canlı Maç Kontrolü (Maksimum 4 Maç)</b>
+      <span class="mut" style="font-size:12px">Aktif: <b>${live.length} / 4</b></span>
+    </div>
+    ${live.length ? live.map(l=>{
+      const m=S.matches.find(x=>x.id===l.id)||{};
+      return `<div style="padding:10px;border-radius:10px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35);display:grid;gap:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px">
+          <span><b>${esc(tMap[m.home_id]||'Ev')}</b> <b style="font-size:16px;color:#f87171;margin:0 6px">${l.hs} - ${l.aws}</b> <b>${esc(tMap[m.away_id]||'Dep')}</b></span>
+          <input value="${esc(l.min||"1'")}" onchange="updateLiveMatch(${l.id},{min:this.value})" style="width:54px;text-align:center;padding:3px" title="Dakika">
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:space-between">
+          <div style="display:flex;gap:4px">
+            <button type="button" onclick="updateLiveMatch(${l.id},{hs:(l.hs||0)+1})">+1 Ev</button>
+            <button type="button" onclick="updateLiveMatch(${l.id},{hs:Math.max(0,(l.hs||0)-1)})">-1 Ev</button>
+            <button type="button" onclick="updateLiveMatch(${l.id},{aws:(l.aws||0)+1})">+1 Dep</button>
+            <button type="button" onclick="updateLiveMatch(${l.id},{aws:Math.max(0,(l.aws||0)-1)})">-1 Dep</button>
+          </div>
+          <div style="display:flex;gap:4px">
+            <button type="button" class="pri" onclick="removeLiveMatch(${l.id},true)">✅ Bitir & Tabloya İşle</button>
+            <button type="button" class="dng" onclick="removeLiveMatch(${l.id},false)">✕ İptal</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('') : '<div class="mut" style="font-size:13px">Şu an canlı maç yok. Aşağıdan oynanmamış maçlardan (en fazla 4 adet) canlıya alabilirsin.</div>'}
+    <div style="border-top:1px solid rgba(148,163,184,0.2);padding-top:10px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px">Fikstürden Canlıya Al:</div>
+      <div class="row">
+        <select id="pickLiveMatch">${unplayed.map(m=>`<option value="${m.id}">H${m.week}: ${esc(tMap[m.home_id]||'Ev')} vs ${esc(tMap[m.away_id]||'Dep')}</option>`).join('')}</select>
+        <button type="button" class="pri" onclick="const v=+document.getElementById('pickLiveMatch').value;if(v)addMatchToLive(v)">🔴 Canlıya Al</button>
+      </div>
+    </div>
+  </div>`;
+}
+function adminSecurityTab(){
+  if(!adminUsersData) loadAdminUsersData();
+  const d=adminUsersData||{primary:'Yönetici',admins:[],logs:[],adminSlug:(S.settings&&S.settings.admin_slug)||'krd-kontrol'};
+  const fullUrl=location.origin + '/#/' + d.adminSlug;
+  return `<div style="display:grid;gap:12px">
+    <form class="card" style="display:grid;gap:8px" onsubmit="return updateAdminSlug(event)">
+      <b>🔐 Gizli Yönetici Giriş Adresi</b>
+      <div class="mut" style="font-size:12px">Ana sayfadaki link gizlendi. Sadece bu adresten veya sayfa başlığına 5 kez dokunarak giriş yapılabilir.</div>
+      <div class="row">
+        <input id="admSlugInput" value="${esc(d.adminSlug)}" placeholder="ornek-gizli-yol" required minlength="4" maxlength="30">
+        <button class="pri">Yolu Güncelle</button>
+      </div>
+      <div style="font-size:11.5px;color:#38bdf8;word-break:break-all">Aktif Giriş Linki: <b>${esc(fullUrl)}</b></div>
+    </form>
+
+    <form class="card" style="display:grid;gap:8px" onsubmit="return addNewAdminUser(event)">
+      <b>👤 Yeni Yönetici Ekle & Şifre Oluştur</b>
+      <div class="row">
+        <input id="newAdmUser" placeholder="Yönetici kullanıcı adı" required minlength="3" maxlength="24">
+        <input id="newAdmPass" type="text" placeholder="Şifre" required minlength="4" maxlength="40">
+        <button type="button" onclick="genStrongPass(12)">🎲 Şifre Oluştur</button>
+        <button class="pri">➕ Ekle</button>
+      </div>
+      <div style="margin-top:6px;display:grid;gap:6px">
+        <div style="font-size:12px;padding:6px 8px;background:rgba(34,197,94,0.12);border-radius:8px;display:flex;justify-content:space-between">
+          <span>👑 <b>${esc(d.primary)}</b> (Ana Kurucu Yönetici)</span>
+          <span class="mut" style="font-size:11px">Korumalı</span>
+        </div>
+        ${(d.admins||[]).map(a=>`<div style="font-size:12px;padding:6px 8px;background:rgba(15,23,42,0.5);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+          <span>🛡️ <b>${esc(a.username)}</b></span>
+          <button type="button" class="dng" style="padding:3px 8px;font-size:11px" onclick="deleteAdminUser('${esc(a.username).replace(/'/g,'')}')">Kaldır</button>
+        </div>`).join('')}
+      </div>
+    </form>
+
+    <div class="card" style="display:grid;gap:6px">
+      <b>📋 Yönetici Giriş & Çıkış Kayıtları</b>
+      <div style="max-height:220px;overflow-y:auto;display:grid;gap:4px">
+        ${(d.logs||[]).length ? d.logs.map(l=>`<div style="font-size:11.5px;padding:5px 8px;background:rgba(15,23,42,0.45);border-radius:6px;display:flex;justify-content:space-between;gap:8px">
+          <span><b>${esc(l.user)}</b> — ${esc(l.action)}</span>
+          <span class="mut">${new Date(l.time).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})} (${esc(l.ip)})</span>
+        </div>`).join('') : '<div class="mut" style="font-size:12px">Henüz giriş-çıkış kaydı yok.</div>'}
+      </div>
+    </div>
+  </div>`;
+}
+
 function panel(){const weeks=[...new Set(S.matches.map(m=>m.week))].sort((a,b)=>a-b);if(!wk||!weeks.includes(wk))wk=+S.settings.week&&weeks.includes(+S.settings.week)?+S.settings.week:weeks[0]||1;
- const _topStats=adminStatsBar();const tabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler ve Görüntü'],['bildirim','🔔 Bildirim']];let c='';
- if(tab==='bildirim')c=adminNotifyTab();else if(tab==='kupa')c=adminExtrasTab();else if(tab==='m')c=`<div class="tabs">${weeks.map(w=>`<button class="${w===wk?'on':''}" onclick="wk=${w};render()">H${w}</button>`).join('')}</div>${(()=>{const wm=S.matches.filter(m=>m.week===wk);const unp=wm.filter(m=>!m.played);const nextW=weeks.find(w=>w>wk);let bar='';if(wm.length&&!unp.length&&nextW&&+S.settings.week===wk){bar=`<div class="card row" style="justify-content:space-between;margin-bottom:10px;border-color:rgba(34,197,94,0.4)"><span>✅ H${wk} maçlarının tamamı oynandı!</span><button type="button" class="pri" onclick="advanceLeagueWeek(${nextW})">⏭ Haftayı H${nextW} Yap</button></div>`;}return bar;})()}${S.matches.some(m=>m.week===wk)?`<div class="grid">${S.matches.filter(m=>m.week===wk).map(m=>mcard(m,1)).join('')}</div>`:'<div class="card empty">Bu haftada maç yok. Aşağıdan ekle ya da fikstür oluştur.</div>'}
+ const _topStats=adminStatsBar();const tabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler ve Görüntü'],['canli','🔴 Canlı (1-4)'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki & Log']];let c='';
+ if(tab==='canli')c=adminLiveTab();else if(tab==='yetki')c=adminSecurityTab();else if(tab==='bildirim')c=adminNotifyTab();else if(tab==='kupa')c=adminExtrasTab();else if(tab==='m')c=`<div class="tabs">${weeks.map(w=>`<button class="${w===wk?'on':''}" onclick="wk=${w};render()">H${w}</button>`).join('')}</div>${(()=>{const wm=S.matches.filter(m=>m.week===wk);const unp=wm.filter(m=>!m.played);const nextW=weeks.find(w=>w>wk);let bar='';if(wm.length&&!unp.length&&nextW&&+S.settings.week===wk){bar=`<div class="card row" style="justify-content:space-between;margin-bottom:10px;border-color:rgba(34,197,94,0.4)"><span>✅ H${wk} maçlarının tamamı oynandı!</span><button type="button" class="pri" onclick="advanceLeagueWeek(${nextW})">⏭ Haftayı H${nextW} Yap</button></div>`;}return bar;})()}${S.matches.some(m=>m.week===wk)?`<div class="grid">${S.matches.filter(m=>m.week===wk).map(m=>mcard(m,1)).join('')}</div>`:'<div class="card empty">Bu haftada maç yok. Aşağıdan ekle ya da fikstür oluştur.</div>'}
  <div class="sh"><h2>Maç Ekle</h2></div><form class="card row" onsubmit="return addM(event)"><input name="w" type="number" min="1" value="${wk}" title="Hafta"><select name="h">${S.teams.map(t=>`<option value="${t.id}">${esc(t.name)}`).join('')}</select><select name="a">${S.teams.map((t,i)=>`<option value="${t.id}" ${i==1?'selected':''}>${esc(t.name)}`).join('')}</select><button class="pri">Ekle</button></form>${goalModal()}`;
  if(tab==='t')c=`<form class="card row" onsubmit="return addT(event)"><input name="n" placeholder="Takım adı" required maxlength="40"><input name="s" placeholder="Kısa ad" maxlength="4" style="max-width:100px"><input name="c" type="color" value="#22c55e"><button class="pri">Takım ekle</button></form><div class="grid" style="margin-top:12px">${S.teams.map(t=>`<form class="card row" onsubmit="return editT(event,${t.id})">${badge(t)}<input name="n" value="${esc(t.name)}" required maxlength="40"><input name="s" value="${esc(t.short||'')}" maxlength="4" style="max-width:80px"><input name="c" type="color" value="${esc(t.color)}"><button>💾</button><button type="button" class="dng" onclick="delT(${t.id},'${esc(t.name).replace(/'/g,'')}')">🗑</button></form>`).join('')||'<div class="card empty">Takım yok.</div>'}</div>`;
  if(tab==='c'){
@@ -1005,7 +1162,7 @@ function restoreJson(inp){
  rd.readAsText(file);
 }
 
-function render(){const r=location.hash.startsWith('#/yonetici');$('#app').innerHTML=!r?home():!ME.admin?login():panel();bump=null}
+function render(){const _admSlug=(S&&S.settings&&S.settings.admin_slug)||'krd-kontrol';const r=location.hash.startsWith('#/'+_admSlug)||location.hash.startsWith('#/yonetici-gizli');$('#app').innerHTML=!r?home():!ME.admin?login():panel();bump=null}
 const out=()=>act(()=>api('POST','/api/admin/logout'),'Çıkış yapıldı');
 const f=e=>(e.preventDefault(),e.target);
 async function g(id,k,d){const m=S.matches.find(x=>x.id===id),v=Math.max(0,m[k]+d);if(v===m[k])return;bump=id;if(d>0){playSfx('goal');launchConfetti();const e=$('#goal');e.className='';void e.offsetWidth;e.className='go'}
@@ -1777,6 +1934,68 @@ events.onmessage = async () => {
   }
 
   setInterval(enhanceUI, 900);
+})();
+</script>
+
+
+<script id="krdLiveAndSecretGate">
+(function() {
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // Sayfa basligina 5 kez hizli dokununca gizli yonetici girisine gotur
+  let taps = 0, tapTimer = null;
+  document.addEventListener('click', e => {
+    const h = e.target.closest('h1');
+    if (!h) return;
+    taps++;
+    clearTimeout(tapTimer);
+    tapTimer = setTimeout(() => { taps = 0; }, 1500);
+    if (taps >= 5) {
+      taps = 0;
+      const slug = (typeof S !== 'undefined' && S.settings && S.settings.admin_slug) ? S.settings.admin_slug : 'krd-kontrol';
+      location.hash = '#/' + slug;
+    }
+  });
+
+  // Ana sayfada yonetici canliya aldiysa (1-4 mac) canli skor kartlarini goster
+  function renderPublicLiveBar() {
+    if (typeof S === 'undefined' || !S.settings || !Array.isArray(S.teams)) return;
+    const onAdmin = location.hash.startsWith('#/yonetici') || location.hash.startsWith('#/' + ((S.settings && S.settings.admin_slug) || 'krd-kontrol'));
+    let bar = document.getElementById('krdPublicLiveBar');
+    if (onAdmin) { if (bar) bar.remove(); return; }
+
+    let live = [];
+    try { live = JSON.parse(S.settings.live_matches || '[]') || []; } catch { live = []; }
+    live = live.slice(0, 4);
+
+    if (!live.length) { if (bar) bar.remove(); return; }
+
+    const tMap = Object.fromEntries(S.teams.map(t => [t.id, t.name]));
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'krdPublicLiveBar';
+      bar.style.cssText = 'max-width:860px;margin:10px auto;padding:0 12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;';
+      const app = document.getElementById('app');
+      if (app && app.firstChild) app.insertBefore(bar, app.firstChild);
+    }
+
+    bar.innerHTML = live.map(l => {
+      const m = (S.matches || []).find(x => x.id === l.id) || {};
+      return `<div style="background:linear-gradient(135deg,rgba(127,29,29,0.55),rgba(15,23,42,0.9));border:1px solid rgba(248,113,113,0.45);border-radius:12px;padding:10px 12px;color:#fff;box-shadow:0 6px 20px rgba(0,0,0,0.35);">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;font-weight:800;color:#fca5a5;margin-bottom:5px;">
+          <span>🔴 CANLI MAÇ</span>
+          <span>${esc(l.min || "1'")}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:13.5px;font-weight:800;">
+          <span>${esc(tMap[m.home_id] || 'Ev')}</span>
+          <span style="background:rgba(0,0,0,0.45);padding:2px 9px;border-radius:7px;color:#facc15;font-size:15px;">${Number(l.hs)||0} - ${Number(l.aws)||0}</span>
+          <span>${esc(tMap[m.away_id] || 'Dep')}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  setInterval(renderPublicLiveBar, 1200);
 })();
 </script>
 
