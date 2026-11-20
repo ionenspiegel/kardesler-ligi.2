@@ -123,7 +123,9 @@ input,select{background:#0b1226;border:1px solid var(--line);border-radius:10px;
 .po-final{border:1px solid rgba(250,204,21,.45);background:linear-gradient(145deg,rgba(250,204,21,.1),rgba(15,23,42,.85))}
 .confetti-p{position:fixed;top:-12px;width:9px;height:14px;border-radius:2px;pointer-events:none;z-index:9999;animation:cfall 2.6s linear forwards}
 @keyframes cfall{to{transform:translateY(105vh) rotate(720deg);opacity:0}}
-</style><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0b1220"></head><body><div id="goal">GOL!</div><div class="wrap" id="app"></div><div id="toast"></div>
+</style><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0b1220">  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+</head><body><div id="goal">GOL!</div><div class="wrap" id="app"></div><div id="toast"></div>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let S={settings:{},teams:[],matches:[],table:[],goals:[],archives:[]},ME={},tab='m',wk=0,htab='ozet',selTeam=null,story=null,goalMatch=null,archView=null,h2hA=0,h2hB=0,bump=null;

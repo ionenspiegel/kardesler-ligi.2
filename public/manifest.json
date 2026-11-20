@@ -1,18 +1,36 @@
-﻿{
+{
+  "id": "/",
   "name": "Kardeşler Ligi",
   "short_name": "Kardeşler Ligi",
-  "description": "Canlı puan durumu, fikstür, 1v1 tahmin barı ve istatistikler",
+  "description": "Canlı puan durumu, fikstür, 1v1 tahmin oyunu ve Play-Off istatistikleri",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#0b1220",
   "theme_color": "#0b1220",
+  "categories": [
+    "sports",
+    "games"
+  ],
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%230b1220'/%3E%3Ccircle cx='96' cy='96' r='54' fill='none' stroke='%2322c55e' stroke-width='10'/%3E%3Ctext x='96' y='112' text-anchor='middle' font-size='52' fill='%23ffffff'%3E%E2%9A%BD%3C/text%3E%3C/svg%3E",
+      "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
