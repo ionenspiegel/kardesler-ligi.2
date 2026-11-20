@@ -1334,136 +1334,52 @@ events.onmessage = async () => {
 </script>
 
 
+
 <style>
-  /* Modern Glassmorphism & Yumusak Efektler */
-  html { scroll-behavior: smooth; }
-  body {
-    background-image:
-      radial-gradient(circle at 12% 8%, rgba(34, 197, 94, 0.10), transparent 32%),
-      radial-gradient(circle at 88% 18%, rgba(56, 189, 248, 0.10), transparent 36%) !important;
-  }
-  .card, section, table {
-    transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
-  }
-  table tbody tr {
-    transition: background-color .18s ease, transform .15s ease;
-  }
-  table tbody tr:hover {
-    background-color: rgba(56, 189, 248, 0.08) !important;
-  }
-
-  /* Ust Hizli Erisim & Canli Vitrin Bari */
-  #krdTopNav {
-    position: sticky;
-    top: 0;
-    z-index: 990;
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    background: rgba(15, 23, 42, 0.84);
-    border-bottom: 1px solid rgba(148, 163, 184, 0.16);
-    padding: 8px 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  .krd-nav-pill {
-    background: rgba(30, 41, 59, 0.85);
-    color: #e2e8f0;
-    border: 1px solid rgba(148, 163, 184, 0.2);
-    border-radius: 999px;
-    padding: 6px 13px;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all .18s ease;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-  }
-  .krd-nav-pill:hover, .krd-nav-pill:active {
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-    color: #fff;
-    border-color: transparent;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
-  }
-
-  /* Haftanin Derbisi & Tahmin Kralligi Vitrin Alani */
-  #krdProHub {
-    max-width: 980px;
-    margin: 14px auto 6px auto;
-    padding: 0 12px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-    gap: 12px;
-    animation: krdFadeUp .35s ease-out;
-  }
-  @keyframes krdFadeUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .krd-hub-card {
-    background: linear-gradient(145deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.78));
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(148, 163, 184, 0.2);
-    border-radius: 16px;
-    padding: 14px 16px;
-    color: #f8fafc;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
-    position: relative;
-    overflow: hidden;
-  }
-  .krd-hub-card::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    border-radius: 16px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  }
-  .krd-derby-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    background: linear-gradient(135deg, #ef4444, #f97316);
-    color: #fff;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: .06em;
-    padding: 3px 9px;
-    border-radius: 999px;
-    text-transform: uppercase;
-    animation: krdPulse 2.2s infinite;
-  }
-  @keyframes krdPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45); }
-    50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
-  }
   .krd-team-badge {
     display: inline-block;
-    font-size: 10px;
-    font-weight: 800;
-    padding: 2px 6px;
-    border-radius: 6px;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 4px;
     margin-left: 5px;
     vertical-align: middle;
-    background: rgba(255, 255, 255, 0.09);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    color: #f8fafc;
+    background: rgba(255, 255, 255, 0.08);
+    color: #cbd5e1;
   }
-  .krd-pred-row {
+  #krdBottomExtras {
+    max-width: 860px;
+    margin: 18px auto 72px auto;
+    padding: 0 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 10px;
+  }
+  .krd-mini-card {
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 12px;
+    padding: 12px 14px;
+    color: #e2e8f0;
+  }
+  .krd-mini-title {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    color: #94a3b8;
+    text-transform: uppercase;
+    margin-bottom: 8px;
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    padding: 6px 8px;
-    border-radius: 9px;
-    background: rgba(15, 23, 42, 0.55);
-    margin-top: 6px;
-    font-size: 13px;
   }
+  .krd-pred-line {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+  }
+  .krd-pred-line:last-child { border-bottom: none; }
 </style>
 
 <script>
@@ -1472,37 +1388,7 @@ events.onmessage = async () => {
     return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
-  // 1. Yapiskan Hizli Menu Cubugu Ekle
-  function ensureTopNav() {
-    if (document.getElementById('krdTopNav')) return;
-    const nav = document.createElement('nav');
-    nav.id = 'krdTopNav';
-    nav.innerHTML = `
-      <button type="button" class="krd-nav-pill" data-jump="top">🏆 Puan Durumu</button>
-      <button type="button" class="krd-nav-pill" data-jump="derby">🔥 Haftanın Derbisi</button>
-      <button type="button" class="krd-nav-pill" data-jump="fixture">📅 Fikstür</button>
-      <button type="button" class="krd-nav-pill" data-jump="preds">🎯 Tahmin Krallığı</button>
-    `;
-    document.body.insertBefore(nav, document.body.firstChild);
-
-    nav.addEventListener('click', e => {
-      const btn = e.target.closest('[data-jump]');
-      if (!btn) return;
-      const target = btn.getAttribute('data-jump');
-      if (target === 'top') window.scrollTo({ top: 0, behavior: 'smooth' });
-      else if (target === 'derby' || target === 'preds') {
-        const hub = document.getElementById('krdProHub');
-        if (hub) hub.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      } else if (target === 'fixture') {
-        const headings = Array.from(document.querySelectorAll('h1,h2,h3,button,div'));
-        const fx = headings.find(el => /fikstür|maçlar/i.test(el.textContent || '') && el.offsetHeight > 0 && el.offsetHeight < 80);
-        if (fx) fx.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    });
-  }
-
-  // 2. Haftanin Derbisi + Tahmin Kralligi + Otomatik Basari Rozetleri
-  async function refreshProFeatures() {
+  async function refreshCleanExtras() {
     try {
       const res = await fetch('/api/league');
       const data = await res.json();
@@ -1513,71 +1399,47 @@ events.onmessage = async () => {
       const teamMap = Object.fromEntries(teams.map(t => [t.id, t]));
       const rankMap = Object.fromEntries(table.map((t, idx) => [t.id, idx + 1]));
 
-      // --- A. OTOMATIK BASARI ROZETLERI HESAPLA ---
+      // 1. Tablodaki kompakt basari rozetleri
       const badgesByName = {};
-      if (table.length) {
-        // Lider rozeti
-        if (table[0].p > 0) {
-          badgesByName[table[0].name.toLowerCase()] = (badgesByName[table[0].name.toLowerCase()] || []).concat('👑 Lider');
-        }
-        // En golcu (Gol Makinesi)
-        const playedTeams = table.filter(t => t.p > 0);
-        if (playedTeams.length) {
-          const topScorer = [...playedTeams].sort((a, b) => (b.gf / b.p) - (a.gf / a.p))[0];
-          if (topScorer && topScorer.gf > 0) {
-            const k = topScorer.name.toLowerCase();
-            badgesByName[k] = (badgesByName[k] || []).concat('⚡ Gol Makinesi');
-          }
-          // En az gol yiyen (Beton Savunma)
-          const bestDef = [...playedTeams].sort((a, b) => (a.ga / a.p) - (b.ga / b.p))[0];
-          if (bestDef) {
-            const k = bestDef.name.toLowerCase();
-            badgesByName[k] = (badgesByName[k] || []).concat('🛡️ Beton Savunma');
-          }
-        }
-        // Son 3 maci kazanan (Alev Aldi)
-        const playedMatches = matches.filter(m => m.played).sort((a, b) => (a.week - b.week) || (a.id - b.id));
-        for (const tm of teams) {
-          const last3 = playedMatches.filter(m => m.home_id === tm.id || m.away_id === tm.id).slice(-3);
-          if (last3.length === 3 && last3.every(m => (m.home_id === tm.id ? m.hs > m.aws : m.aws > m.hs))) {
-            const k = tm.name.toLowerCase();
-            badgesByName[k] = (badgesByName[k] || []).concat('🔥 Alev Aldı');
-          }
+      if (table.length && table[0].p > 0) {
+        badgesByName[table[0].name.toLowerCase()] = '👑';
+      }
+      const playedMatches = matches.filter(m => m.played).sort((a, b) => (a.week - b.week) || (a.id - b.id));
+      for (const tm of teams) {
+        const last3 = playedMatches.filter(m => m.home_id === tm.id || m.away_id === tm.id).slice(-3);
+        if (last3.length === 3 && last3.every(m => (m.home_id === tm.id ? m.hs > m.aws : m.aws > m.hs))) {
+          const k = tm.name.toLowerCase();
+          badgesByName[k] = (badgesByName[k] || '') + '🔥';
         }
       }
 
-      // Tablo satirlarina rozetleri bas
       document.querySelectorAll('table tbody tr').forEach(tr => {
         const cell = tr.children[1];
         if (!cell) return;
         const raw = (cell.dataset.origName || cell.textContent || '').trim();
         if (!cell.dataset.origName) cell.dataset.origName = raw;
         const cleanKey = raw.replace(/^[0-9]+s*/, '').replace(/([^)]*)/g, '').trim().toLowerCase();
-        const bList = badgesByName[cleanKey] || [];
+        const badge = badgesByName[cleanKey] || '';
         cell.querySelectorAll('.krd-team-badge').forEach(el => el.remove());
-        if (bList.length) {
+        if (badge) {
           const span = document.createElement('span');
           span.className = 'krd-team-badge';
-          span.textContent = bList[0];
-          span.title = bList.join(' • ');
+          span.textContent = badge;
           cell.appendChild(span);
         }
       });
 
-      // --- B. HAFTANIN DERBISI SECIMI ---
+      // 2. Haftanin Derbisi (En altta kompakt kart)
       const unplayed = matches.filter(m => !m.played).sort((a, b) => (a.week - b.week) || (a.id - b.id));
       let derbyMatch = null;
       if (unplayed.length) {
         const nextWeek = unplayed[0].week;
-        const weekMatches = unplayed.filter(m => m.week === nextWeek);
-        derbyMatch = weekMatches.sort((a, b) => {
-          const scoreA = (rankMap[a.home_id] || 99) + (rankMap[a.away_id] || 99);
-          const scoreB = (rankMap[b.home_id] || 99) + (rankMap[b.away_id] || 99);
-          return scoreA - scoreB;
+        derbyMatch = unplayed.filter(m => m.week === nextWeek).sort((a, b) => {
+          return ((rankMap[a.home_id] || 99) + (rankMap[a.away_id] || 99)) - ((rankMap[b.home_id] || 99) + (rankMap[b.away_id] || 99));
         })[0];
       }
 
-      // --- C. TAHMIN KRALLIGI PUAN HESABI ---
+      // 3. Tahmin Kralligi
       let preds = {};
       try { preds = JSON.parse(settings.predictions || '{}') || {}; } catch { preds = {}; }
       const userScores = {};
@@ -1586,82 +1448,53 @@ events.onmessage = async () => {
         const actual = m.hs > m.aws ? 'H' : (m.hs < m.aws ? 'A' : 'D');
         const mPreds = preds[String(m.id)] || {};
         for (const [user, pick] of Object.entries(mPreds)) {
-          if (!userScores[user]) userScores[user] = { user, pts: 0, hits: 0, total: 0 };
-          userScores[user].total++;
-          if (pick === actual) {
-            userScores[user].pts += 3;
-            userScores[user].hits++;
-          }
+          if (!userScores[user]) userScores[user] = { user, pts: 0, hits: 0 };
+          if (pick === actual) { userScores[user].pts += 3; userScores[user].hits++; }
         }
       }
-      const predRanking = Object.values(userScores).sort((a, b) => b.pts - a.pts || b.hits - a.hits).slice(0, 5);
+      const predRanking = Object.values(userScores).sort((a, b) => b.pts - a.pts).slice(0, 5);
 
-      // --- D. VITRIN KARTLARINI EKRANA YERLESTIR ---
-      let hub = document.getElementById('krdProHub');
-      if (!hub) {
-        hub = document.createElement('div');
-        hub.id = 'krdProHub';
-        const nav = document.getElementById('krdTopNav');
-        if (nav && nav.nextSibling) nav.parentNode.insertBefore(hub, nav.nextSibling);
-        else document.body.insertBefore(hub, document.body.firstChild);
+      let box = document.getElementById('krdBottomExtras');
+      if (!box) {
+        box = document.createElement('div');
+        box.id = 'krdBottomExtras';
+        const mainEl = document.querySelector('main') || document.body;
+        mainEl.appendChild(box);
       }
 
-      const derbyHtml = derbyMatch ? (() => {
-        const ht = teamMap[derbyMatch.home_id] || { name: 'Ev Sahibi', color: '#22c55e' };
-        const at = teamMap[derbyMatch.away_id] || { name: 'Deplasman', color: '#38bdf8' };
-        return `
-          <div class="krd-hub-card">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-              <span class="krd-derby-badge">🔥 HAFTANIN DERBİSİ</span>
-              <span style="font-size:11px;color:#94a3b8;font-weight:700;">${derbyMatch.week}. Hafta • Zirve Mücadelesi</span>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;">
-              <div style="flex:1;text-align:left;">
-                <div style="font-size:16px;font-weight:800;color:#fff;">${esc(ht.name)}</div>
-                <div style="font-size:11px;color:#94a3b8;">Sıra: #${rankMap[ht.id] || '-'}</div>
-              </div>
-              <div style="background:rgba(255,255,255,0.08);padding:6px 12px;border-radius:10px;font-weight:900;font-size:13px;color:#fbbf24;">VS</div>
-              <div style="flex:1;text-align:right;">
-                <div style="font-size:16px;font-weight:800;color:#fff;">${esc(at.name)}</div>
-                <div style="font-size:11px;color:#94a3b8;">Sıra: #${rankMap[at.id] || '-'}</div>
-              </div>
-            </div>
+      const derbyHtml = derbyMatch ? `
+        <div class="krd-mini-card">
+          <div class="krd-mini-title"><span>🔥 Haftanın Derbisi</span><span>${derbyMatch.week}. Hafta</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:700;padding-top:4px;">
+            <span>${esc((teamMap[derbyMatch.home_id] || {}).name || 'Ev')}</span>
+            <span style="font-size:11px;color:#94a3b8;font-weight:600;">vs</span>
+            <span>${esc((teamMap[derbyMatch.away_id] || {}).name || 'Dep')}</span>
           </div>
-        `;
-      })() : `
-        <div class="krd-hub-card">
-          <span class="krd-derby-badge">🏆 SEZON DURUMU</span>
-          <div style="margin-top:10px;font-size:14px;font-weight:700;color:#e2e8f0;">Tüm fikstür maçları tamamlandı!</div>
-          <div style="font-size:12px;color:#94a3b8;margin-top:3px;">Yeni sezon fikstürü veya play-off eşleşmeleri bekleniyor.</div>
         </div>
-      `;
+      ` : '';
 
-      const predHtml = `
-        <div class="krd-hub-card">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-            <span style="font-size:13px;font-weight:800;color:#38bdf8;">🎯 TAHMİN KRALLIĞI</span>
-            <span style="font-size:11px;color:#94a3b8;">Doğru Tahmin = +3 P</span>
-          </div>
-          ${predRanking.length ? predRanking.map((u, i) => `
-            <div class="krd-pred-row">
-              <span><strong>#${i + 1}</strong> ${esc(u.user)} <span style="font-size:11px;color:#94a3b8;">(${u.hits}/${u.total} isabet)</span></span>
-              <span style="font-weight:800;color:#22c55e;">${u.pts} P</span>
+      const predHtml = predRanking.length ? `
+        <div class="krd-mini-card">
+          <div class="krd-mini-title"><span>🎯 Tahmin Sıralaması</span><span>+3 P</span></div>
+          ${predRanking.map((u, i) => `
+            <div class="krd-pred-line">
+              <span>#${i + 1} ${esc(u.user)}</span>
+              <strong style="color:#22c55e;">${u.pts} P</strong>
             </div>
-          `).join('') : '<div style="font-size:12px;color:#94a3b8;margin-top:8px;">Maçlara tahmin yapıldıkça ve skorlar girildikçe en iyi tahminciler burada sıralanacak!</div>'}
+          `).join('')}
         </div>
-      `;
+      ` : '';
 
-      hub.innerHTML = derbyHtml + predHtml;
-    } catch (e) {
-      console.error('Pro hub hatasi:', e);
-    }
+      box.innerHTML = derbyHtml + predHtml;
+      box.style.display = (derbyHtml || predHtml) ? 'grid' : 'none';
+    } catch {}
   }
 
-  ensureTopNav();
-  refreshProFeatures();
-  setInterval(refreshProFeatures, 8000);
+  refreshCleanExtras();
+  setInterval(refreshCleanExtras, 10000);
 })();
 </script>
+
 
 </body></html>
 
