@@ -420,6 +420,15 @@ const server = http.createServer(async (req, res) => {
     const u = new URL(req.url, 'http://x');
     
     
+    
+    if (u.pathname === '/api/admin/stats' && req.method === 'GET') {
+      if (!isAdmin(req)) throw E(401, 'Yönetici girişi gerekli');
+      const row = await one(`SELECT v FROM ${SETTINGS} WHERE k='push_subs'`);
+      let subs = [];
+      try { subs = JSON.parse((row && row.v) || '[]'); } catch { subs = []; }
+      return send(res, 200, { subscribers: Array.isArray(subs) ? subs.length : 0, pushReady: !!webpush && !!VAPID_PUBLIC });
+    }
+
     if (u.pathname === '/api/admin/announce' && req.method === 'POST') {
       if (!isAdmin(req)) throw E(401, 'Yönetici girişi gerekli');
       const raw = await new Promise((resolve, reject) => {

@@ -240,7 +240,7 @@ function remainingData(){
 function remainingSection(){
  if(!S.teams.length||!S.matches.length)return '';
  const unplayed=S.matches.filter(m=>!m.played);
- if(!unplayed.length)return `<div class="sh"><h2>📅 Herkesin Kalan Maçı</h2></div><div class="card empty">Tüm maçlar tamamlandı!</div>`;
+ if(!unplayed.length)return _topStats+`<div class="sh"><h2>📅 Herkesin Kalan Maçı</h2></div><div class="card empty">Tüm maçlar tamamlandı!</div>`;
  const list=remainingData();
  const cards=list.map(x=>{
   const pills=x.items.map(it=>`<span class="rem-pill"><b>H${it.week}</b> ${esc(it.opp.name)} <span class="mut">(${it.isHome?'E':'D'})</span></span>`).join('');
@@ -876,9 +876,71 @@ function login(){if(ME.needsSetup)return `<div class="login"><form class="card" 
 const setup=e=>{e.preventDefault();const f=e.target;act(()=>api('POST','/api/admin/setup',{code:f.c.value,password:f.p.value}),'Hesap oluşturuldu');return false};
 const doLogin=e=>{e.preventDefault();const f=e.target;act(()=>api('POST','/api/admin/login',{username:f.u.value,password:f.p.value}),'Hoş geldin Yusuf');return false};
 
+
+let adminSubCount = null;
+async function loadAdminSubCount(){
+  try{
+    const r = await fetch('/api/admin/stats');
+    if(r.ok){ const d = await r.json(); adminSubCount = d.subscribers; const el = document.getElementById('admSubVal'); if(el) el.textContent = adminSubCount; }
+  }catch{}
+}
+function adminStatsBar(){
+  if(adminSubCount === null) loadAdminSubCount();
+  const played = S.matches.filter(m=>m.played).length;
+  const total = S.matches.length;
+  const goals = S.matches.filter(m=>m.played).reduce((a,m)=>a+(+m.hs||0)+(+m.aws||0),0);
+  return `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+    <div class="card" style="padding:10px;text-align:center"><div class="mut" style="font-size:11px">Oynanan Maç</div><b style="font-size:16px">${played} / ${total}</b></div>
+    <div class="card" style="padding:10px;text-align:center"><div class="mut" style="font-size:11px">Toplam Gol</div><b style="font-size:16px">${goals}</b></div>
+    <div class="card" style="padding:10px;text-align:center"><div class="mut" style="font-size:11px">Aktif Hafta</div><b style="font-size:16px">H${esc(S.settings.week||'1')}</b></div>
+    <div class="card" style="padding:10px;text-align:center"><div class="mut" style="font-size:11px">Bildirim Abonesi</div><b id="admSubVal" style="font-size:16px;color:#22c55e">${adminSubCount!==null?adminSubCount:'...'}</b></div>
+  </div>`;
+}
+function adminNotifyTab(){
+  if(adminSubCount === null) loadAdminSubCount();
+  return `<form class="card" style="display:grid;gap:10px" onsubmit="return sendAdminPush(event)">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <b>🔔 Tüm Telefonlara Anlık Bildirim Gönder</b>
+      <span class="mut" style="font-size:12px">Kayıtlı cihaz: <b>${adminSubCount!==null?adminSubCount:'...'}</b></span>
+    </div>
+    <div class="row" style="flex-wrap:wrap;gap:6px">
+      <button type="button" onclick="fillPushTpl('⚽ Maçlar Başlıyor!','Haftanın kritik karşılaşmaları birazdan başlıyor, yerini al!')">⚽ Maçlar Başlıyor</button>
+      <button type="button" onclick="fillPushTpl('📊 Puan Durumu Güncellendi!','Son skorlar işlendi, güncel puan durumunu ve sıralamayı kontrol et!')">📊 Puan Güncellendi</button>
+      <button type="button" onclick="fillPushTpl('🏆 Şampiyonluk Haftası!','Zirve yarışı kızıştı! Son hafta maçları ve kupa heyecanı başlıyor.')">🏆 Şampiyonluk Haftası</button>
+    </div>
+    <label>Bildirim Başlığı<input id="admPushTitle" name="title" value="📢 KRD Ligi Duyuru" maxlength="60" required></label>
+    <label>Duyuru Mesajı<textarea id="admPushBody" name="body" rows="3" maxlength="200" placeholder="Tüm abonelere gönderilecek mesajı yaz..." required style="width:100%;padding:8px;border-radius:8px;background:rgba(15,23,42,0.6);color:inherit;border:1px solid rgba(148,163,184,0.25)"></textarea></label>
+    <button class="pri">🚀 Duyuruyu Yayınla & Telefonlara Bildirim At</button>
+  </form>`;
+}
+function fillPushTpl(t,b){
+  const ti=document.getElementById('admPushTitle'), bo=document.getElementById('admPushBody');
+  if(ti) ti.value=t; if(bo) bo.value=b;
+}
+async function sendAdminPush(e){
+  e.preventDefault();
+  const title=document.getElementById('admPushTitle').value.trim();
+  const body=document.getElementById('admPushBody').value.trim();
+  if(!body) return false;
+  await act(async()=>{
+    const r=await api('POST','/api/admin/announce',{title,body});
+    document.getElementById('admPushBody').value='';
+    adminSubCount=r.count;
+  },'Bildirim tüm kayıtlı telefonlara gönderildi');
+  return false;
+}
+async function quickForfeit(id, hs, aws){
+  if(!confirm(`Bu maça ${hs}-${aws} hükmen skor işlensin mi?`)) return;
+  await act(()=>api('PUT','/api/admin/matches/'+id,{hs,aws,played:1,note:'Hükmen'}),'Hükmen skor işlendi');
+}
+async function advanceLeagueWeek(nextW){
+  const s=S.settings;
+  await act(()=>api('PUT','/api/admin/settings',{name:s.name,season:s.season,win:s.win,draw:s.draw,loss:s.loss,week:nextW}),`Aktif hafta H${nextW} olarak güncellendi`);
+}
+
 function panel(){const weeks=[...new Set(S.matches.map(m=>m.week))].sort((a,b)=>a-b);if(!wk||!weeks.includes(wk))wk=+S.settings.week&&weeks.includes(+S.settings.week)?+S.settings.week:weeks[0]||1;
- const tabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler ve Görüntü']];let c='';
- if(tab==='kupa')c=adminExtrasTab();else if(tab==='m')c=`<div class="tabs">${weeks.map(w=>`<button class="${w===wk?'on':''}" onclick="wk=${w};render()">H${w}</button>`).join('')}</div>${S.matches.some(m=>m.week===wk)?`<div class="grid">${S.matches.filter(m=>m.week===wk).map(m=>mcard(m,1)).join('')}</div>`:'<div class="card empty">Bu haftada maç yok. Aşağıdan ekle ya da fikstür oluştur.</div>'}
+ const _topStats=adminStatsBar();const tabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler ve Görüntü'],['bildirim','🔔 Bildirim']];let c='';
+ if(tab==='bildirim')c=adminNotifyTab();else if(tab==='kupa')c=adminExtrasTab();else if(tab==='m')c=`<div class="tabs">${weeks.map(w=>`<button class="${w===wk?'on':''}" onclick="wk=${w};render()">H${w}</button>`).join('')}</div>${(()=>{const wm=S.matches.filter(m=>m.week===wk);const unp=wm.filter(m=>!m.played);const nextW=weeks.find(w=>w>wk);let bar='';if(wm.length&&!unp.length&&nextW&&+S.settings.week===wk){bar=`<div class="card row" style="justify-content:space-between;margin-bottom:10px;border-color:rgba(34,197,94,0.4)"><span>✅ H${wk} maçlarının tamamı oynandı!</span><button type="button" class="pri" onclick="advanceLeagueWeek(${nextW})">⏭ Haftayı H${nextW} Yap</button></div>`;}if(unp.length){const tMap=Object.fromEntries(S.teams.map(t=>[t.id,t.name]));bar+=`<details class="card" style="margin-bottom:10px"><summary style="cursor:pointer;font-weight:700">⚡ H${wk} Hızlı Hükmen Skor İşle (${unp.length} bekleyen maç)</summary><div style="display:grid;gap:6px;margin-top:8px">${unp.map(m=>`<div class="row" style="justify-content:space-between;font-size:13px"><span>${esc(tMap[m.home_id]||'Ev')} - ${esc(tMap[m.away_id]||'Dep')}</span><div style="display:flex;gap:4px"><button type="button" onclick="quickForfeit(${m.id},3,0)">3-0 Ev</button><button type="button" onclick="quickForfeit(${m.id},0,3)">0-3 Dep</button></div></div>`).join('')}</div></details>`;}return bar;})()}${S.matches.some(m=>m.week===wk)?`<div class="grid">${S.matches.filter(m=>m.week===wk).map(m=>mcard(m,1)).join('')}</div>`:'<div class="card empty">Bu haftada maç yok. Aşağıdan ekle ya da fikstür oluştur.</div>'}
  <div class="sh"><h2>Maç Ekle</h2></div><form class="card row" onsubmit="return addM(event)"><input name="w" type="number" min="1" value="${wk}" title="Hafta"><select name="h">${S.teams.map(t=>`<option value="${t.id}">${esc(t.name)}`).join('')}</select><select name="a">${S.teams.map((t,i)=>`<option value="${t.id}" ${i==1?'selected':''}>${esc(t.name)}`).join('')}</select><button class="pri">Ekle</button></form>${goalModal()}`;
  if(tab==='t')c=`<form class="card row" onsubmit="return addT(event)"><input name="n" placeholder="Takım adı" required maxlength="40"><input name="s" placeholder="Kısa ad" maxlength="4" style="max-width:100px"><input name="c" type="color" value="#22c55e"><button class="pri">Takım ekle</button></form><div class="grid" style="margin-top:12px">${S.teams.map(t=>`<form class="card row" onsubmit="return editT(event,${t.id})">${badge(t)}<input name="n" value="${esc(t.name)}" required maxlength="40"><input name="s" value="${esc(t.short||'')}" maxlength="4" style="max-width:80px"><input name="c" type="color" value="${esc(t.color)}"><button>💾</button><button type="button" class="dng" onclick="delT(${t.id},'${esc(t.name).replace(/'/g,'')}')">🗑</button></form>`).join('')||'<div class="card empty">Takım yok.</div>'}</div>`;
  if(tab==='c'){
@@ -1262,76 +1324,7 @@ events.onmessage = async () => {
 </script>
 
 
-<script>
-(function() {
-  let isAdminUser = false;
-  fetch('/api/me').then(r => r.json()).then(d => { isAdminUser = !!d.admin; renderAdminAnnounce(); }).catch(() => {});
 
-  function renderAdminAnnounce() {
-    const onAdminRoute = location.hash.includes('yonetici') || location.pathname.includes('yonetici');
-    let box = document.getElementById('krdAdminAnnounceBox');
-
-    if (!isAdminUser || !onAdminRoute) {
-      if (box) box.style.display = 'none';
-      return;
-    }
-
-    if (!box) {
-      box = document.createElement('div');
-      box.id = 'krdAdminAnnounceBox';
-      box.style.cssText = 'max-width:680px;margin:16px auto;padding:16px;background:#0f172a;border:1px solid rgba(56,189,248,0.3);border-radius:14px;color:#f8fafc;box-shadow:0 10px 30px rgba(0,0,0,0.35);';
-      box.innerHTML = `
-        <div style="font-size:15px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
-          <span>📢</span> <span>Tüm Telefonlara Anlık Duyuru Gönder</span>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          <input id="krdAnnTitle" type="text" maxlength="60" value="📢 KRD Ligi Duyuru" placeholder="Bildirim Başlığı"
-            style="background:#1e293b;border:1px solid rgba(148,163,184,0.25);color:#fff;padding:9px 12px;border-radius:10px;font-size:13px;" />
-          <textarea id="krdAnnBody" rows="2" maxlength="200" placeholder="Örn: Akşam 21:00'de haftanın kritik maçları başlıyor!"
-            style="background:#1e293b;border:1px solid rgba(148,163,184,0.25);color:#fff;padding:9px 12px;border-radius:10px;font-size:13px;resize:vertical;"></textarea>
-          <button id="krdAnnSendBtn" type="button"
-            style="align-self:flex-start;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;">
-            🚀 Duyuruyu Yayınla & Bildirim At
-          </button>
-        </div>
-      `;
-      const target = document.querySelector('main') || document.body;
-      target.insertBefore(box, target.firstChild);
-
-      document.getElementById('krdAnnSendBtn').addEventListener('click', async () => {
-        const btn = document.getElementById('krdAnnSendBtn');
-        const title = document.getElementById('krdAnnTitle').value.trim();
-        const body = document.getElementById('krdAnnBody').value.trim();
-        if (!body) { alert('Lütfen duyuru metni yaz.'); return; }
-        btn.disabled = true;
-        btn.textContent = 'Gönderiliyor...';
-        try {
-          const r = await fetch('/api/admin/announce', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-kl': '1' },
-            body: JSON.stringify({ title, body })
-          });
-          const res = await r.json();
-          if (!r.ok) throw new Error(res.error || 'Gönderilemedi');
-          document.getElementById('krdAnnBody').value = '';
-          alert('Duyuru yayınlandı! (' + (res.count || 0) + ' kayıtlı cihaza bildirim gönderildi)');
-        } catch (err) {
-          alert('Hata: ' + err.message);
-        } finally {
-          btn.disabled = false;
-          btn.textContent = '🚀 Duyuruyu Yayınla & Bildirim At';
-        }
-      });
-    }
-    box.style.display = 'block';
-  }
-
-  window.addEventListener('hashchange', renderAdminAnnounce);
-  setInterval(() => {
-    fetch('/api/me').then(r => r.json()).then(d => { isAdminUser = !!d.admin; renderAdminAnnounce(); }).catch(() => {});
-  }, 4000);
-})();
-</script>
 
 
 
