@@ -377,6 +377,15 @@ const server = http.createServer(async (req, res) => {
   try {
     const u = new URL(req.url, 'http://x');
     
+    
+    if (u.pathname === '/api/push/test' && req.method === 'POST') {
+      const row = await one(`SELECT v FROM ${SETTINGS} WHERE k='push_subs'`);
+      let subs = [];
+      try { subs = JSON.parse((row && row.v) || '[]'); } catch { subs = []; }
+      await sendPushAll({ title: '🔔 Test Bildirimi — KRD Ligi', body: 'Canlı bildirim sistemi sorunsuz çalışıyor!' });
+      return send(res, 200, { ok: 1, count: subs.length, ready: !!webpush && !!VAPID_PUBLIC });
+    }
+
     if (u.pathname === '/api/push/key' && req.method === 'GET') {
       return send(res, 200, { publicKey: VAPID_PUBLIC });
     }

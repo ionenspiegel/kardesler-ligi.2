@@ -1049,7 +1049,7 @@ events.onmessage = async () => {
   .krd-form-M { background: #dc2626; color: #fff; }
 </style>
 
-<button id="krdPushBtn" class="krd-push-btn" type="button">🔔 Bildirimleri Aç</button>
+<div style="position:fixed;right:14px;bottom:16px;z-index:9990;display:flex;gap:8px;align-items:center;"><button id="krdPushTestBtn" type="button" style="display:none;background:#1e293b;color:#38bdf8;border:1px solid rgba(56,189,248,0.35);border-radius:999px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.45);">⚡ Test Gönder</button><button id="krdPushBtn" class="krd-push-btn" style="position:static;" type="button">🔔 Bildirimleri Aç</button></div>
 
 <div id="krdTeamStatsModal" role="dialog" aria-modal="true">
   <div class="krd-stat-card" id="krdTeamStatsBody"></div>
@@ -1077,7 +1077,7 @@ events.onmessage = async () => {
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
       if (sub && pushBtn) {
-        pushBtn.textContent = '🔔 Bildirimler Açık';
+        pushBtn.textContent = '🔔 Bildirimler Açık'; const tb = document.getElementById('krdPushTestBtn'); if (tb) tb.style.display = 'inline-flex';
         pushBtn.classList.add('subscribed');
       }
     }
@@ -1106,10 +1106,29 @@ events.onmessage = async () => {
       updatePushBtnState();
       alert('Harika! Artık maç skoru girildiğinde veya yeni manşet yayınlandığında telefonuna anında bildirim düşecek.');
     } catch (err) {
-      console.error('Push abonelik hatasi:', err);
+      console.error('Push abonelik hatasi:', err); alert('Bildirim hatası: ' + (err && err.message ? err.message : err));
     }
   }
 
+  
+  const testBtn = document.getElementById('krdPushTestBtn');
+  if (testBtn) {
+    testBtn.addEventListener('click', async () => {
+      testBtn.disabled = true;
+      testBtn.textContent = 'Gönderiliyor...';
+      try {
+        const r = await fetch('/api/push/test', { method: 'POST' });
+        const d = await r.json();
+        alert('Sonuç: ' + (d.count || 0) + ' kayıtlı cihaza bildirim gönderildi. (Motor: ' + (d.ready ? 'Aktif' : 'Kapalı') + ')');
+      } catch (e) {
+        alert('Test hatası: ' + e.message);
+      } finally {
+        testBtn.disabled = false;
+        testBtn.textContent = '⚡ Test Gönder';
+      }
+    });
+  }
+  
   if (pushBtn) {
     pushBtn.addEventListener('click', subscribePush);
     updatePushBtnState();
