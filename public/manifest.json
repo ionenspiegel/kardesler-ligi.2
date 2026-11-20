@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Kardeşler Ligi",
-  "short_name": "Kardeşler Ligi",
+  "name": "KRD Ligi",
+  "short_name": "KRD Ligi",
   "description": "Canlı puan durumu, fikstür, 1v1 tahmin oyunu ve Play-Off istatistikleri",
   "start_url": "/",
   "scope": "/",

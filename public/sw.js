@@ -1,4 +1,4 @@
-﻿const CACHE = 'kardesler-ligi-v1';
+const CACHE = 'kardesler-ligi-v1';
 const ASSETS = ['/', '/manifest.json'];
 
 self.addEventListener('install', event => {

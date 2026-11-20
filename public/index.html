@@ -4,7 +4,7 @@
 <meta name="description" content="__OG_DESC__">
 <meta name="theme-color" content="#0f7a4f">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Kardeşler Ligi">
+<meta property="og:site_name" content="KRD Ligi">
 <meta property="og:title" content="__OG_TITLE__">
 <meta property="og:description" content="__OG_DESC__">
 <meta name="twitter:card" content="summary">
@@ -736,7 +736,7 @@ function downloadStoryPng(){
  const g2=ctx.createRadialGradient(900,1720,20,900,1720,880);g2.addColorStop(0,'rgba(37,87,214,.48)');g2.addColorStop(1,'rgba(37,87,214,0)');ctx.fillStyle=g2;ctx.fillRect(0,0,W,H);
  rrect(ctx,38,38,W-76,H-76,56);ctx.strokeStyle='rgba(255,255,255,.16)';ctx.lineWidth=4;ctx.stroke();
  const playedAll=S.matches.filter(m=>m.played).sort((a,b)=>(b.updated||'').localeCompare(a.updated||'')||b.week-a.week||b.id-a.id);
- const leagueName=String(S.settings.name||'KARDEŞLER LİGİ').toUpperCase(),seasonName=String(S.settings.season||'SEZON 2027').toUpperCase();
+ const leagueName=String(S.settings.name||'KRD LİGİ').toUpperCase(),seasonName=String(S.settings.season||'SEZON 2027').toUpperCase();
  let topSub=`${seasonName} · ${playedAll.length} MAÇ OYNANDI`,subTitle='',fname='kardesler-ligi.png';
  if(story.type==='table'){const st=liveStandings();subTitle=`${st.hasLive?'CANLI PUAN DURUMU':'PUAN DURUMU'} (${st.rows.length} TAKIM)`;fname='puan-durumu.png'}
  else if(story.type==='matches'){const sw=story.week||'recent';subTitle=sw==='recent'?'SON OYNANAN MAÇLAR':`HAFTA ${sw} SONUÇLARI`;fname=sw==='recent'?'son-maclar.png':`hafta-${sw}.png`}

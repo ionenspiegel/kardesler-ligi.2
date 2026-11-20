@@ -1,5 +1,5 @@
 'use strict';
-// Kardeşler Ligi — takım tabanlı lig. Veritabanı: PostgreSQL (Neon), bağlantı: DATABASE_URL.
+// KRD Ligi — takım tabanlı lig. Veritabanı: PostgreSQL (Neon), bağlantı: DATABASE_URL.
 const http = require('http'), fs = require('fs'), path = require('path'), crypto = require('crypto');
 const { Pool } = require('pg');
 const { ADMIN, TEAMS, MATCHES, SETTINGS, SECRETS, GOALS, ARCHIVES, DDL } = require('./schema')(process.env.KL_PREFIX || 'kl_');
@@ -19,7 +19,7 @@ async function tx(f) {
   finally { c.release(broken); }
 }
 
-const DEF = { name: 'Kardeşler Ligi', season: '2026', win: '3', draw: '1', loss: '0', week: '1' };
+const DEF = { name: 'KRD Ligi', season: '2026', win: '3', draw: '1', loss: '0', week: '1' };
 async function init() {
   await tx(async t => {
     await t.run('SELECT pg_advisory_xact_lock(724119)');
@@ -389,7 +389,7 @@ const server = http.createServer(async (req, res) => {
         const ogDesc = escHtml(`${s.name || DEF.name} canlı puan durumu, fikstür, kafa kafaya rekabet ve gol krallığı istatistikleri.`);
         html = html.replace(/__OG_TITLE__/g, ogTitle).replace(/__OG_DESC__/g, ogDesc);
       } catch {
-        html = html.replace(/__OG_TITLE__/g, 'Kardeşler Ligi').replace(/__OG_DESC__/g, 'Canlı puan durumu, fikstür ve istatistikler.');
+        html = html.replace(/__OG_TITLE__/g, 'KRD Ligi').replace(/__OG_DESC__/g, 'Canlı puan durumu, fikstür ve istatistikler.');
       }
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
       res.end(html);
@@ -404,6 +404,6 @@ const server = http.createServer(async (req, res) => {
     await init(); SECRET = await loadSecret();
     if (await needsSetup()) { setupCode = crypto.randomBytes(5).toString('hex'); console.log(`\n>>> YÖNETİCİ KURULUM KODU (yalnızca bu oturum için): ${setupCode}\n>>> Sitenin /#/yonetici adresinde bu kodla Yusuf'un şifresini belirle.\n`); }
   } catch (e) { console.error('Veritabanı başlatılamadı:', e.message); process.exit(1); }
-  server.listen(PORT, () => console.log(`Kardeşler Ligi: http://localhost:${PORT}`));
+  server.listen(PORT, () => console.log(`KRD Ligi: http://localhost:${PORT}`));
 })();
 for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { server.close(); pool.end().finally(() => process.exit(0)); });
