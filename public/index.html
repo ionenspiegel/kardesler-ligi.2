@@ -984,42 +984,66 @@ async function updateAdminSlug(e){
   },'Yeni gizli yönetici giriş adresi aktif edildi');
   return false;
 }
+
 function getLiveMatches(){
-  try{ return JSON.parse((S.settings&&S.settings.live_matches)||'[]')||[]; }catch{ return []; }
+  try{
+    const raw = (S && S.settings && S.settings.live_matches) ? S.settings.live_matches : '[]';
+    const arr = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return Array.isArray(arr) ? arr : [];
+  }catch{ return []; }
+}
+async function pushLiveList(list, msg){
+  try{
+    const r = await fetch('/api/admin/live-matches', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-kl': '1' },
+      body: JSON.stringify({ live: list })
+    });
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.error || 'Sunucu hatası: ' + r.status);
+    if(S && S.settings) S.settings.live_matches = JSON.stringify(d.live || list);
+    if(typeof load === 'function') await load();
+    render();
+    if(msg && typeof toast === 'function') toast(msg);
+  }catch(err){
+    alert('Canlı Maç Hatası: ' + err.message);
+  }
 }
 async function addMatchToLive(mid){
-  const list=getLiveMatches();
-  if(list.some(x=>x.id===mid)) return toast('Bu maç zaten canlıda');
-  if(list.length>=4) return toast('Aynı anda en fazla 4 maç canlı olabilir!',1);
-  list.push({id:mid,hs:0,aws:0,min:"1'"});
-  await act(()=>api('POST','/api/admin/live-matches',{live:list}),'Maç canlı yayına alındı (1-4)');
+  mid = Number(mid);
+  if(!mid) return alert('Lütfen listeden bir maç seç.');
+  const list = getLiveMatches();
+  if(list.some(x => Number(x.id) === mid)) return typeof toast === 'function' ? toast('Bu maç zaten canlıda') : alert('Bu maç zaten canlıda');
+  if(list.length >= 4) return alert('Aynı anda en fazla 4 maç canlı olabilir!');
+  list.push({ id: mid, hs: 0, aws: 0, min: "1'" });
+  await pushLiveList(list, 'Maç canlı yayına alındı!');
 }
-async function updateLiveMatch(mid,patch){
-  const list=getLiveMatches().map(x=>x.id===mid?{...x,...patch}:x);
-  await act(()=>api('POST','/api/admin/live-matches',{live:list}),'Canlı skor güncellendi');
+async function updateLiveMatch(mid, patch){
+  mid = Number(mid);
+  const list = getLiveMatches().map(x => Number(x.id) === mid ? { ...x, ...patch } : x);
+  await pushLiveList(list, 'Canlı skor güncellendi');
 }
-async function removeLiveMatch(mid,saveToTable){
-  const list=getLiveMatches();
-  const item=list.find(x=>x.id===mid);
-  const rest=list.filter(x=>x.id!==mid);
-  await act(async()=>{
-    if(saveToTable && item){
-      await api('PUT','/api/admin/matches/'+mid,{hs:Number(item.hs)||0,aws:Number(item.aws)||0,played:1});
-    }
-    await api('POST','/api/admin/live-matches',{live:rest});
-  }, saveToTable ? 'Maç bitirildi ve puan tablosuna işlendi!' : 'Canlı listeden çıkarıldı');
+async function removeLiveMatch(mid, saveToTable){
+  mid = Number(mid);
+  const list = getLiveMatches();
+  const item = list.find(x => Number(x.id) === mid);
+  const rest = list.filter(x => Number(x.id) !== mid);
+  if(saveToTable && item){
+    await api('PUT', '/api/admin/matches/' + mid, { hs: Number(item.hs)||0, aws: Number(item.aws)||0, played: 1 });
+  }
+  await pushLiveList(rest, saveToTable ? 'Maç bitirildi ve tabloya işlendi!' : 'Canlı listeden çıkarıldı');
 }
 function adminLiveTab(){
-  const live=getLiveMatches();
-  const tMap=Object.fromEntries(S.teams.map(t=>[t.id,t.name]));
-  const unplayed=S.matches.filter(m=>!m.played && !live.some(l=>l.id===m.id));
+  const live = getLiveMatches();
+  const tMap = Object.fromEntries((S.teams||[]).map(t => [t.id, t.name]));
+  const unplayed = (S.matches||[]).filter(m => !m.played && !live.some(l => Number(l.id) === Number(m.id)));
   return `<div class="card" style="display:grid;gap:12px">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <b>🔴 Canlı Maç Kontrolü (Maksimum 4 Maç)</b>
       <span class="mut" style="font-size:12px">Aktif: <b>${live.length} / 4</b></span>
     </div>
-    ${live.length ? live.map(l=>{
-      const m=S.matches.find(x=>x.id===l.id)||{};
+    ${live.length ? live.map(l => {
+      const m = (S.matches||[]).find(x => Number(x.id) === Number(l.id)) || {};
       return `<div style="padding:10px;border-radius:10px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35);display:grid;gap:8px">
         <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px">
           <span><b>${esc(tMap[m.home_id]||'Ev')}</b> <b style="font-size:16px;color:#f87171;margin:0 6px">${l.hs} - ${l.aws}</b> <b>${esc(tMap[m.away_id]||'Dep')}</b></span>
@@ -1027,10 +1051,10 @@ function adminLiveTab(){
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:space-between">
           <div style="display:flex;gap:4px">
-            <button type="button" onclick="updateLiveMatch(${l.id},{hs:(l.hs||0)+1})">+1 Ev</button>
-            <button type="button" onclick="updateLiveMatch(${l.id},{hs:Math.max(0,(l.hs||0)-1)})">-1 Ev</button>
-            <button type="button" onclick="updateLiveMatch(${l.id},{aws:(l.aws||0)+1})">+1 Dep</button>
-            <button type="button" onclick="updateLiveMatch(${l.id},{aws:Math.max(0,(l.aws||0)-1)})">-1 Dep</button>
+            <button type="button" onclick="updateLiveMatch(${l.id},{hs:(Number(l.hs)||0)+1})">+1 Ev</button>
+            <button type="button" onclick="updateLiveMatch(${l.id},{hs:Math.max(0,(Number(l.hs)||0)-1)})">-1 Ev</button>
+            <button type="button" onclick="updateLiveMatch(${l.id},{aws:(Number(l.aws)||0)+1})">+1 Dep</button>
+            <button type="button" onclick="updateLiveMatch(${l.id},{aws:Math.max(0,(Number(l.aws)||0)-1)})">-1 Dep</button>
           </div>
           <div style="display:flex;gap:4px">
             <button type="button" class="pri" onclick="removeLiveMatch(${l.id},true)">✅ Bitir & Tabloya İşle</button>
@@ -1041,10 +1065,10 @@ function adminLiveTab(){
     }).join('') : '<div class="mut" style="font-size:13px">Şu an canlı maç yok. Aşağıdan oynanmamış maçlardan (en fazla 4 adet) canlıya alabilirsin.</div>'}
     <div style="border-top:1px solid rgba(148,163,184,0.2);padding-top:10px">
       <div style="font-size:12px;font-weight:700;margin-bottom:6px">Fikstürden Canlıya Al:</div>
-      <div class="row">
-        <select id="pickLiveMatch">${unplayed.map(m=>`<option value="${m.id}">H${m.week}: ${esc(tMap[m.home_id]||'Ev')} vs ${esc(tMap[m.away_id]||'Dep')}</option>`).join('')}</select>
-        <button type="button" class="pri" onclick="const v=+document.getElementById('pickLiveMatch').value;if(v)addMatchToLive(v)">🔴 Canlıya Al</button>
-      </div>
+      ${unplayed.length ? `<div class="row">
+        <select id="pickLiveMatch">${unplayed.map(m => `<option value="${m.id}">H${m.week}: ${esc(tMap[m.home_id]||'Ev')} vs ${esc(tMap[m.away_id]||'Dep')}</option>`).join('')}</select>
+        <button type="button" class="pri" onclick="addMatchToLive(document.getElementById('pickLiveMatch').value)">🔴 Canlıya Al</button>
+      </div>` : '<div class="mut" style="font-size:12px">Canlıya alınabilecek oynanmamış maç kalmadı.</div>'}
     </div>
   </div>`;
 }

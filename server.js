@@ -547,22 +547,7 @@ const server = http.createServer(async (req, res) => {
       notifyClients();
       return;
     }
-    if (u.pathname === '/api/admin/live-matches' && req.method === 'POST') {
-      if (!isAdmin(req)) throw E(401, 'Yönetici yetkisi gerekli');
-      const raw = await new Promise((resolve, reject) => {
-        let d = '';
-        req.on('data', ch => { d += ch; if (d.length > 16384) reject(E(413, 'Veri çok büyük')); });
-        req.on('end', () => resolve(d));
-        req.on('error', reject);
-      });
-      let b = {};
-      try { b = JSON.parse(raw || '{}'); } catch { throw E(400, 'Geçersiz JSON'); }
-      const list = Array.isArray(b.live) ? b.live.slice(0, 4) : [];
-      await setSettingJson('live_matches', list);
-      send(res, 200, { ok: 1, live: list });
-      notifyClients();
-      return;
-    }
+    
 
     if (u.pathname === '/api/admin/announce' && req.method === 'POST') {
       if (!isAdmin(req)) throw E(401, 'Yönetici girişi gerekli');
