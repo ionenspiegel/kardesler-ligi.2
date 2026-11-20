@@ -2,7 +2,7 @@
 // KRD Ligi — takım tabanlı lig. Veritabanı: PostgreSQL (Neon), bağlantı: DATABASE_URL.
 const http = require('http'), fs = require('fs'), path = require('path'), crypto = require('crypto');
 const { Pool } = require('pg');
-const webpush = require('web-push');
+let webpush = null; try { webpush = require('web-push'); } catch (e) { console.warn('web-push yuklenemedi:', e.message); }
 const { ADMIN, TEAMS, MATCHES, SETTINGS, SECRETS, GOALS, ARCHIVES, DDL } = require('./schema')(process.env.KL_PREFIX || 'kl_');
 const PORT = +process.env.PORT || 3000;
 const DB_URL = process.env.DATABASE_URL;
@@ -321,7 +321,7 @@ async function api(req, res, u) {
 const PUB = path.join(__dirname, 'public');
 
 let VAPID_PUBLIC = '';
-async function initPush() {
+async function initPush() { if (!webpush) return;
   let pub = await one(`SELECT v FROM ${SECRETS} WHERE k='vapid_pub'`);
   let priv = await one(`SELECT v FROM ${SECRETS} WHERE k='vapid_priv'`);
   if (!pub || !priv) {
@@ -337,7 +337,7 @@ async function initPush() {
 
 async function sendPushAll(payload) {
   try {
-    if (!VAPID_PUBLIC) return;
+    if (!webpush || !VAPID_PUBLIC) return;
     const row = await one(`SELECT v FROM ${SETTINGS} WHERE k='push_subs'`);
     let subs = [];
     try { subs = JSON.parse((row && row.v) || '[]'); } catch { subs = []; }
