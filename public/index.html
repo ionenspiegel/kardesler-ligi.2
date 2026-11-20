@@ -940,7 +940,7 @@ async function advanceLeagueWeek(nextW){
 
 function panel(){const weeks=[...new Set(S.matches.map(m=>m.week))].sort((a,b)=>a-b);if(!wk||!weeks.includes(wk))wk=+S.settings.week&&weeks.includes(+S.settings.week)?+S.settings.week:weeks[0]||1;
  const _topStats=adminStatsBar();const tabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler ve Görüntü'],['bildirim','🔔 Bildirim']];let c='';
- if(tab==='bildirim')c=adminNotifyTab();else if(tab==='kupa')c=adminExtrasTab();else if(tab==='m')c=`<div class="tabs">${weeks.map(w=>`<button class="${w===wk?'on':''}" onclick="wk=${w};render()">H${w}</button>`).join('')}</div>${(()=>{const wm=S.matches.filter(m=>m.week===wk);const unp=wm.filter(m=>!m.played);const nextW=weeks.find(w=>w>wk);let bar='';if(wm.length&&!unp.length&&nextW&&+S.settings.week===wk){bar=`<div class="card row" style="justify-content:space-between;margin-bottom:10px;border-color:rgba(34,197,94,0.4)"><span>✅ H${wk} maçlarının tamamı oynandı!</span><button type="button" class="pri" onclick="advanceLeagueWeek(${nextW})">⏭ Haftayı H${nextW} Yap</button></div>`;}if(unp.length){const tMap=Object.fromEntries(S.teams.map(t=>[t.id,t.name]));bar+=`<details class="card" style="margin-bottom:10px"><summary style="cursor:pointer;font-weight:700">⚡ H${wk} Hızlı Hükmen Skor İşle (${unp.length} bekleyen maç)</summary><div style="display:grid;gap:6px;margin-top:8px">${unp.map(m=>`<div class="row" style="justify-content:space-between;font-size:13px"><span>${esc(tMap[m.home_id]||'Ev')} - ${esc(tMap[m.away_id]||'Dep')}</span><div style="display:flex;gap:4px"><button type="button" onclick="quickForfeit(${m.id},3,0)">3-0 Ev</button><button type="button" onclick="quickForfeit(${m.id},0,3)">0-3 Dep</button></div></div>`).join('')}</div></details>`;}return bar;})()}${S.matches.some(m=>m.week===wk)?`<div class="grid">${S.matches.filter(m=>m.week===wk).map(m=>mcard(m,1)).join('')}</div>`:'<div class="card empty">Bu haftada maç yok. Aşağıdan ekle ya da fikstür oluştur.</div>'}
+ if(tab==='bildirim')c=adminNotifyTab();else if(tab==='kupa')c=adminExtrasTab();else if(tab==='m')c=`<div class="tabs">${weeks.map(w=>`<button class="${w===wk?'on':''}" onclick="wk=${w};render()">H${w}</button>`).join('')}</div>${(()=>{const wm=S.matches.filter(m=>m.week===wk);const unp=wm.filter(m=>!m.played);const nextW=weeks.find(w=>w>wk);let bar='';if(wm.length&&!unp.length&&nextW&&+S.settings.week===wk){bar=`<div class="card row" style="justify-content:space-between;margin-bottom:10px;border-color:rgba(34,197,94,0.4)"><span>✅ H${wk} maçlarının tamamı oynandı!</span><button type="button" class="pri" onclick="advanceLeagueWeek(${nextW})">⏭ Haftayı H${nextW} Yap</button></div>`;}return bar;})()}${S.matches.some(m=>m.week===wk)?`<div class="grid">${S.matches.filter(m=>m.week===wk).map(m=>mcard(m,1)).join('')}</div>`:'<div class="card empty">Bu haftada maç yok. Aşağıdan ekle ya da fikstür oluştur.</div>'}
  <div class="sh"><h2>Maç Ekle</h2></div><form class="card row" onsubmit="return addM(event)"><input name="w" type="number" min="1" value="${wk}" title="Hafta"><select name="h">${S.teams.map(t=>`<option value="${t.id}">${esc(t.name)}`).join('')}</select><select name="a">${S.teams.map((t,i)=>`<option value="${t.id}" ${i==1?'selected':''}>${esc(t.name)}`).join('')}</select><button class="pri">Ekle</button></form>${goalModal()}`;
  if(tab==='t')c=`<form class="card row" onsubmit="return addT(event)"><input name="n" placeholder="Takım adı" required maxlength="40"><input name="s" placeholder="Kısa ad" maxlength="4" style="max-width:100px"><input name="c" type="color" value="#22c55e"><button class="pri">Takım ekle</button></form><div class="grid" style="margin-top:12px">${S.teams.map(t=>`<form class="card row" onsubmit="return editT(event,${t.id})">${badge(t)}<input name="n" value="${esc(t.name)}" required maxlength="40"><input name="s" value="${esc(t.short||'')}" maxlength="4" style="max-width:80px"><input name="c" type="color" value="${esc(t.color)}"><button>💾</button><button type="button" class="dng" onclick="delT(${t.id},'${esc(t.name).replace(/'/g,'')}')">🗑</button></form>`).join('')||'<div class="card empty">Takım yok.</div>'}</div>`;
  if(tab==='c'){
@@ -1328,166 +1328,289 @@ events.onmessage = async () => {
 
 
 
+
+
+
+
 <style>
-  .krd-team-badge {
-    display: inline-block;
-    font-size: 9px;
+  #krdChatFab {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 999px;
+    padding: 9px 14px;
+    font-size: 13px;
     font-weight: 700;
-    padding: 1px 5px;
-    border-radius: 4px;
-    margin-left: 5px;
-    vertical-align: middle;
-    background: rgba(255, 255, 255, 0.08);
-    color: #cbd5e1;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
-  #krdBottomExtras {
-    max-width: 860px;
-    margin: 18px auto 72px auto;
-    padding: 0 12px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 10px;
+  .krd-online-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 8px #4ade80;
+    display: inline-block;
   }
-  .krd-mini-card {
-    background: rgba(15, 23, 42, 0.65);
-    border: 1px solid rgba(148, 163, 184, 0.14);
-    border-radius: 12px;
-    padding: 12px 14px;
-    color: #e2e8f0;
+  #krdChatBox {
+    position: fixed;
+    right: 14px;
+    bottom: 66px;
+    width: calc(100vw - 28px);
+    max-width: 350px;
+    height: 410px;
+    max-height: 70vh;
+    z-index: 9995;
+    background: #0f172a;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    color: #f8fafc;
   }
-  .krd-mini-title {
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: .04em;
-    color: #94a3b8;
-    text-transform: uppercase;
-    margin-bottom: 8px;
+  #krdChatBox.open { display: flex; }
+  .krd-chat-head {
+    padding: 10px 12px;
+    background: #1e293b;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  }
+  .krd-chat-online-list {
     display: flex;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 5px;
+    max-height: 42px;
+    overflow-y: auto;
   }
-  .krd-pred-line {
+  .krd-online-pill {
+    font-size: 10px;
+    font-weight: 700;
+    background: rgba(34, 197, 94, 0.16);
+    color: #86efac;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    padding: 1px 7px;
+    border-radius: 999px;
+  }
+  .krd-chat-msgs {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
     display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    padding: 4px 0;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+    flex-direction: column;
+    gap: 7px;
   }
-  .krd-pred-line:last-child { border-bottom: none; }
+  .krd-msg {
+    background: rgba(30, 41, 59, 0.85);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 11px;
+    padding: 7px 10px;
+    font-size: 12.5px;
+    line-height: 1.35;
+    word-break: break-word;
+  }
+  .krd-msg.me {
+    background: rgba(37, 99, 235, 0.24);
+    border-color: rgba(59, 130, 246, 0.35);
+    align-self: flex-end;
+    max-width: 86%;
+  }
+  .krd-msg.other {
+    align-self: flex-start;
+    max-width: 86%;
+  }
+  .krd-chat-form {
+    display: flex;
+    gap: 6px;
+    padding: 8px;
+    background: #1e293b;
+    border-top: 1px solid rgba(148, 163, 184, 0.16);
+  }
+  .krd-chat-form input {
+    flex: 1;
+    background: #0f172a;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    color: #fff;
+    border-radius: 9px;
+    padding: 8px 10px;
+    font-size: 12.5px;
+  }
+  .krd-chat-form button {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    padding: 0 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
 </style>
+
+<div id="krdChatWidget">
+  <div id="krdChatBox">
+    <div class="krd-chat-head">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;">
+          <span class="krd-online-dot"></span>
+          <span>Lig Sohbeti (<span id="krdOnlineCount">1</span> Aktif)</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <button type="button" id="krdChangeNameBtn" title="İsmini değiştir" style="background:rgba(255,255,255,0.08);border:none;color:#cbd5e1;font-size:10px;padding:3px 7px;border-radius:6px;cursor:pointer;">İsim</button>
+          <button type="button" id="krdChatCloseBtn" style="background:none;border:none;color:#94a3b8;font-size:16px;cursor:pointer;">✕</button>
+        </div>
+      </div>
+      <div class="krd-chat-online-list" id="krdOnlineNames"></div>
+    </div>
+
+    <div class="krd-chat-msgs" id="krdChatMsgs"></div>
+
+    <form class="krd-chat-form" id="krdChatForm">
+      <input id="krdChatInput" type="text" maxlength="240" placeholder="Mesaj yaz..." autocomplete="off" />
+      <button type="submit">Gönder</button>
+    </form>
+  </div>
+</div>
 
 <script>
 (function() {
-  function esc(s) {
-    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  let cid = localStorage.getItem('krd_chat_cid');
+  if (!cid) { cid = 'u_' + Math.random().toString(36).slice(2, 10); localStorage.setItem('krd_chat_cid', cid); }
+  let myName = localStorage.getItem('krd_chat_name') || '';
+  let isAdminChat = false;
+  let lastMsgCount = 0;
+
+  fetch('/api/me').then(r => r.json()).then(d => { isAdminChat = !!d.admin; }).catch(() => {});
+
+  // Sag alt buton grubuna Sohbet balonunu ekle
+  const pushBtn = document.getElementById('krdPushBtn');
+  const fab = document.createElement('button');
+  fab.id = 'krdChatFab';
+  fab.type = 'button';
+  fab.innerHTML = '<span class="krd-online-dot"></span> 💬 Sohbet (<span id="krdFabCount">1</span>)';
+  if (pushBtn && pushBtn.parentElement) {
+    pushBtn.parentElement.insertBefore(fab, pushBtn);
+  } else {
+    fab.style.cssText = 'position:fixed;right:14px;bottom:16px;z-index:9990;';
+    document.body.appendChild(fab);
   }
 
-  async function refreshCleanExtras() {
-    try {
-      const res = await fetch('/api/league');
-      const data = await res.json();
-      const teams = data.teams || [];
-      const table = data.table || [];
-      const matches = data.matches || [];
-      const settings = data.settings || {};
-      const teamMap = Object.fromEntries(teams.map(t => [t.id, t]));
-      const rankMap = Object.fromEntries(table.map((t, idx) => [t.id, idx + 1]));
+  const box = document.getElementById('krdChatBox');
+  const msgsEl = document.getElementById('krdChatMsgs');
+  const onlineCountEl = document.getElementById('krdOnlineCount');
+  const fabCountEl = document.getElementById('krdFabCount');
+  const onlineNamesEl = document.getElementById('krdOnlineNames');
 
-      // 1. Tablodaki kompakt basari rozetleri
-      const badgesByName = {};
-      if (table.length && table[0].p > 0) {
-        badgesByName[table[0].name.toLowerCase()] = '👑';
-      }
-      const playedMatches = matches.filter(m => m.played).sort((a, b) => (a.week - b.week) || (a.id - b.id));
-      for (const tm of teams) {
-        const last3 = playedMatches.filter(m => m.home_id === tm.id || m.away_id === tm.id).slice(-3);
-        if (last3.length === 3 && last3.every(m => (m.home_id === tm.id ? m.hs > m.aws : m.aws > m.hs))) {
-          const k = tm.name.toLowerCase();
-          badgesByName[k] = (badgesByName[k] || '') + '🔥';
-        }
-      }
+  function askName(force) {
+    if (!force && myName) return true;
+    const n = prompt('Sohbette görünecek ismin (örn: Yusuf, Mamutabi):', myName || '');
+    if (n && n.trim()) {
+      myName = n.trim().slice(0, 24);
+      localStorage.setItem('krd_chat_name', myName);
+      return true;
+    }
+    return false;
+  }
 
-      document.querySelectorAll('table tbody tr').forEach(tr => {
-        const cell = tr.children[1];
-        if (!cell) return;
-        const raw = (cell.dataset.origName || cell.textContent || '').trim();
-        if (!cell.dataset.origName) cell.dataset.origName = raw;
-        const cleanKey = raw.replace(/^[0-9]+s*/, '').replace(/([^)]*)/g, '').trim().toLowerCase();
-        const badge = badgesByName[cleanKey] || '';
-        cell.querySelectorAll('.krd-team-badge').forEach(el => el.remove());
-        if (badge) {
-          const span = document.createElement('span');
-          span.className = 'krd-team-badge';
-          span.textContent = badge;
-          cell.appendChild(span);
-        }
-      });
+  fab.addEventListener('click', () => {
+    if (!box.classList.contains('open')) {
+      if (!askName(false)) return;
+      box.classList.add('open');
+      syncChat(true);
+    } else {
+      box.classList.remove('open');
+    }
+  });
 
-      // 2. Haftanin Derbisi (En altta kompakt kart)
-      const unplayed = matches.filter(m => !m.played).sort((a, b) => (a.week - b.week) || (a.id - b.id));
-      let derbyMatch = null;
-      if (unplayed.length) {
-        const nextWeek = unplayed[0].week;
-        derbyMatch = unplayed.filter(m => m.week === nextWeek).sort((a, b) => {
-          return ((rankMap[a.home_id] || 99) + (rankMap[a.away_id] || 99)) - ((rankMap[b.home_id] || 99) + (rankMap[b.away_id] || 99));
-        })[0];
-      }
+  document.getElementById('krdChatCloseBtn').onclick = () => box.classList.remove('open');
+  document.getElementById('krdChangeNameBtn').onclick = () => { if (askName(true)) syncChat(false); };
 
-      // 3. Tahmin Kralligi
-      let preds = {};
-      try { preds = JSON.parse(settings.predictions || '{}') || {}; } catch { preds = {}; }
-      const userScores = {};
-      for (const m of matches) {
-        if (!m.played) continue;
-        const actual = m.hs > m.aws ? 'H' : (m.hs < m.aws ? 'A' : 'D');
-        const mPreds = preds[String(m.id)] || {};
-        for (const [user, pick] of Object.entries(mPreds)) {
-          if (!userScores[user]) userScores[user] = { user, pts: 0, hits: 0 };
-          if (pick === actual) { userScores[user].pts += 3; userScores[user].hits++; }
-        }
-      }
-      const predRanking = Object.values(userScores).sort((a, b) => b.pts - a.pts).slice(0, 5);
+  function renderMessages(messages, online) {
+    const list = Array.isArray(online) && online.length ? online : (myName ? [myName] : ['Misafir']);
+    onlineCountEl.textContent = list.length;
+    fabCountEl.textContent = list.length;
+    onlineNamesEl.innerHTML = list.map(n => `<span class="krd-online-pill">● ${esc(n)}</span>`).join('');
 
-      let box = document.getElementById('krdBottomExtras');
-      if (!box) {
-        box = document.createElement('div');
-        box.id = 'krdBottomExtras';
-        const mainEl = document.querySelector('main') || document.body;
-        mainEl.appendChild(box);
-      }
-
-      const derbyHtml = derbyMatch ? `
-        <div class="krd-mini-card">
-          <div class="krd-mini-title"><span>🔥 Haftanın Derbisi</span><span>${derbyMatch.week}. Hafta</span></div>
-          <div style="display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:700;padding-top:4px;">
-            <span>${esc((teamMap[derbyMatch.home_id] || {}).name || 'Ev')}</span>
-            <span style="font-size:11px;color:#94a3b8;font-weight:600;">vs</span>
-            <span>${esc((teamMap[derbyMatch.away_id] || {}).name || 'Dep')}</span>
+    const wasBottom = msgsEl.scrollHeight - msgsEl.scrollTop - msgsEl.clientHeight < 60;
+    msgsEl.innerHTML = (messages || []).map(m => {
+      const isMe = myName && m.user.toLowerCase() === myName.toLowerCase();
+      const t = m.time ? new Date(m.time).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '';
+      const delBtn = isAdminChat ? `<button type="button" data-del="${esc(m.id)}" style="background:none;border:none;color:#f87171;font-size:11px;margin-left:6px;cursor:pointer;">✕</button>` : '';
+      return `
+        <div class="krd-msg ${isMe ? 'me' : 'other'}">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:2px;">
+            <strong style="font-size:11px;color:${m.admin ? '#fbbf24' : '#38bdf8'};">${esc(m.user)}${m.admin ? ' 👑' : ''}</strong>
+            <span style="font-size:10px;color:#94a3b8;">${t}${delBtn}</span>
           </div>
+          <div>${esc(m.text)}</div>
         </div>
-      ` : '';
+      `;
+    }).join('') || '<div style="text-align:center;color:#64748b;font-size:12px;margin-top:40px;">Henüz mesaj yok. İlk mesajı sen yaz!</div>';
 
-      const predHtml = predRanking.length ? `
-        <div class="krd-mini-card">
-          <div class="krd-mini-title"><span>🎯 Tahmin Sıralaması</span><span>+3 P</span></div>
-          ${predRanking.map((u, i) => `
-            <div class="krd-pred-line">
-              <span>#${i + 1} ${esc(u.user)}</span>
-              <strong style="color:#22c55e;">${u.pts} P</strong>
-            </div>
-          `).join('')}
-        </div>
-      ` : '';
+    if (wasBottom || (messages && messages.length !== lastMsgCount)) {
+      msgsEl.scrollTop = msgsEl.scrollHeight;
+    }
+    lastMsgCount = messages ? messages.length : 0;
+  }
 
-      box.innerHTML = derbyHtml + predHtml;
-      box.style.display = (derbyHtml || predHtml) ? 'grid' : 'none';
+  msgsEl.addEventListener('click', async e => {
+    const btn = e.target.closest('[data-del]');
+    if (!btn) return;
+    if (!confirm('Bu mesaj silinsin mi?')) return;
+    await fetch('/api/chat/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: btn.getAttribute('data-del') })
+    });
+    syncChat(false);
+  });
+
+  async function syncChat(scrollDown) {
+    try {
+      const q = `?cid=${encodeURIComponent(cid)}&name=${encodeURIComponent(myName || 'Ziyaretçi')}`;
+      const r = await fetch('/api/chat' + q);
+      if (!r.ok) return;
+      const d = await r.json();
+      renderMessages(d.messages, d.online);
+      if (scrollDown) msgsEl.scrollTop = msgsEl.scrollHeight;
     } catch {}
   }
 
-  refreshCleanExtras();
-  setInterval(refreshCleanExtras, 10000);
+  document.getElementById('krdChatForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!askName(false)) return;
+    const inp = document.getElementById('krdChatInput');
+    const text = inp.value.trim();
+    if (!text) return;
+    inp.value = '';
+    try {
+      const r = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user: myName, text, cid })
+      });
+      if (r.ok) {
+        const d = await r.json();
+        renderMessages(d.messages, d.online);
+      }
+    } catch {}
+  });
+
+  // Sunucu SSE canli yayini geldiginde sohbeti aninda guncelle + 12 sn kalp atisi
+  if (typeof EventSource !== 'undefined') {
+    try {
+      const es = new EventSource('/api/events');
+      es.onmessage = () => syncChat(false);
+    } catch {}
+  }
+  syncChat(false);
+  setInterval(() => syncChat(false), 12000);
 })();
 </script>
-
 
 </body></html>
 

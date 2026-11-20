@@ -406,6 +406,21 @@ async function checkMatchDrama(prevLeaderId, m) {
   }
 }
 
+
+const chatOnline = new Map(); // clientId -> { name, lastSeen }
+function getActiveChatUsers() {
+  const now = Date.now();
+  const names = [];
+  for (const [cid, info] of chatOnline.entries()) {
+    if (now - info.lastSeen > 35000) {
+      chatOnline.delete(cid);
+    } else if (info.name) {
+      names.push(info.name);
+    }
+  }
+  return [...new Set(names)];
+}
+
 const sseClients = new Set();
 function notifyClients() {
   for (const client of sseClients) {
@@ -475,6 +490,71 @@ const server = http.createServer(async (req, res) => {
         await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES('push_subs',$1)`, JSON.stringify(subs));
       });
       return send(res, 200, { ok: 1 });
+    }
+
+    
+    if (u.pathname === '/api/chat' && req.method === 'GET') {
+      const cid = clean(u.searchParams.get('cid') || '').slice(0, 40);
+      const cname = clean(u.searchParams.get('name') || '').slice(0, 24);
+      if (cid) chatOnline.set(cid, { name: cname || 'Misafir', lastSeen: Date.now() });
+      const row = await one(`SELECT v FROM ${SETTINGS} WHERE k='chat_msgs'`);
+      let msgs = [];
+      try { msgs = JSON.parse((row && row.v) || '[]'); } catch { msgs = []; }
+      return send(res, 200, { messages: Array.isArray(msgs) ? msgs : [], online: getActiveChatUsers() });
+    }
+    if (u.pathname === '/api/chat' && req.method === 'POST') {
+      const raw = await new Promise((resolve, reject) => {
+        let d = '';
+        req.on('data', ch => { d += ch; if (d.length > 16384) reject(E(413, 'Veri çok büyük')); });
+        req.on('end', () => resolve(d));
+        req.on('error', reject);
+      });
+      let b = {};
+      try { b = JSON.parse(raw || '{}'); } catch { throw E(400, 'Geçersiz JSON'); }
+      const user = clean(String(b.user || '')).slice(0, 24);
+      const text = clean(String(b.text || '')).slice(0, 240);
+      const cid = clean(String(b.cid || '')).slice(0, 40);
+      if (!user || !text) throw E(400, 'İsim ve mesaj gerekli');
+      if (cid) chatOnline.set(cid, { name: user, lastSeen: Date.now() });
+
+      const row = await one(`SELECT v FROM ${SETTINGS} WHERE k='chat_msgs'`);
+      let msgs = [];
+      try { msgs = JSON.parse((row && row.v) || '[]'); } catch { msgs = []; }
+      if (!Array.isArray(msgs)) msgs = [];
+      msgs.push({ id: Date.now() + '_' + Math.random().toString(36).slice(2, 6), user, text, time: new Date().toISOString(), admin: isAdmin(req) });
+      if (msgs.length > 60) msgs = msgs.slice(-60);
+
+      await tx(async t => {
+        await t.run(`DELETE FROM ${SETTINGS} WHERE k='chat_msgs'`);
+        await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES('chat_msgs',$1)`, JSON.stringify(msgs));
+      });
+      send(res, 200, { ok: 1, messages: msgs, online: getActiveChatUsers() });
+      notifyClients();
+      return;
+    }
+    if (u.pathname === '/api/chat/delete' && req.method === 'POST') {
+      if (!isAdmin(req)) throw E(401, 'Yönetici yetkisi gerekli');
+      const raw = await new Promise((resolve, reject) => {
+        let d = '';
+        req.on('data', ch => { d += ch; if (d.length > 8192) reject(E(413, 'Veri çok büyük')); });
+        req.on('end', () => resolve(d));
+        req.on('error', reject);
+      });
+      let b = {};
+      try { b = JSON.parse(raw || '{}'); } catch { throw E(400, 'Geçersiz JSON'); }
+      let msgs = [];
+      if (!b.clearAll) {
+        const row = await one(`SELECT v FROM ${SETTINGS} WHERE k='chat_msgs'`);
+        try { msgs = JSON.parse((row && row.v) || '[]'); } catch { msgs = []; }
+        msgs = Array.isArray(msgs) ? msgs.filter(m => m.id !== b.id) : [];
+      }
+      await tx(async t => {
+        await t.run(`DELETE FROM ${SETTINGS} WHERE k='chat_msgs'`);
+        await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES('chat_msgs',$1)`, JSON.stringify(msgs));
+      });
+      send(res, 200, { ok: 1, messages: msgs });
+      notifyClients();
+      return;
     }
 
     if (u.pathname === '/api/events' && req.method === 'GET') {
