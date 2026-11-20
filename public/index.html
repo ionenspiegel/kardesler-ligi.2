@@ -978,5 +978,287 @@ events.onmessage = async () => {
     console.error('Canlı güncelleme hatası:', e);
   }
 };
-</script></body></html>
+</script>
+<style>
+  .krd-push-btn {
+    position: fixed;
+    right: 14px;
+    bottom: 16px;
+    z-index: 9990;
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 999px;
+    padding: 10px 15px;
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: transform .15s ease, opacity .2s ease;
+  }
+  .krd-push-btn:active { transform: scale(0.96); }
+  .krd-push-btn.subscribed { background: #1e293b; color: #94a3b8; font-size: 12px; padding: 8px 12px; }
+  #krdTeamStatsModal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(2, 6, 23, 0.82);
+    backdrop-filter: blur(6px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  #krdTeamStatsModal.open { display: flex; }
+  .krd-stat-card {
+    width: 100%;
+    max-width: 420px;
+    background: #0f172a;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 18px;
+    padding: 20px;
+    color: #f8fafc;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.65);
+    animation: krdPop .18s ease-out;
+  }
+  @keyframes krdPop { from { transform: scale(0.93); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .krd-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .krd-stat-box {
+    background: rgba(30, 41, 59, 0.75);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 12px;
+    padding: 11px 12px;
+  }
+  .krd-stat-lbl { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; }
+  .krd-stat-val { font-size: 18px; font-weight: 800; color: #fff; margin-top: 3px; }
+  .krd-stat-sub { font-size: 11px; color: #cbd5e1; margin-top: 2px; }
+  .krd-form-pill {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 6px; font-weight: 800; font-size: 12px; margin-right: 4px;
+  }
+  .krd-form-G { background: #16a34a; color: #fff; }
+  .krd-form-B { background: #eab308; color: #0f172a; }
+  .krd-form-M { background: #dc2626; color: #fff; }
+</style>
+
+<button id="krdPushBtn" class="krd-push-btn" type="button">🔔 Bildirimleri Aç</button>
+
+<div id="krdTeamStatsModal" role="dialog" aria-modal="true">
+  <div class="krd-stat-card" id="krdTeamStatsBody"></div>
+</div>
+
+<script>
+(function() {
+  // --- 1. CANLI WEB PUSH ABONELIGI ---
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+    return outputArray;
+  }
+
+  const pushBtn = document.getElementById('krdPushBtn');
+  async function updatePushBtnState() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      if (pushBtn) pushBtn.style.display = 'none';
+      return;
+    }
+    if (Notification.permission === 'granted') {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub && pushBtn) {
+        pushBtn.textContent = '🔔 Bildirimler Açık';
+        pushBtn.classList.add('subscribed');
+      }
+    }
+  }
+
+  async function subscribePush() {
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') {
+        alert('Bildirim izni verilmedi. Tarayıcı veya telefon ayarlarından KRD Ligi bildirimlerine izin verebilirsin.');
+        return;
+      }
+      const reg = await navigator.serviceWorker.ready;
+      const keyRes = await fetch('/api/push/key');
+      const { publicKey } = await keyRes.json();
+      if (!publicKey) return;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
+      });
+      await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: sub })
+      });
+      updatePushBtnState();
+      alert('Harika! Artık maç skoru girildiğinde veya yeni manşet yayınlandığında telefonuna anında bildirim düşecek.');
+    } catch (err) {
+      console.error('Push abonelik hatasi:', err);
+    }
+  }
+
+  if (pushBtn) {
+    pushBtn.addEventListener('click', subscribePush);
+    updatePushBtnState();
+  }
+
+  // --- 2. KISISEL ISTATISTIK KARTLARI ---
+  const modal = document.getElementById('krdTeamStatsModal');
+  const modalBody = document.getElementById('krdTeamStatsBody');
+  if (modal) {
+    modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+  }
+
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  async function openTeamCard(teamName) {
+    try {
+      const res = await fetch('/api/league');
+      const data = await res.json();
+      const teams = data.teams || [];
+      const matches = (data.matches || []).filter(m => m.played);
+      const table = data.table || [];
+      const row = table.find(t => t.name.toLowerCase() === teamName.toLowerCase());
+      const team = teams.find(t => t.name.toLowerCase() === teamName.toLowerCase()) || row;
+      if (!team || !row) return;
+
+      const teamMap = Object.fromEntries(teams.map(t => [t.id, t.name]));
+      const myMatches = matches
+        .filter(m => m.home_id === team.id || m.away_id === team.id)
+        .sort((a, b) => (a.week - b.week) || (a.id - b.id));
+
+      let curWinStreak = 0, maxWinStreak = 0, unbeatenStreak = 0, maxUnbeaten = 0;
+      let bestWin = null;
+      const form = [];
+
+      for (const m of myMatches) {
+        const isHome = m.home_id === team.id;
+        const gf = isHome ? m.hs : m.aws;
+        const ga = isHome ? m.aws : m.hs;
+        const opp = teamMap[isHome ? m.away_id : m.home_id] || 'Rakip';
+        const diff = gf - ga;
+
+        if (diff > 0) {
+          form.push('G');
+          curWinStreak++;
+          unbeatenStreak++;
+          if (curWinStreak > maxWinStreak) maxWinStreak = curWinStreak;
+          if (unbeatenStreak > maxUnbeaten) maxUnbeaten = unbeatenStreak;
+          if (!bestWin || diff > bestWin.diff || (diff === bestWin.diff && gf > bestWin.gf)) {
+            bestWin = { diff, gf, ga, opp, score: `${gf}-${ga}` };
+          }
+        } else if (diff === 0) {
+          form.push('B');
+          curWinStreak = 0;
+          unbeatenStreak++;
+          if (unbeatenStreak > maxUnbeaten) maxUnbeaten = unbeatenStreak;
+        } else {
+          form.push('M');
+          curWinStreak = 0;
+          unbeatenStreak = 0;
+        }
+      }
+
+      const avgGf = row.p ? (row.gf / row.p).toFixed(2) : '0.00';
+      const avgGa = row.p ? (row.ga / row.p).toFixed(2) : '0.00';
+      const winRate = row.p ? Math.round((row.w / row.p) * 100) : 0;
+      const rank = table.findIndex(t => t.id === team.id) + 1;
+      const last5 = form.slice(-5);
+
+      modalBody.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="width:14px;height:36px;border-radius:6px;background:${esc(team.color || '#22c55e')};display:inline-block;"></span>
+            <div>
+              <div style="font-size:19px;font-weight:800;line-height:1.2;">${esc(team.name)}</div>
+              <div style="font-size:12px;color:#94a3b8;">Lig Sırası: #${rank} • ${row.pts} Puan (${row.p} Maç)</div>
+            </div>
+          </div>
+          <button type="button" id="krdCloseStatBtn" style="background:#1e293b;border:none;color:#cbd5e1;width:32px;height:32px;border-radius:10px;font-size:16px;cursor:pointer;">✕</button>
+        </div>
+
+        <div class="krd-stat-grid">
+          <div class="krd-stat-box">
+            <div class="krd-stat-lbl">Galibiyet Serisi</div>
+            <div class="krd-stat-val">${curWinStreak} Maç</div>
+            <div class="krd-stat-sub">Rekor Seri: ${maxWinStreak} Maç</div>
+          </div>
+          <div class="krd-stat-box">
+            <div class="krd-stat-lbl">Maç Başı Gol Ort.</div>
+            <div class="krd-stat-val">${avgGf}</div>
+            <div class="krd-stat-sub">Yenen Ort: ${avgGa} / maç</div>
+          </div>
+          <div class="krd-stat-box">
+            <div class="krd-stat-lbl">En Farklı Galibiyet</div>
+            <div class="krd-stat-val">${bestWin ? bestWin.score : '—'}</div>
+            <div class="krd-stat-sub">${bestWin ? esc(bestWin.opp) + ' karşısında' : 'Henüz galibiyet yok'}</div>
+          </div>
+          <div class="krd-stat-box">
+            <div class="krd-stat-lbl">Kazanma & Yenilmezlik</div>
+            <div class="krd-stat-val">%${winRate}</div>
+            <div class="krd-stat-sub">En Uzun Yenilmezlik: ${maxUnbeaten}</div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;background:rgba(30,41,59,0.55);border-radius:12px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:12px;color:#94a3b8;font-weight:600;">Son 5 Maç Formu</span>
+          <div>${last5.length ? last5.map(r => `<span class="krd-form-pill krd-form-${r}">${r}</span>`).join('') : '<span style="font-size:12px;color:#64748b;">Maç yok</span>'}</div>
+        </div>
+      `;
+      document.getElementById('krdCloseStatBtn').onclick = () => modal.classList.remove('open');
+      modal.classList.add('open');
+    } catch (e) {
+      console.error('Istatistik karti hatasi:', e);
+    }
+  }
+
+  // Tablodaki takim isimlerine tiklaninca istatistik kartini ac
+  document.addEventListener('click', e => {
+    const cell = e.target.closest('td, .team-name, [data-team]');
+    if (!cell) return;
+    const tableEl = cell.closest('table');
+    if (!tableEl) return;
+    const row = cell.closest('tr');
+    if (!row || row.parentElement.tagName === 'THEAD') return;
+    // Takim adi sutunu genelde 2. sutundur (index 1)
+    const cells = Array.from(row.children);
+    const idx = cells.indexOf(cell);
+    if (idx === 1 || cell.hasAttribute('data-team')) {
+      const rawText = cell.getAttribute('data-team') || cell.textContent || '';
+      const cleanName = rawText.replace(/^[0-9]+s*/, '').replace(/([^)]*)/g, '').trim();
+      if (cleanName && cleanName.length >= 2) {
+        openTeamCard(cleanName);
+      }
+    }
+  });
+
+  // Tablo satirlarina tiklanabilir imlec ekle
+  setInterval(() => {
+    document.querySelectorAll('table tbody tr').forEach(tr => {
+      if (tr.children[1] && !tr.children[1].dataset.krdBound) {
+        tr.children[1].dataset.krdBound = '1';
+        tr.children[1].style.cursor = 'pointer';
+        tr.children[1].title = 'Kişisel istatistik kartını görmek için tıkla';
+      }
+    });
+  }, 1200);
+})();
+</script>
+
+</body></html>
 

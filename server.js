@@ -2,6 +2,7 @@
 // KRD Ligi — takım tabanlı lig. Veritabanı: PostgreSQL (Neon), bağlantı: DATABASE_URL.
 const http = require('http'), fs = require('fs'), path = require('path'), crypto = require('crypto');
 const { Pool } = require('pg');
+const webpush = require('web-push');
 const { ADMIN, TEAMS, MATCHES, SETTINGS, SECRETS, GOALS, ARCHIVES, DDL } = require('./schema')(process.env.KL_PREFIX || 'kl_');
 const PORT = +process.env.PORT || 3000;
 const DB_URL = process.env.DATABASE_URL;
@@ -242,10 +243,28 @@ async function api(req, res, u) {
     } catch (e) { if (e.code === '23505') throw E(409, 'Bu isimde takım var'); throw e; }
   }
   if (kind === 'matches') {
-    if (M === 'POST') { const m = await matchData(b); const r = await run(`INSERT INTO ${MATCHES}(week,home_id,away_id,hs,aws,played,updated,note) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`, m.week, m.home_id, m.away_id, m.hs, m.aws, m.played, new Date().toISOString(), m.note); return send(res, 200, { id: Number(r.rows[0].id) }); }
+    if (M === 'POST') {
+      const m = await matchData(b);
+      const r = await run(`INSERT INTO ${MATCHES}(week,home_id,away_id,hs,aws,played,updated,note) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`, m.week, m.home_id, m.away_id, m.hs, m.aws, m.played, new Date().toISOString(), m.note);
+      if (m.played) {
+        const ht = await one(`SELECT name FROM ${TEAMS} WHERE id=$1`, m.home_id);
+        const at = await one(`SELECT name FROM ${TEAMS} WHERE id=$1`, m.away_id);
+        sendPushAll({ title: '⚽ Maç Sonucu — KRD Ligi', body: `${ht ? ht.name : 'Ev'} ${m.hs} - ${m.aws} ${at ? at.name : 'Dep'}` });
+      }
+      return send(res, 200, { id: Number(r.rows[0].id) });
+    }
     if (!okId(id)) throw E(404, 'Maç yok');
     const old = await one(`SELECT * FROM ${MATCHES} WHERE id=$1`, id); if (!old) throw E(404, 'Maç yok');
-    if (M === 'PUT') { const m = await matchData(b, old); await run(`UPDATE ${MATCHES} SET week=$1,home_id=$2,away_id=$3,hs=$4,aws=$5,played=$6,updated=$7,note=$8 WHERE id=$9`, m.week, m.home_id, m.away_id, m.hs, m.aws, m.played, new Date().toISOString(), m.note, id); return send(res, 200, { ok: 1 }); }
+    if (M === 'PUT') {
+      const m = await matchData(b, old);
+      await run(`UPDATE ${MATCHES} SET week=$1,home_id=$2,away_id=$3,hs=$4,aws=$5,played=$6,updated=$7,note=$8 WHERE id=$9`, m.week, m.home_id, m.away_id, m.hs, m.aws, m.played, new Date().toISOString(), m.note, id);
+      if (m.played && (!old.played || old.hs !== m.hs || old.aws !== m.aws)) {
+        const ht = await one(`SELECT name FROM ${TEAMS} WHERE id=$1`, m.home_id);
+        const at = await one(`SELECT name FROM ${TEAMS} WHERE id=$1`, m.away_id);
+        sendPushAll({ title: '⚽ Maç Sonucu — KRD Ligi', body: `${ht ? ht.name : 'Ev'} ${m.hs} - ${m.aws} ${at ? at.name : 'Dep'}` });
+      }
+      return send(res, 200, { ok: 1 });
+    }
     if (M === 'DELETE') { await run(`DELETE FROM ${MATCHES} WHERE id=$1`, id); return send(res, 200, { ok: 1 }); }
   }
   if (kind === 'goals') {
@@ -300,6 +319,51 @@ async function api(req, res, u) {
 }
 
 const PUB = path.join(__dirname, 'public');
+
+let VAPID_PUBLIC = '';
+async function initPush() {
+  let pub = await one(`SELECT v FROM ${SECRETS} WHERE k='vapid_pub'`);
+  let priv = await one(`SELECT v FROM ${SECRETS} WHERE k='vapid_priv'`);
+  if (!pub || !priv) {
+    const keys = webpush.generateVAPIDKeys();
+    await run(`INSERT INTO ${SECRETS}(k,v) VALUES('vapid_pub',$1) ON CONFLICT(k) DO UPDATE SET v=EXCLUDED.v`, keys.publicKey);
+    await run(`INSERT INTO ${SECRETS}(k,v) VALUES('vapid_priv',$1) ON CONFLICT(k) DO UPDATE SET v=EXCLUDED.v`, keys.privateKey);
+    pub = { v: keys.publicKey };
+    priv = { v: keys.privateKey };
+  }
+  VAPID_PUBLIC = pub.v;
+  webpush.setVapidDetails('mailto:admin@krdligi.local', pub.v, priv.v);
+}
+
+async function sendPushAll(payload) {
+  try {
+    if (!VAPID_PUBLIC) return;
+    const row = await one(`SELECT v FROM ${SETTINGS} WHERE k='push_subs'`);
+    let subs = [];
+    try { subs = JSON.parse((row && row.v) || '[]'); } catch { subs = []; }
+    if (!Array.isArray(subs) || !subs.length) return;
+    const msg = JSON.stringify({ title: 'KRD Ligi', url: '/', ...payload });
+    const alive = [];
+    await Promise.all(subs.map(async sub => {
+      try {
+        await webpush.sendNotification(sub, msg);
+        alive.push(sub);
+      } catch (err) {
+        if (err && (err.statusCode === 404 || err.statusCode === 410)) return;
+        alive.push(sub);
+      }
+    }));
+    if (alive.length !== subs.length) {
+      await tx(async t => {
+        await t.run(`DELETE FROM ${SETTINGS} WHERE k='push_subs'`);
+        await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES('push_subs',$1)`, JSON.stringify(alive));
+      });
+    }
+  } catch (e) {
+    console.error('Push gonderim hatasi:', e.message);
+  }
+}
+
 const sseClients = new Set();
 function notifyClients() {
   for (const client of sseClients) {
@@ -312,6 +376,35 @@ const server = http.createServer(async (req, res) => {
   if (req.url.startsWith('/sw.js')) res.setHeader('Service-Worker-Allowed', '/');
   try {
     const u = new URL(req.url, 'http://x');
+    
+    if (u.pathname === '/api/push/key' && req.method === 'GET') {
+      return send(res, 200, { publicKey: VAPID_PUBLIC });
+    }
+    if (u.pathname === '/api/push/subscribe' && req.method === 'POST') {
+      const raw = await new Promise((resolve, reject) => {
+        let d = '';
+        req.on('data', ch => { d += ch; if (d.length > 32768) reject(E(413, 'Veri çok büyük')); });
+        req.on('end', () => resolve(d));
+        req.on('error', reject);
+      });
+      let b = {};
+      try { b = JSON.parse(raw || '{}'); } catch { throw E(400, 'Geçersiz JSON'); }
+      const sub = b.subscription;
+      if (!sub || !sub.endpoint || !sub.keys) throw E(400, 'Geçersiz abonelik');
+      const s = await settings();
+      let subs = [];
+      try { subs = JSON.parse(s.push_subs || '[]'); } catch { subs = []; }
+      if (!Array.isArray(subs)) subs = [];
+      subs = subs.filter(x => x && x.endpoint !== sub.endpoint);
+      subs.push(sub);
+      if (subs.length > 200) subs = subs.slice(-200);
+      await tx(async t => {
+        await t.run(`DELETE FROM ${SETTINGS} WHERE k='push_subs'`);
+        await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES('push_subs',$1)`, JSON.stringify(subs));
+      });
+      return send(res, 200, { ok: 1 });
+    }
+
     if (u.pathname === '/api/events' && req.method === 'GET') {
       res.writeHead(200, {
         'Content-Type': 'text/event-stream; charset=utf-8',
@@ -344,6 +437,12 @@ const server = http.createServer(async (req, res) => {
       });
       send(res, 200, { ok: 1 });
       notifyClients();
+      if (key === 'custom_news') {
+        try {
+          const nw = typeof b.value === 'string' ? JSON.parse(b.value) : b.value;
+          if (nw && nw.text) sendPushAll({ title: `📰 ${nw.tag || 'SON DAKİKA'} — KRD Ligi`, body: String(nw.text).slice(0, 140) });
+        } catch {}
+      }
       return;
     }
     if (u.pathname === '/api/predictions' && req.method === 'POST') {
@@ -401,7 +500,7 @@ const server = http.createServer(async (req, res) => {
 
 (async () => {
   try {
-    await init(); SECRET = await loadSecret();
+    await init(); SECRET = await loadSecret(); await initPush();
     if (await needsSetup()) { setupCode = crypto.randomBytes(5).toString('hex'); console.log(`\n>>> YÖNETİCİ KURULUM KODU (yalnızca bu oturum için): ${setupCode}\n>>> Sitenin /#/yonetici adresinde bu kodla Yusuf'un şifresini belirle.\n`); }
   } catch (e) { console.error('Veritabanı başlatılamadı:', e.message); process.exit(1); }
   server.listen(PORT, () => console.log(`KRD Ligi: http://localhost:${PORT}`));

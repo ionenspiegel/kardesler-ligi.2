@@ -1,5 +1,5 @@
-const CACHE = 'kardesler-ligi-v1';
-const ASSETS = ['/', '/manifest.json'];
+const CACHE = 'krd-ligi-v2';
+const ASSETS = ['/', '/manifest.json', '/icon-192.png'];
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -31,5 +31,36 @@ self.addEventListener('fetch', event => {
         return res;
       })
       .catch(() => caches.match(req).then(cached => cached || caches.match('/')))
+  );
+});
+
+self.addEventListener('push', event => {
+  let data = { title: 'KRD Ligi', body: 'Ligde yeni bir gelişme var!', url: '/' };
+  try {
+    if (event.data) data = { ...data, ...event.data.json() };
+  } catch (e) {
+    if (event.data) data.body = event.data.text();
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'KRD Ligi', {
+      body: data.body || '',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      vibrate: [180, 90, 180],
+      data: { url: data.url || '/' }
+    })
+  );
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const client of list) {
+        if ('focus' in client) return client.focus();
+      }
+      if (clients.openWindow) return clients.openWindow(targetUrl);
+    })
   );
 });
