@@ -244,24 +244,30 @@ async function api(req, res, u) {
   }
   if (kind === 'matches') {
     if (M === 'POST') {
+      const prevTbl = await standings();
+      const prevLeaderId = prevTbl.length ? prevTbl[0].id : null;
       const m = await matchData(b);
       const r = await run(`INSERT INTO ${MATCHES}(week,home_id,away_id,hs,aws,played,updated,note) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`, m.week, m.home_id, m.away_id, m.hs, m.aws, m.played, new Date().toISOString(), m.note);
       if (m.played) {
         const ht = await one(`SELECT name FROM ${TEAMS} WHERE id=$1`, m.home_id);
         const at = await one(`SELECT name FROM ${TEAMS} WHERE id=$1`, m.away_id);
         sendPushAll({ title: '⚽ Maç Sonucu — KRD Ligi', body: `${ht ? ht.name : 'Ev'} ${m.hs} - ${m.aws} ${at ? at.name : 'Dep'}` });
+        await checkMatchDrama(prevLeaderId, m);
       }
       return send(res, 200, { id: Number(r.rows[0].id) });
     }
     if (!okId(id)) throw E(404, 'Maç yok');
     const old = await one(`SELECT * FROM ${MATCHES} WHERE id=$1`, id); if (!old) throw E(404, 'Maç yok');
     if (M === 'PUT') {
+      const prevTbl = await standings();
+      const prevLeaderId = prevTbl.length ? prevTbl[0].id : null;
       const m = await matchData(b, old);
       await run(`UPDATE ${MATCHES} SET week=$1,home_id=$2,away_id=$3,hs=$4,aws=$5,played=$6,updated=$7,note=$8 WHERE id=$9`, m.week, m.home_id, m.away_id, m.hs, m.aws, m.played, new Date().toISOString(), m.note, id);
       if (m.played && (!old.played || old.hs !== m.hs || old.aws !== m.aws)) {
         const ht = await one(`SELECT name FROM ${TEAMS} WHERE id=$1`, m.home_id);
         const at = await one(`SELECT name FROM ${TEAMS} WHERE id=$1`, m.away_id);
         sendPushAll({ title: '⚽ Maç Sonucu — KRD Ligi', body: `${ht ? ht.name : 'Ev'} ${m.hs} - ${m.aws} ${at ? at.name : 'Dep'}` });
+        await checkMatchDrama(prevLeaderId, m);
       }
       return send(res, 200, { ok: 1 });
     }
@@ -361,6 +367,42 @@ async function sendPushAll(payload) {
     }
   } catch (e) {
     console.error('Push gonderim hatasi:', e.message);
+  }
+}
+
+
+async function checkMatchDrama(prevLeaderId, m) {
+  try {
+    if (!m || !m.played) return;
+    const tbl = await standings();
+    const teams = await q(`SELECT id, name FROM ${TEAMS}`);
+    const tMap = Object.fromEntries(teams.map(t => [t.id, t.name]));
+    const ht = tMap[m.home_id] || 'Ev Sahibi';
+    const at = tMap[m.away_id] || 'Deplasman';
+    const diff = Math.abs(m.hs - m.aws);
+
+    let alertText = '';
+    let alertTag = 'SON DAKİKA';
+
+    if (tbl.length && prevLeaderId && tbl[0].id !== prevLeaderId) {
+      alertTag = 'LİDER DEĞİŞTİ';
+      alertText = `🚨 LİDER DEĞİŞTİ! ${tbl[0].name} (${tbl[0].pts} P) zirveyi ele geçirdi!`;
+      sendPushAll({ title: '🚨 LİDER DEĞİŞTİ! — KRD Ligi', body: alertText });
+    } else if (diff >= 5) {
+      const winner = m.hs > m.aws ? ht : at;
+      alertTag = 'TARİHİ FARK';
+      alertText = `💥 TARİHİ FARK! ${winner}, rakibini ${m.hs}-${m.aws} mağlup etti!`;
+      sendPushAll({ title: '💥 TARİHİ FARK! — KRD Ligi', body: alertText });
+    }
+
+    if (alertText) {
+      await tx(async t => {
+        await t.run(`DELETE FROM ${SETTINGS} WHERE k='custom_news'`);
+        await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES('custom_news',$1)`, JSON.stringify({ tag: alertTag, text: alertText, updated: new Date().toISOString() }));
+      });
+    }
+  } catch (e) {
+    console.error('Drama kontrol hatasi:', e.message);
   }
 }
 
