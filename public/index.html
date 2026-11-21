@@ -520,6 +520,9 @@ input,select{background:#0b1226;border:1px solid var(--line);border-radius:10px;
   }
 </style>
 
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0b1120">
 </head><body><div id="goal">GOL!</div><div class="wrap" id="app"></div><div id="toast"></div>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -2996,6 +2999,45 @@ events.onmessage = async () => {
 
   // Tek hafif motor (1.1 sn)
   setInterval(syncCleanUI, 1100);
+})();
+</script>
+
+
+<script id="krdApkRefreshEnhancer">
+(function() {
+  function injectRefreshBtn() {
+    const nav = document.getElementById('krdTopNav');
+    if (!nav || document.getElementById('krdManualRefreshBtn')) return;
+    const btn = document.createElement('button');
+    btn.id = 'krdManualRefreshBtn';
+    btn.type = 'button';
+    btn.title = 'Verileri Yenile';
+    btn.style.cssText = 'padding:5px 9px;font-size:12px;background:rgba(255,255,255,0.06);border:1px solid var(--krd-border,rgba(148,163,184,0.2));color:var(--krd-text,#f1f5f9);cursor:pointer;';
+    btn.innerHTML = '<span id="krdConnDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;margin-right:5px;"></span>🔄';
+    btn.addEventListener('click', async () => {
+      btn.style.opacity = '0.5';
+      try {
+        if (typeof load === 'function') { await load(); if (typeof render === 'function') render(); }
+        else location.reload();
+        if (typeof toast === 'function') toast('Güncellendi');
+      } catch {
+        location.reload();
+      } finally {
+        btn.style.opacity = '1';
+      }
+    });
+    const rightGroup = document.getElementById('krdSoundBtn')?.parentNode || document.getElementById('krdThemeBtn');
+    if (rightGroup && rightGroup.parentNode === nav) {
+      rightGroup.insertBefore(btn, rightGroup.firstChild);
+    } else {
+      nav.appendChild(btn);
+    }
+  }
+  setInterval(() => {
+    injectRefreshBtn();
+    const dot = document.getElementById('krdConnDot');
+    if (dot) dot.style.background = navigator.onLine ? '#22c55e' : '#ef4444';
+  }, 1000);
 })();
 </script>
 

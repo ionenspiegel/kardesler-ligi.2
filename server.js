@@ -473,6 +473,12 @@ const server = http.createServer(async (req, res) => {
   if (req.url.startsWith('/sw.js')) res.setHeader('Service-Worker-Allowed', '/');
   try {
     const u = new URL(req.url, 'http://x');
+
+  if (req.method === 'GET' && u.pathname === '/.well-known/assetlinks.json') {
+    const raw = process.env.ASSETLINKS_JSON || (fs.existsSync(path.join(__dirname, 'public/.well-known/assetlinks.json')) ? fs.readFileSync(path.join(__dirname, 'public/.well-known/assetlinks.json'), 'utf8') : '[]');
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-cache' });
+    return res.end(raw);
+  }
     
     
     
