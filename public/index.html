@@ -986,62 +986,72 @@ async function updateAdminSlug(e){
 }
 
 
+
+window._krdLiveCache = null;
 window.getLiveMatches = function(){
   try{
-    const raw = (S && S.settings && S.settings.live_matches) ? S.settings.live_matches : '[]';
+    const raw = (S && S.settings && S.settings.live_matches !== undefined) ? S.settings.live_matches : window._krdLiveCache;
+    if(!raw) return Array.isArray(window._krdLiveCache) ? window._krdLiveCache : [];
     const arr = typeof raw === 'string' ? JSON.parse(raw) : raw;
-    return Array.isArray(arr) ? arr : [];
-  }catch{ return []; }
-}
+    if(Array.isArray(arr)){ window._krdLiveCache = arr; return arr; }
+    return [];
+  }catch{ return Array.isArray(window._krdLiveCache) ? window._krdLiveCache : []; }
+};
 window.pushLiveList = async function(list, msg){
   try{
-    const cur = (S && S.settings) ? S.settings : {};
-    await api('PUT', '/api/admin/settings', {
-      name: cur.name || 'KRD Ligi',
-      season: cur.season || '2026/2027',
-      win: Number(cur.win ?? 3),
-      draw: Number(cur.draw ?? 1),
-      loss: Number(cur.loss ?? 0),
-      week: Number(cur.week ?? 1),
-      penalties: cur.penalties || '[]',
-      live_matches: JSON.stringify(list)
-    });
+    window._krdLiveCache = list;
     if(S && S.settings) S.settings.live_matches = JSON.stringify(list);
-    await load();
-    if(S && S.settings) S.settings.live_matches = JSON.stringify(list);
+    render();
+    if(typeof renderPublicLiveBar === 'function') renderPublicLiveBar();
+    const res = await api('POST', '/api/admin/live-matches', { live: list });
+    const finalList = (res && Array.isArray(res.live)) ? res.live : list;
+    window._krdLiveCache = finalList;
+    if(S && S.settings) S.settings.live_matches = JSON.stringify(finalList);
     render();
     if(typeof renderPublicLiveBar === 'function') renderPublicLiveBar();
     if(msg && typeof toast === 'function') toast(msg);
   }catch(err){
     alert('Canlı Maç Hatası: ' + (err && err.message ? err.message : err));
   }
-}
+};
 window.addMatchToLive = async function(mid){
   mid = Number(mid);
   if(!mid) return alert('Lütfen listeden bir maç seç.');
-  const list = getLiveMatches();
-  if(list.some(x => Number(x.id) === mid)) return toast('Bu maç zaten canlıda');
+  const list = [...window.getLiveMatches()];
+  if(list.some(x => Number(x.id) === mid)) return typeof toast === 'function' ? toast('Bu maç zaten canlıda') : null;
   if(list.length >= 4) return alert('Aynı anda en fazla 4 maç canlı olabilir!');
   list.push({ id: mid, hs: 0, aws: 0 });
-  await pushLiveList(list, 'Maç canlı yayına alındı!');
-}
-window.updateLiveMatch = async function(mid, patch){
+  await window.pushLiveList(list, 'Maç canlı yayına alındı!');
+};
+window.updateLiveMatch = async function(mid, dHs, dAws){
   mid = Number(mid);
-  const list = getLiveMatches().map(x => Number(x.id) === mid ? { ...x, ...patch } : x);
-  await pushLiveList(list, 'Canlı skor güncellendi');
-}
+  const list = window.getLiveMatches().map(x => {
+    if(Number(x.id) !== mid) return x;
+    return {
+      id: mid,
+      hs: Math.max(0, (Number(x.hs) || 0) + Number(dHs || 0)),
+      aws: Math.max(0, (Number(x.aws) || 0) + Number(dAws || 0))
+    };
+  });
+  await window.pushLiveList(list, 'Canlı skor güncellendi');
+};
 window.removeLiveMatch = async function(mid, saveToTable){
   mid = Number(mid);
-  const list = getLiveMatches();
+  const list = window.getLiveMatches();
   const item = list.find(x => Number(x.id) === mid);
   const rest = list.filter(x => Number(x.id) !== mid);
-  if(saveToTable && item){
-    await api('PUT', '/api/admin/matches/' + mid, { hs: Number(item.hs)||0, aws: Number(item.aws)||0, played: 1 });
+  try{
+    if(saveToTable && item){
+      await api('PUT', '/api/admin/matches/' + mid, { hs: Number(item.hs)||0, aws: Number(item.aws)||0, played: 1 });
+      await load();
+    }
+    await window.pushLiveList(rest, saveToTable ? 'Maç bitirildi ve tabloya işlendi!' : 'Canlı listeden çıkarıldı');
+  }catch(err){
+    alert('İşlem Hatası: ' + (err && err.message ? err.message : err));
   }
-  await pushLiveList(rest, saveToTable ? 'Maç bitirildi ve tabloya işlendi!' : 'Canlı listeden çıkarıldı');
-}
+};
 function adminLiveTab(){
-  const live = getLiveMatches();
+  const live = window.getLiveMatches();
   const tMap = Object.fromEntries((S.teams||[]).map(t => [t.id, t.name]));
   const unplayed = (S.matches||[]).filter(m => !m.played && !live.some(l => Number(l.id) === Number(m.id)));
   return `<div class="card" style="display:grid;gap:12px">
@@ -1058,14 +1068,14 @@ function adminLiveTab(){
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:space-between">
           <div style="display:flex;gap:4px">
-            <button type="button" onclick="updateLiveMatch(${l.id},{hs:(Number(l.hs)||0)+1})">+1 Ev</button>
-            <button type="button" onclick="updateLiveMatch(${l.id},{hs:Math.max(0,(Number(l.hs)||0)-1)})">-1 Ev</button>
-            <button type="button" onclick="updateLiveMatch(${l.id},{aws:(Number(l.aws)||0)+1})">+1 Dep</button>
-            <button type="button" onclick="updateLiveMatch(${l.id},{aws:Math.max(0,(Number(l.aws)||0)-1)})">-1 Dep</button>
+            <button type="button" onclick="window.updateLiveMatch(${Number(l.id)},1,0)">+1 Ev</button>
+            <button type="button" onclick="window.updateLiveMatch(${Number(l.id)},-1,0)">-1 Ev</button>
+            <button type="button" onclick="window.updateLiveMatch(${Number(l.id)},0,1)">+1 Dep</button>
+            <button type="button" onclick="window.updateLiveMatch(${Number(l.id)},0,-1)">-1 Dep</button>
           </div>
           <div style="display:flex;gap:4px">
-            <button type="button" class="pri" onclick="removeLiveMatch(${l.id},true)">✅ Bitir & Tabloya İşle</button>
-            <button type="button" class="dng" onclick="removeLiveMatch(${l.id},false)">✕ İptal</button>
+            <button type="button" class="pri" onclick="window.removeLiveMatch(${Number(l.id)},true)">✅ Bitir & Tabloya İşle</button>
+            <button type="button" class="dng" onclick="window.removeLiveMatch(${Number(l.id)},false)">✕ İptal</button>
           </div>
         </div>
       </div>`;
@@ -1074,11 +1084,12 @@ function adminLiveTab(){
       <div style="font-size:12px;font-weight:700;margin-bottom:6px">Fikstürden Canlıya Al:</div>
       ${unplayed.length ? `<div class="row">
         <select id="pickLiveMatch">${unplayed.map(m => `<option value="${m.id}">H${m.week}: ${esc(tMap[m.home_id]||'Ev')} vs ${esc(tMap[m.away_id]||'Dep')}</option>`).join('')}</select>
-        <button type="button" class="pri" onclick="addMatchToLive(document.getElementById('pickLiveMatch').value)">🔴 Canlıya Al</button>
+        <button type="button" class="pri" onclick="window.addMatchToLive(document.getElementById('pickLiveMatch').value)">🔴 Canlıya Al</button>
       </div>` : '<div class="mut" style="font-size:12px">Canlıya alınabilecek oynanmamış maç kalmadı.</div>'}
     </div>
   </div>`;
 }
+
 function adminSecurityTab(){
   if(!adminUsersData) loadAdminUsersData();
   const d=adminUsersData||{primary:'Yönetici',admins:[],logs:[],adminSlug:(S.settings&&S.settings.admin_slug)||'krd-kontrol'};
@@ -1995,8 +2006,7 @@ events.onmessage = async () => {
     let bar = document.getElementById('krdPublicLiveBar');
     if (onAdmin) { if (bar) bar.remove(); return; }
 
-    let live = [];
-    try { live = JSON.parse(S.settings.live_matches || '[]') || []; } catch { live = []; }
+    let live = typeof window.getLiveMatches === 'function' ? window.getLiveMatches() : [];
     live = live.slice(0, 4);
 
     if (!live.length) { if (bar) bar.remove(); return; }
