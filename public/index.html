@@ -411,6 +411,121 @@ input,select{background:#0b1226;border:1px solid var(--line);border-radius:10px;
   }
 </style>
 
+
+<style id="krdBroadcastHubCss">
+  /* 1. Puan Tablosu Sira Seritleri */
+  table tbody tr.krd-rank-1 {
+    background: linear-gradient(90deg, rgba(250, 204, 21, 0.16), transparent 65%) !important;
+    box-shadow: inset 4px 0 0 #facc15;
+  }
+  table tbody tr.krd-rank-top {
+    box-shadow: inset 4px 0 0 #38bdf8;
+  }
+  table tbody tr.krd-rank-last {
+    background: linear-gradient(90deg, rgba(239, 68, 68, 0.12), transparent 65%) !important;
+    box-shadow: inset 4px 0 0 #ef4444;
+  }
+  .krd-max-pts {
+    display: inline-block;
+    margin-left: 5px;
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 5px;
+    background: rgba(148, 163, 184, 0.14);
+    color: #94a3b8;
+    font-weight: 700;
+  }
+
+  /* 2. Sezonun Enleri Vitrini */
+  #krdAwardsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin: 10px 0 12px 0;
+  }
+  @media (min-width: 640px) {
+    #krdAwardsGrid { grid-template-columns: repeat(4, 1fr); }
+  }
+  .krd-award-card {
+    background: var(--krd-card, rgba(15, 23, 42, 0.86));
+    border: 1px solid var(--krd-border, rgba(148, 163, 184, 0.18));
+    border-radius: 12px;
+    padding: 9px 10px;
+    display: grid;
+    gap: 3px;
+  }
+  .krd-award-card .t {
+    font-size: 10.5px;
+    font-weight: 800;
+    color: var(--krd-accent, #38bdf8);
+    text-transform: uppercase;
+  }
+  .krd-award-card .n {
+    font-size: 13.5px;
+    font-weight: 900;
+    color: #fff;
+  }
+  .krd-award-card .s {
+    font-size: 11px;
+    opacity: 0.78;
+  }
+
+  /* 3. Siradaki Mac Spotlight & Paylasim Arac Cubugu */
+  #krdSpotlightCard {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.14), rgba(15, 23, 42, 0.92));
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 14px;
+    padding: 11px 14px;
+    margin: 10px 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  #krdShareTools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 8px 0;
+  }
+  #krdShareTools button {
+    font-size: 11.5px !important;
+    padding: 5px 10px !important;
+    min-height: 30px !important;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--krd-border, rgba(148, 163, 184, 0.22));
+    color: var(--krd-text, #f1f5f9);
+    cursor: pointer;
+  }
+
+  /* 4. Hafta Secici Haplar */
+  #krdWeekFilterBar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin: 6px 0 10px 0;
+  }
+
+  /* 5. Canli Gol Parlama Animasyonu */
+  @keyframes krdGoalFlash {
+    0% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.85); transform: scale(1.02); }
+    50% { box-shadow: 0 0 24px 6px rgba(239, 68, 68, 0.75); }
+    100% { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35); transform: scale(1); }
+  }
+  .krd-goal-flash {
+    animation: krdGoalFlash 1.1s ease-out 2;
+  }
+  #krdSoundBtn {
+    padding: 5px 9px;
+    font-size: 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--krd-border, rgba(148, 163, 184, 0.2));
+    color: var(--krd-text, #f1f5f9);
+    cursor: pointer;
+  }
+</style>
+
 </head><body><div id="goal">GOL!</div><div class="wrap" id="app"></div><div id="toast"></div>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -2640,6 +2755,290 @@ events.onmessage = async () => {
   }
 
   setInterval(renderLeagueEnhancements, 950);
+})();
+</script>
+
+
+<script id="krdBroadcastHubJs">
+(function() {
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  let soundOn = localStorage.getItem('krd_sound') !== '0';
+  let lastLiveSnapshot = '';
+  let activeWeekFilter = '';
+
+  function playGoalChime() {
+    if (!soundOn) return;
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const notes = [523.25, 659.25, 783.99, 1046.5];
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.08, ctx.currentTime + i * 0.11);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.11 + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + i * 0.11);
+        osc.stop(ctx.currentTime + i * 0.11 + 0.36);
+      });
+    } catch {}
+  }
+
+  function ensureSoundToggle() {
+    const nav = document.getElementById('krdTopNav');
+    if (!nav || document.getElementById('krdSoundBtn')) return;
+    const themeBtn = document.getElementById('krdThemeBtn');
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;align-items:center;gap:6px;';
+    const sBtn = document.createElement('button');
+    sBtn.id = 'krdSoundBtn';
+    sBtn.type = 'button';
+    sBtn.title = 'Canlı Gol Sesini Aç/Kapat';
+    sBtn.textContent = soundOn ? '🔊' : '🔇';
+    sBtn.addEventListener('click', () => {
+      soundOn = !soundOn;
+      localStorage.setItem('krd_sound', soundOn ? '1' : '0');
+      sBtn.textContent = soundOn ? '🔊' : '🔇';
+      if (soundOn) playGoalChime();
+    });
+    if (themeBtn && themeBtn.parentNode === nav) {
+      nav.insertBefore(wrap, themeBtn);
+      wrap.appendChild(sBtn);
+      wrap.appendChild(themeBtn);
+    }
+  }
+
+  function isAdminView() {
+    if (typeof S === 'undefined') return true;
+    const slug = (S.settings && S.settings.admin_slug) ? S.settings.admin_slug : 'krd-kontrol';
+    return location.hash.startsWith('#/yonetici') || location.hash.startsWith('#/' + slug);
+  }
+
+  function computeTeamStats() {
+    const teams = (S && Array.isArray(S.teams)) ? S.teams : [];
+    const matches = (S && Array.isArray(S.matches)) ? S.matches : [];
+    const winPts = Number((S && S.settings && S.settings.win) ?? 3);
+    const map = {};
+    teams.forEach(t => {
+      map[t.id] = { id: t.id, name: t.name, p: 0, gf: 0, ga: 0, pts: 0, rem: 0, streak: 0 };
+    });
+    matches.forEach(m => {
+      if (!map[m.home_id] || !map[m.away_id]) return;
+      if (!m.played) {
+        map[m.home_id].rem++;
+        map[m.away_id].rem++;
+        return;
+      }
+      const hs = Number(m.hs || 0), aws = Number(m.aws || 0);
+      map[m.home_id].p++; map[m.away_id].p++;
+      map[m.home_id].gf += hs; map[m.home_id].ga += aws;
+      map[m.away_id].gf += aws; map[m.away_id].ga += hs;
+      if (hs > aws) {
+        map[m.home_id].pts += winPts;
+        map[m.home_id].streak++;
+        map[m.away_id].streak = 0;
+      } else if (aws > hs) {
+        map[m.away_id].pts += winPts;
+        map[m.away_id].streak++;
+        map[m.home_id].streak = 0;
+      } else {
+        map[m.home_id].pts += 1;
+        map[m.away_id].pts += 1;
+        map[m.home_id].streak++;
+        map[m.away_id].streak++;
+      }
+    });
+    return { map, winPts };
+  }
+
+  function copyShareText(type) {
+    if (typeof S === 'undefined') return;
+    const tMap = Object.fromEntries((S.teams || []).map(t => [t.id, t.name]));
+    const leagueName = (S.settings && S.settings.name) || 'KRD LİGİ';
+    const season = (S.settings && S.settings.season) || '';
+    let text = '';
+
+    if (type === 'table') {
+      const tbl = document.querySelector('#app table');
+      const rows = tbl ? Array.from(tbl.querySelectorAll('tbody tr')) : [];
+      text = `🏆 ${leagueName} ${season} — PUAN DURUMU\n\n`;
+      rows.forEach((tr, idx) => {
+        const cols = Array.from(tr.children).map(td => td.innerText.replace(/\s+/g, ' ').trim());
+        const medal = idx === 0 ? '👑' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
+        text += `${medal} ${cols[1] || cols[0]} — ${cols[cols.length - 1] || ''} P\n`;
+      });
+    } else {
+      const played = (S.matches || []).filter(m => m.played);
+      const lastWeek = played.length ? Math.max(...played.map(m => Number(m.week || 1))) : 1;
+      const wMatches = played.filter(m => Number(m.week || 1) === lastWeek);
+      text = `⚽ ${leagueName} — ${lastWeek}. HAFTA SONUÇLARI\n\n`;
+      wMatches.forEach(m => {
+        text += `▪️ ${tMap[m.home_id] || 'Ev'} ${m.hs} - ${m.aws} ${tMap[m.away_id] || 'Dep'}\n`;
+      });
+    }
+    text += `\n🔗 Canlı Takip: ${location.origin}`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => {
+        if (typeof toast === 'function') toast('Yayın metni panoya kopyalandı!');
+      }).catch(() => alert(text));
+    } else {
+      alert(text);
+    }
+  }
+
+  function runBroadcastEnhancements() {
+    ensureSoundToggle();
+    if (typeof S === 'undefined' || !Array.isArray(S.teams) || !S.teams.length) return;
+
+    // Canli gol sesi ve parlama kontrolu
+    const live = typeof window.getLiveMatches === 'function' ? window.getLiveMatches() : [];
+    const snap = JSON.stringify(live.map(x => [x.id, x.hs, x.aws]));
+    if (lastLiveSnapshot && snap !== lastLiveSnapshot && live.length) {
+      playGoalChime();
+      const bar = document.getElementById('krdPublicLiveBar');
+      if (bar) {
+        bar.classList.remove('krd-goal-flash');
+        void bar.offsetWidth;
+        bar.classList.add('krd-goal-flash');
+      }
+    }
+    lastLiveSnapshot = snap;
+
+    if (isAdminView()) return;
+    const app = document.getElementById('app');
+    if (!app) return;
+
+    const tbl = app.querySelector('table');
+    const tMap = Object.fromEntries(S.teams.map(t => [t.id, t.name]));
+    const { map: statsMap, winPts } = computeTeamStats();
+
+    // 1. Puan Tablosu Sira Seritleri + Max Puan Rozeti
+    if (tbl) {
+      const trs = Array.from(tbl.querySelectorAll('tbody tr'));
+      trs.forEach((tr, idx) => {
+        tr.classList.remove('krd-rank-1', 'krd-rank-top', 'krd-rank-last');
+        if (idx === 0) tr.classList.add('krd-rank-1');
+        else if (idx <= 2) tr.classList.add('krd-rank-top');
+        else if (idx === trs.length - 1 && trs.length > 3) tr.classList.add('krd-rank-last');
+
+        const rowTxt = (tr.textContent || '').toLowerCase();
+        const tm = S.teams.find(t => rowTxt.includes((t.name || '').toLowerCase()));
+        if (tm && statsMap[tm.id] && !tr.querySelector('.krd-max-pts')) {
+          const st = statsMap[tm.id];
+          const maxPossible = st.pts + st.rem * winPts;
+          const ptsCell = tr.lastElementChild;
+          if (ptsCell) {
+            const b = document.createElement('span');
+            b.className = 'krd-max-pts';
+            b.title = 'Kalan maçları kazanırsa ulaşabileceği maksimum puan';
+            b.textContent = `Max:${maxPossible}`;
+            ptsCell.appendChild(b);
+          }
+        }
+      });
+
+      // 2. Tek Tikla Paylasim Butonlari
+      if (!document.getElementById('krdShareTools')) {
+        const tools = document.createElement('div');
+        tools.id = 'krdShareTools';
+        tools.innerHTML = `
+          <button type="button" id="krdCopyTableBtn">📋 Puan Durumunu Kopyala</button>
+          <button type="button" id="krdCopyWeekBtn">📢 Son Hafta Sonuçlarını Kopyala</button>
+        `;
+        tbl.parentNode.insertBefore(tools, tbl.nextSibling);
+        document.getElementById('krdCopyTableBtn').addEventListener('click', () => copyShareText('table'));
+        document.getElementById('krdCopyWeekBtn').addEventListener('click', () => copyShareText('week'));
+      }
+
+      // 3. Sezonun Enleri Vitrini
+      const playedMatches = (S.matches || []).filter(m => m.played);
+      if (!document.getElementById('krdAwardsGrid') && playedMatches.length) {
+        const allStats = Object.values(statsMap).filter(x => x.p > 0);
+        const bestAtk = [...allStats].sort((a, b) => b.gf - a.gf)[0];
+        const bestDef = [...allStats].sort((a, b) => a.ga - b.ga)[0];
+        const bestStreak = [...allStats].sort((a, b) => b.streak - a.streak)[0];
+        const biggestWin = [...playedMatches].sort((a, b) => Math.abs(Number(b.hs) - Number(b.aws)) - Math.abs(Number(a.hs) - Number(a.aws)))[0];
+
+        const grid = document.createElement('div');
+        grid.id = 'krdAwardsGrid';
+        grid.innerHTML = `
+          <div class="krd-award-card">
+            <div class="t">⚽ En Golcü Takım</div>
+            <div class="n">${esc(bestAtk ? bestAtk.name : '-')}</div>
+            <div class="s">${bestAtk ? bestAtk.gf + ' Gol Attı' : ''}</div>
+          </div>
+          <div class="krd-award-card">
+            <div class="t">🛡️ En İyi Savunma</div>
+            <div class="n">${esc(bestDef ? bestDef.name : '-')}</div>
+            <div class="s">${bestDef ? bestDef.ga + ' Gol Yedi' : ''}</div>
+          </div>
+          <div class="krd-award-card">
+            <div class="t">🔥 Yenilmezlik Serisi</div>
+            <div class="n">${esc(bestStreak ? bestStreak.name : '-')}</div>
+            <div class="s">${bestStreak ? bestStreak.streak + ' Maçtır Yenilmiyor' : ''}</div>
+          </div>
+          <div class="krd-award-card">
+            <div class="t">💥 En Farklı Skor</div>
+            <div class="n">${biggestWin ? esc(tMap[biggestWin.home_id]) + ' ' + biggestWin.hs + '-' + biggestWin.aws + ' ' + esc(tMap[biggestWin.away_id]) : '-'}</div>
+            <div class="s">${biggestWin ? biggestWin.week + '. Hafta' : ''}</div>
+          </div>
+        `;
+        const anchor = document.getElementById('krdH2HBox') || document.getElementById('krdShareTools') || tbl;
+        anchor.parentNode.insertBefore(grid, anchor.nextSibling);
+      }
+    }
+
+    // 4. Siradaki Kritik Mac Spotlight Karti
+    const nextMatch = (S.matches || []).find(m => !m.played);
+    if (nextMatch && !document.getElementById('krdSpotlightCard')) {
+      const fBar = document.getElementById('krdFilterBar') || app.querySelector('.grid');
+      if (fBar && fBar.parentNode) {
+        const spot = document.createElement('div');
+        spot.id = 'krdSpotlightCard';
+        spot.innerHTML = `
+          <div>
+            <div style="font-size:10.5px;font-weight:800;color:#38bdf8;text-transform:uppercase;">⚡ Sıradaki Maç • ${nextMatch.week}. Hafta</div>
+            <div style="font-size:14.5px;font-weight:900;margin-top:2px;">${esc(tMap[nextMatch.home_id] || 'Ev')} <span style="color:#facc15;margin:0 6px;">VS</span> ${esc(tMap[nextMatch.away_id] || 'Dep')}</div>
+          </div>
+          <span style="font-size:11px;padding:4px 9px;border-radius:8px;background:rgba(56,189,248,0.16);color:#38bdf8;font-weight:700;">Oynanacak</span>
+        `;
+        fBar.parentNode.insertBefore(spot, fBar);
+      }
+    }
+
+    // 5. Hafta Bazli Fikstur Filtresi
+    const weeks = [...new Set((S.matches || []).map(m => Number(m.week || 1)))].sort((a, b) => a - b);
+    const matchGrid = app.querySelector('.grid');
+    if (matchGrid && weeks.length > 1) {
+      let wBar = document.getElementById('krdWeekFilterBar');
+      if (!wBar) {
+        wBar = document.createElement('div');
+        wBar.id = 'krdWeekFilterBar';
+        matchGrid.parentNode.insertBefore(wBar, matchGrid);
+      }
+      if (wBar.children.length !== weeks.length + 1) {
+        wBar.innerHTML = `<button type="button" class="krd-chip ${!activeWeekFilter ? 'active' : ''}" data-wk="">Tüm Haftalar</button>` +
+          weeks.map(w => `<button type="button" class="krd-chip ${activeWeekFilter === String(w) ? 'active' : ''}" data-wk="${w}">H${w}</button>`).join('');
+        wBar.querySelectorAll('.krd-chip').forEach(btn => {
+          btn.addEventListener('click', () => {
+            activeWeekFilter = btn.getAttribute('data-wk') || '';
+            wBar.querySelectorAll('.krd-chip').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            Array.from(matchGrid.children).forEach(card => {
+              if (!activeWeekFilter) { card.style.display = ''; return; }
+              const txt = card.textContent || '';
+              const hit = txt.includes(`Hafta ${activeWeekFilter}`) || txt.includes(`H${activeWeekFilter}`) || txt.includes(`${activeWeekFilter}. Hafta`);
+              card.style.display = hit ? '' : 'none';
+            });
+          });
+        });
+      }
+    }
+  }
+
+  setInterval(runBroadcastEnhancements, 950);
 })();
 </script>
 
