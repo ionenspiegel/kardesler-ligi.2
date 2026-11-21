@@ -985,6 +985,7 @@ async function updateAdminSlug(e){
   return false;
 }
 
+
 function getLiveMatches(){
   try{
     const raw = (S && S.settings && S.settings.live_matches) ? S.settings.live_matches : '[]';
@@ -994,28 +995,22 @@ function getLiveMatches(){
 }
 async function pushLiveList(list, msg){
   try{
-    const r = await fetch('/api/admin/live-matches', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-kl': '1' },
-      body: JSON.stringify({ live: list })
-    });
-    const d = await r.json();
-    if(!r.ok) throw new Error(d.error || 'Sunucu hatası: ' + r.status);
-    if(S && S.settings) S.settings.live_matches = JSON.stringify(d.live || list);
-    if(typeof load === 'function') await load();
+    await api('PUT', '/api/admin/settings', { live_matches: JSON.stringify(list) });
+    if(S && S.settings) S.settings.live_matches = JSON.stringify(list);
+    await load();
     render();
     if(msg && typeof toast === 'function') toast(msg);
   }catch(err){
-    alert('Canlı Maç Hatası: ' + err.message);
+    alert('Canlı Maç Hatası: ' + (err && err.message ? err.message : err));
   }
 }
 async function addMatchToLive(mid){
   mid = Number(mid);
   if(!mid) return alert('Lütfen listeden bir maç seç.');
   const list = getLiveMatches();
-  if(list.some(x => Number(x.id) === mid)) return typeof toast === 'function' ? toast('Bu maç zaten canlıda') : alert('Bu maç zaten canlıda');
+  if(list.some(x => Number(x.id) === mid)) return toast('Bu maç zaten canlıda');
   if(list.length >= 4) return alert('Aynı anda en fazla 4 maç canlı olabilir!');
-  list.push({ id: mid, hs: 0, aws: 0, min: "1'" });
+  list.push({ id: mid, hs: 0, aws: 0 });
   await pushLiveList(list, 'Maç canlı yayına alındı!');
 }
 async function updateLiveMatch(mid, patch){
@@ -1039,15 +1034,15 @@ function adminLiveTab(){
   const unplayed = (S.matches||[]).filter(m => !m.played && !live.some(l => Number(l.id) === Number(m.id)));
   return `<div class="card" style="display:grid;gap:12px">
     <div style="display:flex;justify-content:space-between;align-items:center">
-      <b>🔴 Canlı Maç Kontrolü (Maksimum 4 Maç)</b>
+      <b>🔴 Canlı Maç Kontrolü (1 - 4 Maç)</b>
       <span class="mut" style="font-size:12px">Aktif: <b>${live.length} / 4</b></span>
     </div>
     ${live.length ? live.map(l => {
       const m = (S.matches||[]).find(x => Number(x.id) === Number(l.id)) || {};
       return `<div style="padding:10px;border-radius:10px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35);display:grid;gap:8px">
-        <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px">
-          <span><b>${esc(tMap[m.home_id]||'Ev')}</b> <b style="font-size:16px;color:#f87171;margin:0 6px">${l.hs} - ${l.aws}</b> <b>${esc(tMap[m.away_id]||'Dep')}</b></span>
-          <input value="${esc(l.min||"1'")}" onchange="updateLiveMatch(${l.id},{min:this.value})" style="width:54px;text-align:center;padding:3px" title="Dakika">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:13.5px">
+          <span><b>${esc(tMap[m.home_id]||'Ev')}</b> <b style="font-size:17px;color:#f87171;margin:0 8px">${Number(l.hs)||0} - ${Number(l.aws)||0}</b> <b>${esc(tMap[m.away_id]||'Dep')}</b></span>
+          <span style="font-size:11px;font-weight:800;color:#fca5a5;">🔴 CANLI</span>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:space-between">
           <div style="display:flex;gap:4px">
@@ -2007,8 +2002,7 @@ events.onmessage = async () => {
       const m = (S.matches || []).find(x => x.id === l.id) || {};
       return `<div style="background:linear-gradient(135deg,rgba(127,29,29,0.55),rgba(15,23,42,0.9));border:1px solid rgba(248,113,113,0.45);border-radius:12px;padding:10px 12px;color:#fff;box-shadow:0 6px 20px rgba(0,0,0,0.35);">
         <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;font-weight:800;color:#fca5a5;margin-bottom:5px;">
-          <span>🔴 CANLI MAÇ</span>
-          <span>${esc(l.min || "1'")}</span>
+          <span>🔴 CANLI</span><span>SKOR</span>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;font-size:13.5px;font-weight:800;">
           <span>${esc(tMap[m.home_id] || 'Ev')}</span>
@@ -2020,6 +2014,30 @@ events.onmessage = async () => {
   }
 
   setInterval(renderPublicLiveBar, 1200);
+})();
+</script>
+
+
+<script id="krdPushAutoRecover">
+(function(){
+  const origSubscribe = window.PushManager && PushManager.prototype && PushManager.prototype.subscribe;
+  if (!origSubscribe) return;
+  PushManager.prototype.subscribe = async function(opts) {
+    try {
+      return await origSubscribe.call(this, opts);
+    } catch (err) {
+      if (String(err && err.message || err).toLowerCase().includes('push service error')) {
+        try {
+          const oldSub = await this.getSubscription();
+          if (oldSub) await oldSub.unsubscribe();
+          return await origSubscribe.call(this, opts);
+        } catch (retryErr) {
+          throw new Error('Telefonun Google Play Hizmetleri / Bildirim servisi engelliyor. Chrome izinlerinden bildirimleri sıfırlayıp güç tasarrufunu kapatın.');
+        }
+      }
+      throw err;
+    }
+  };
 })();
 </script>
 
