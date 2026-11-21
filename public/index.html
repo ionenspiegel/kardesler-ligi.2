@@ -986,14 +986,14 @@ async function updateAdminSlug(e){
 }
 
 
-function getLiveMatches(){
+window.getLiveMatches = function(){
   try{
     const raw = (S && S.settings && S.settings.live_matches) ? S.settings.live_matches : '[]';
     const arr = typeof raw === 'string' ? JSON.parse(raw) : raw;
     return Array.isArray(arr) ? arr : [];
   }catch{ return []; }
 }
-async function pushLiveList(list, msg){
+window.pushLiveList = async function(list, msg){
   try{
     const cur = (S && S.settings) ? S.settings : {};
     await api('PUT', '/api/admin/settings', {
@@ -1016,7 +1016,7 @@ async function pushLiveList(list, msg){
     alert('Canlı Maç Hatası: ' + (err && err.message ? err.message : err));
   }
 }
-async function addMatchToLive(mid){
+window.addMatchToLive = async function(mid){
   mid = Number(mid);
   if(!mid) return alert('Lütfen listeden bir maç seç.');
   const list = getLiveMatches();
@@ -1025,12 +1025,12 @@ async function addMatchToLive(mid){
   list.push({ id: mid, hs: 0, aws: 0 });
   await pushLiveList(list, 'Maç canlı yayına alındı!');
 }
-async function updateLiveMatch(mid, patch){
+window.updateLiveMatch = async function(mid, patch){
   mid = Number(mid);
   const list = getLiveMatches().map(x => Number(x.id) === mid ? { ...x, ...patch } : x);
   await pushLiveList(list, 'Canlı skor güncellendi');
 }
-async function removeLiveMatch(mid, saveToTable){
+window.removeLiveMatch = async function(mid, saveToTable){
   mid = Number(mid);
   const list = getLiveMatches();
   const item = list.find(x => Number(x.id) === mid);
