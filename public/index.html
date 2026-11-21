@@ -1,5 +1,31 @@
 <!doctype html>
-<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="tr"><head>
+<script id="krdStateBridgeJs">
+(function() {
+  window._krdLiveS = window._krdLiveS || null;
+  const origFetch = window.fetch;
+  window.fetch = async function(...args) {
+    const res = await origFetch.apply(this, args);
+    try {
+      const clone = res.clone();
+      const ct = clone.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        clone.json().then(data => {
+          if (data && Array.isArray(data.teams) && Array.isArray(data.matches)) {
+            window._krdLiveS = data;
+          }
+        }).catch(() => {});
+      }
+    } catch {}
+    return res;
+  };
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      regs.forEach(r => r.update());
+    }).catch(() => {});
+  }
+})();
+</script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>__OG_TITLE__</title>
 <meta name="description" content="__OG_DESC__">
 <meta name="theme-color" content="#0f7a4f">
@@ -3500,7 +3526,7 @@ events.onmessage = async () => {
 (function(){
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   window._krdPro5={badges:{},cup:{}};
-  const isAdm=()=>{if(typeof S==='undefined')return false;const sl=(S.settings&&S.settings.admin_slug)||'krd-kontrol';return location.hash.startsWith('#/yonetici')||location.hash.startsWith('#/'+sl);};
+  const isAdm=()=>{if(!(typeof S !== 'undefined' ? S : window._krdLiveS))return false;const sl=(((typeof S !== 'undefined' ? S : window._krdLiveS)?.settings)&&((typeof S !== 'undefined' ? S : window._krdLiveS)?.settings).admin_slug)||'krd-kontrol';return location.hash.startsWith('#/yonetici')||location.hash.startsWith('#/'+sl);};
   async function syncPro5(){try{const r=await fetch('/api/krd-pro5-data?_='+Date.now());const d=await r.json();if(d&&d.ok)window._krdPro5={badges:d.badges||{},cup:d.cup||{}};}catch{}}
   function badgeHtml(tid,name){
     const b=(window._krdPro5.badges||{})[String(tid)];
@@ -3509,20 +3535,20 @@ events.onmessage = async () => {
     return '<span class="krd-club-crest" style="background:'+esc(bg)+';color:#fff;">'+esc(code)+'</span>';
   }
   function getClubStats(){
-    const teams=(S&&S.teams)||[],matches=(S&&S.matches)||[],wP=Number((S&&S.settings&&S.settings.win)??3),dP=Number((S&&S.settings&&S.settings.draw)??1);
+    const teams=(S&&((typeof S !== 'undefined' ? S : window._krdLiveS)?.teams))||[],matches=(S&&((typeof S !== 'undefined' ? S : window._krdLiveS)?.matches))||[],wP=Number((S&&((typeof S !== 'undefined' ? S : window._krdLiveS)?.settings)&&((typeof S !== 'undefined' ? S : window._krdLiveS)?.settings).win)??3),dP=Number((S&&((typeof S !== 'undefined' ? S : window._krdLiveS)?.settings)&&((typeof S !== 'undefined' ? S : window._krdLiveS)?.settings).draw)??1);
     const map={};teams.forEach(t=>map[t.id]={id:t.id,name:t.name,o:0,ag:0,yg:0,av:0,p:0});
     matches.filter(m=>m.played).forEach(x=>{if(!map[x.home_id]||!map[x.away_id])return;const hs=+x.hs||0,aw=+x.aws||0;map[x.home_id].o++;map[x.away_id].o++;map[x.home_id].ag+=hs;map[x.home_id].yg+=aw;map[x.away_id].ag+=aw;map[x.away_id].yg+=hs;map[x.home_id].av+=hs-aw;map[x.away_id].av+=aw-hs;if(hs>aw)map[x.home_id].p+=wP;else if(aw>hs)map[x.away_id].p+=wP;else{map[x.home_id].p+=dP;map[x.away_id].p+=dP;}});
     return Object.values(map).sort((a,b)=>(b.p-a.p)||(b.av-a.av)||(b.ag-a.ag));
   }
   window.krdDrawSingleMatchPoster=function(mid){
-    const m=(S.matches||[]).find(x=>Number(x.id)===Number(mid));if(!m)return;
-    const tMap=Object.fromEntries((S.teams||[]).map(t=>[t.id,t.name]));
+    const m=(((typeof S !== 'undefined' ? S : window._krdLiveS)?.matches)||[]).find(x=>Number(x.id)===Number(mid));if(!m)return;
+    const tMap=Object.fromEntries((((typeof S !== 'undefined' ? S : window._krdLiveS)?.teams)||[]).map(t=>[t.id,t.name]));
     const hName=tMap[m.home_id]||'Ev Sahibi',aName=tMap[m.away_id]||'Deplasman';
     const bH=(window._krdPro5.badges||{})[String(m.home_id)]||{},bA=(window._krdPro5.badges||{})[String(m.away_id)]||{};
     const c=document.createElement('canvas');c.width=900;c.height=500;const ctx=c.getContext('2d');
     const g=ctx.createLinearGradient(0,0,900,500);g.addColorStop(0,'#070d1c');g.addColorStop(1,'#13203b');ctx.fillStyle=g;ctx.fillRect(0,0,900,500);
     ctx.fillStyle='#facc15';ctx.fillRect(0,0,900,10);ctx.font='bold 20px sans-serif';ctx.fillText('✦ İONELSPIEGEL SUNAR • MAÇ SONUCU',46,56);
-    ctx.fillStyle='#94a3b8';ctx.font='700 18px sans-serif';ctx.fillText(((S.settings&&S.settings.name)||'KRD LİGİ')+'  •  '+m.week+'. HAFTA',46,88);
+    ctx.fillStyle='#94a3b8';ctx.font='700 18px sans-serif';ctx.fillText(((((typeof S !== 'undefined' ? S : window._krdLiveS)?.settings)&&((typeof S !== 'undefined' ? S : window._krdLiveS)?.settings).name)||'KRD LİGİ')+'  •  '+m.week+'. HAFTA',46,88);
     ctx.fillStyle='rgba(255,255,255,0.05)';ctx.fillRect(46,125,808,270);
     ctx.fillStyle=bH.color||'#38bdf8';ctx.beginPath();ctx.arc(210,220,46,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#fff';ctx.font='900 24px sans-serif';ctx.textAlign='center';
@@ -3539,14 +3565,14 @@ events.onmessage = async () => {
     pm.classList.add('open');
   };
   function renderPro5Visitor(){
-    if(isAdm()||typeof S==='undefined'||!Array.isArray(S.teams)||!S.teams.length)return;
+    if(isAdm()||!(typeof S !== 'undefined' ? S : window._krdLiveS)||!Array.isArray(((typeof S !== 'undefined' ? S : window._krdLiveS)?.teams))||!((typeof S !== 'undefined' ? S : window._krdLiveS)?.teams).length)return;
     const app=document.getElementById('app');if(!app)return;
-    const stats=getClubStats(),top3Ids=new Set(stats.slice(0,3).map(x=>x.id)),tMap=Object.fromEntries(S.teams.map(t=>[t.id,t.name]));
+    const stats=getClubStats(),top3Ids=new Set(stats.slice(0,3).map(x=>x.id)),tMap=Object.fromEntries(((typeof S !== 'undefined' ? S : window._krdLiveS)?.teams).map(t=>[t.id,t.name]));
     // 1. Puan tablosuna kulup armasi ekle
     const tbl=app.querySelector('table:not(#krdSplitTableWrap table)');
-    if(tbl){tbl.querySelectorAll('tbody tr').forEach(tr=>{const c=tr.children[1]||tr.children[0];if(!c||c.dataset.krdCrest)return;const tm=S.teams.find(t=>(tr.textContent||'').toLowerCase().includes((t.name||'').toLowerCase()));if(!tm)return;c.dataset.krdCrest='1';c.insertAdjacentHTML('afterbegin',badgeHtml(tm.id,tm.name));});}
+    if(tbl){tbl.querySelectorAll('tbody tr').forEach(tr=>{const c=tr.children[1]||tr.children[0];if(!c||c.dataset.krdCrest)return;const tm=((typeof S !== 'undefined' ? S : window._krdLiveS)?.teams).find(t=>(tr.textContent||'').toLowerCase().includes((t.name||'').toLowerCase()));if(!tm)return;c.dataset.krdCrest='1';c.insertAdjacentHTML('afterbegin',badgeHtml(tm.id,tm.name));});}
     // 2. Odul Podyumu (En Golcu Kulup, En Iyi Savunma, En Gollu Mac)
-    const played=(S.matches||[]).filter(m=>m.played);
+    const played=(((typeof S !== 'undefined' ? S : window._krdLiveS)?.matches)||[]).filter(m=>m.played);
     if(played.length){
       let pod=document.getElementById('krdAwardsPodium');
       if(!pod){pod=document.createElement('div');pod.id='krdAwardsPodium';const anc=document.getElementById('krdTitleRaceBar')||document.getElementById('krdLeagueHubDrawer')||app.querySelector('table');if(anc&&anc.parentNode)anc.parentNode.insertBefore(pod,anc.nextSibling);}
@@ -3568,18 +3594,18 @@ events.onmessage = async () => {
     }
     // 4. Fikstur Kartlarina Haftanin Derbisi & Tek Mac PNG Afisi Butonu
     const grid=app.querySelector('.grid');
-    if(grid){Array.from(grid.children).forEach(card=>{const txt=card.textContent||'';const m=(S.matches||[]).find(x=>{const h=tMap[x.home_id]||'',a=tMap[x.away_id]||'';return h&&a&&txt.includes(h)&&txt.includes(a);});if(!m)return;if(!m.played&&top3Ids.has(m.home_id)&&top3Ids.has(m.away_id)&&!card.dataset.krdDerby){card.dataset.krdDerby='1';card.classList.add('krd-derby-card');card.insertAdjacentHTML('afterbegin','<span class="krd-derby-tag">🔥 HAFTANIN DERBİSİ</span>');}if(m.played&&!card.querySelector('.krd-match-png-btn')){const btn=document.createElement('button');btn.type='button';btn.className='krd-match-png-btn';btn.textContent='📸 Maç Sonucu Afişi (PNG)';btn.onclick=e=>{e.stopPropagation();window.krdDrawSingleMatchPoster(m.id);};card.appendChild(btn);}});}
+    if(grid){Array.from(grid.children).forEach(card=>{const txt=card.textContent||'';const m=(((typeof S !== 'undefined' ? S : window._krdLiveS)?.matches)||[]).find(x=>{const h=tMap[x.home_id]||'',a=tMap[x.away_id]||'';return h&&a&&txt.includes(h)&&txt.includes(a);});if(!m)return;if(!m.played&&top3Ids.has(m.home_id)&&top3Ids.has(m.away_id)&&!card.dataset.krdDerby){card.dataset.krdDerby='1';card.classList.add('krd-derby-card');card.insertAdjacentHTML('afterbegin','<span class="krd-derby-tag">🔥 HAFTANIN DERBİSİ</span>');}if(m.played&&!card.querySelector('.krd-match-png-btn')){const btn=document.createElement('button');btn.type='button';btn.className='krd-match-png-btn';btn.textContent='📸 Maç Sonucu Afişi (PNG)';btn.onclick=e=>{e.stopPropagation();window.krdDrawSingleMatchPoster(m.id);};card.appendChild(btn);}});}
   }
   window.krdSavePro5Admin=async function(){
-    const badges={};(S.teams||[]).forEach(t=>{badges[String(t.id)]={code:(document.getElementById('bdg_c_'+t.id)?.value||'').trim().toUpperCase(),color:document.getElementById('bdg_col_'+t.id)?.value||'#1e293b'};});
+    const badges={};(((typeof S !== 'undefined' ? S : window._krdLiveS)?.teams)||[]).forEach(t=>{badges[String(t.id)]={code:(document.getElementById('bdg_c_'+t.id)?.value||'').trim().toUpperCase(),color:document.getElementById('bdg_col_'+t.id)?.value||'#1e293b'};});
     const cup={sf1_h:document.getElementById('cup_sf1_h')?.value??'',sf1_a:document.getElementById('cup_sf1_a')?.value??'',sf2_h:document.getElementById('cup_sf2_h')?.value??'',sf2_a:document.getElementById('cup_sf2_a')?.value??'',f_h:document.getElementById('cup_f_h')?.value??'',f_a:document.getElementById('cup_f_a')?.value??''};
     await api('POST','/api/admin/krd-pro5-save',{badges,cup});await syncPro5();if(typeof toast==='function')toast('🛡️ Kulüp armaları ve Süper Kupa kaydedildi!');
   };
   function renderPro5Admin(){
-    if(!isAdm()||typeof S==='undefined'||!Array.isArray(S.teams))return;const app=document.getElementById('app');if(!app)return;
+    if(!isAdm()||!(typeof S !== 'undefined' ? S : window._krdLiveS)||!Array.isArray(((typeof S !== 'undefined' ? S : window._krdLiveS)?.teams)))return;const app=document.getElementById('app');if(!app)return;
     const ok=app.querySelector('button')&&(app.textContent||'').includes('Çıkış');if(!ok||document.getElementById('krdAdminPro5Box'))return;
     const bMap=window._krdPro5.badges||{},c=window._krdPro5.cup||{},box=document.createElement('div');box.id='krdAdminPro5Box';
-    box.innerHTML='<b style="color:#38bdf8;font-size:13.5px;">🛡️ Kulüp Armaları & 🏆 Süper Kupa Skor Yönetimi</b><div style="display:grid;gap:6px;font-size:12px;">'+S.teams.map(t=>{const ex=bMap[String(t.id)]||{};return'<div style="display:grid;grid-template-columns:1fr 70px 44px;gap:6px;align-items:center;"><span>'+esc(t.name)+'</span><input type="text" maxlength="4" id="bdg_c_'+t.id+'" value="'+esc(ex.code||'')+'" placeholder="Kod" style="padding:5px;border-radius:7px;border:1px solid rgba(148,163,184,.3);background:#020617;color:#fff;text-align:center;"><input type="color" id="bdg_col_'+t.id+'" value="'+esc(ex.color||'#2563eb')+'" style="width:100%;height:30px;border:none;background:none;"></div>';}).join('')+'</div><div style="border-top:1px solid rgba(148,163,184,.18);padding-top:8px;display:grid;gap:6px;font-size:12px;"><b>🏆 Süper Kupa Play-Off Skorları (Boş bırakılırsa oynanmadı görünür):</b><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;"><div>YF1 (1v4): <input type="number" id="cup_sf1_h" value="'+esc(c.sf1_h??'')+'" style="width:42px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;"> - <input type="number" id="cup_sf1_a" value="'+esc(c.sf1_a??'')+'" style="width:42px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;"></div><div>YF2 (2v3): <input type="number" id="cup_sf2_h" value="'+esc(c.sf2_h??'')+'" style="width:42px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;"> - <input type="number" id="cup_sf2_a" value="'+esc(c.sf2_a??'')+'" style="width:42px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;"></div><div>FİNAL: <input type="number" id="cup_f_h" value="'+esc(c.f_h??'')+'" style="width:42px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;"> - <input type="number" id="cup_f_a" value="'+esc(c.f_a??'')+'" style="width:42px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;"></div></div></div><div><button type="button" class="pri" onclick="window.krdSavePro5Admin()">💾 Kulüp Armalarını & Kupayı Kaydet</button></div>';
+    box.innerHTML='<b style="color:#38bdf8;font-size:13.5px;">🛡️ Kulüp Armaları & 🏆 Süper Kupa Skor Yönetimi</b><div style="display:grid;gap:6px;font-size:12px;">'+((typeof S !== 'undefined' ? S : window._krdLiveS)?.teams).map(t=>{const ex=bMap[String(t.id)]||{};return'<div style="display:grid;grid-template-columns:1fr 70px 44px;gap:6px;align-items:center;"><span>'+esc(t.name)+'</span><input type="text" maxlength="4" id="bdg_c_'+t.id+'" value="'+esc(ex.code||'')+'" placeholder="Kod" style="padding:5px;border-radius:7px;border:1px solid rgba(148,163,184,.3);background:#020617;color:#fff;text-align:center;"><input type="color" id="bdg_col_'+t.id+'" value="'+esc(ex.color||'#2563eb')+'" style="width:100%;height:30px;border:none;background:none;"></div>';}).join('')+'</div><div style="border-top:1px solid rgba(148,163,184,.18);padding-top:8px;display:grid;gap:6px;font-size:12px;"><b>🏆 Süper Kupa Play-Off Skorları (Boş bırakılırsa oynanmadı görünür):</b><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;"><div>YF1 (1v4): <input type="number" id="cup_sf1_h" value="'+esc(c.sf1_h??'')+'" style="width:42px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;"> - <input type="number" id="cup_sf1_a" value="'+esc(c.sf1_a??'')+'" style="width:42px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;"></div><div>YF2 (2v3): <input type="number" id="cup_sf2_h" value="'+esc(c.sf2_h??'')+'" style="width:42px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;"> - <input type="number" id="cup_sf2_a" value="'+esc(c.sf2_a??'')+'" style="width:42px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;"></div><div>FİNAL: <input type="number" id="cup_f_h" value="'+esc(c.f_h??'')+'" style="width:42px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;"> - <input type="number" id="cup_f_a" value="'+esc(c.f_a??'')+'" style="width:42px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;"></div></div></div><div><button type="button" class="pri" onclick="window.krdSavePro5Admin()">💾 Kulüp Armalarını & Kupayı Kaydet</button></div>';
     app.appendChild(box);
   }
   syncPro5().then(renderPro5Visitor);setInterval(syncPro5,5000);setInterval(()=>{renderPro5Visitor();renderPro5Admin();},1150);
