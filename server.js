@@ -224,6 +224,19 @@ async function api(req, res, u) {
     return send(res, 200, { ok: 1 }, { 'Set-Cookie': cookie(mkToken(), 43200) });
   }
   if (M === 'POST' && P === '/api/admin/logout') return send(res, 200, { ok: 1 }, { 'Set-Cookie': cookie('', 0) });
+
+  if (M === 'POST' && P === '/api/admin/live-matches') {
+    const b = await body(req);
+    const list = Array.isArray(b.live) ? b.live.slice(0, 4).map(x => ({
+      id: Number(x.id),
+      hs: Math.max(0, Number(x.hs) || 0),
+      aws: Math.max(0, Number(x.aws) || 0),
+      min: String(x.min || "1'").slice(0, 12)
+    })).filter(x => x.id) : [];
+    await setSettingJson('live_matches', list);
+    if (typeof notifyClients === 'function') notifyClients();
+    return send(res, 200, { ok: 1, live: list });
+  }
   if (!P.startsWith('/api/admin/')) throw E(404, 'Bulunamadı');
   if (!isAdmin(req)) throw E(401, 'Yönetici girişi gerekli');
   const seg = P.split('/'), id = +seg[4], kind = seg[3];
