@@ -225,7 +225,7 @@ async function api(req, res, u) {
     const salt = crypto.randomBytes(16).toString('hex'); await run(`INSERT INTO ${ADMIN}(id,username,salt,hash) VALUES(1,$1,$2,$3)`, 'yusuf', salt, hashPw(b.password, salt)); setupCode = null;
     return send(res, 200, { ok: 1 }, { 'Set-Cookie': cookie(mkToken(), 43200) });
   }
-  if (M === 'POST' && P === '/api/admin/login') {
+  if (req.method === 'POST' && u.pathname === '/api/admin/login') {
     const b = await body(req); if (limited(ip)) throw E(429, 'Çok fazla deneme; 15 dk sonra tekrar dene');
     const a = await one(`SELECT * FROM ${ADMIN} WHERE id=1`); const ok = a && String(b.username || '').toLowerCase() === a.username && eq(hashPw(String(b.password || ''), a.salt), a.hash);
     if (!ok) { fail(ip); throw E(401, 'Kullanıcı adı veya şifre hatalı'); } fails.delete(ip);
@@ -538,14 +538,14 @@ const server = http.createServer(async (req, res) => {
   // === KRD_PRO5_END ===
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  if (M === 'POST' && P === '/api/admin/login') {
+  if (req.method === 'POST' && u.pathname === '/api/admin/login') {
     const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'x').split(',')[0].trim();
     const rec = krdLoginGuard.get(ip);
     if (rec && rec.lockUntil && Date.now() < rec.lockUntil) {
       return send(res, 429, { error: 'Çok fazla hatalı deneme. ' + Math.ceil((rec.lockUntil - Date.now()) / 60000) + ' dk bekleyin.' });
     }
   }
-  if (req.method === 'GET' && P === '/api/krd-mega-data') {
+  if (req.method === 'GET' && u.pathname === '/api/krd-mega-data') {
     const pRow = await get(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_predictions');
     const hRow = await get(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_hof_archive');
     let predictions = {}, archive = [];
@@ -553,7 +553,7 @@ const server = http.createServer(async (req, res) => {
     try { if (hRow && hRow.v) archive = JSON.parse(hRow.v); } catch {}
     return send(res, 200, { ok: 1, predictions, archive });
   }
-  if (M === 'POST' && P === '/api/krd-predict') {
+  if (req.method === 'POST' && u.pathname === '/api/krd-predict') {
     const b = await body(req);
     const nick = String(b.nick || '').trim().slice(0, 24);
     const matchId = Number(b.matchId), hs = Math.max(0, Math.min(99, Number(b.hs))), aws = Math.max(0, Math.min(99, Number(b.aws)));
