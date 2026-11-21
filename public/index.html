@@ -995,7 +995,17 @@ function getLiveMatches(){
 }
 async function pushLiveList(list, msg){
   try{
-    await api('PUT', '/api/admin/settings', { live_matches: JSON.stringify(list) });
+    const cur = (S && S.settings) ? S.settings : {};
+    await api('PUT', '/api/admin/settings', {
+      name: cur.name || 'KRD Ligi',
+      season: cur.season || '2026/2027',
+      win: Number(cur.win ?? 3),
+      draw: Number(cur.draw ?? 1),
+      loss: Number(cur.loss ?? 0),
+      week: Number(cur.week ?? 1),
+      penalties: cur.penalties || '[]',
+      live_matches: JSON.stringify(list)
+    });
     if(S && S.settings) S.settings.live_matches = JSON.stringify(list);
     await load();
     render();
