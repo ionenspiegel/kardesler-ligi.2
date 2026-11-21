@@ -1008,7 +1008,9 @@ async function pushLiveList(list, msg){
     });
     if(S && S.settings) S.settings.live_matches = JSON.stringify(list);
     await load();
+    if(S && S.settings) S.settings.live_matches = JSON.stringify(list);
     render();
+    if(typeof renderPublicLiveBar === 'function') renderPublicLiveBar();
     if(msg && typeof toast === 'function') toast(msg);
   }catch(err){
     alert('Canlı Maç Hatası: ' + (err && err.message ? err.message : err));
@@ -1987,9 +1989,9 @@ events.onmessage = async () => {
   });
 
   // Ana sayfada yonetici canliya aldiysa (1-4 mac) canli skor kartlarini goster
-  function renderPublicLiveBar() {
+  window.renderPublicLiveBar = function() {
     if (typeof S === 'undefined' || !S.settings || !Array.isArray(S.teams)) return;
-    const onAdmin = location.hash.startsWith('#/yonetici') || location.hash.startsWith('#/' + ((S.settings && S.settings.admin_slug) || 'krd-kontrol'));
+    const _slug = (S && S.settings && S.settings.admin_slug) ? S.settings.admin_slug : 'krd-kontrol'; const onAdmin = location.hash.startsWith('#/yonetici') || location.hash.startsWith('#/' + _slug);
     let bar = document.getElementById('krdPublicLiveBar');
     if (onAdmin) { if (bar) bar.remove(); return; }
 
