@@ -282,6 +282,47 @@ input,select{background:#0b1226;border:1px solid var(--line);border-radius:10px;
   }
 </style>
 
+
+<style id="krdMobileOverlapFixCss">
+  /* Modal / Paylasim penceresi acikken alttaki sabit butonlari gizle */
+  body.krd-modal-open #krdChatWidget,
+  body.krd-modal-open #krdScrollTop,
+  body.krd-modal-open .push-bar,
+  body.krd-modal-open [id*="push" i]:not(input):not(button),
+  body.krd-modal-open button[onclick*="push" i],
+  body.krd-modal-open button[onclick*="notif" i] {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Modal icindeki PNG Indir ve Kapat butonlarini her zaman en uste al */
+  .modal, .ov, [class*="modal"] {
+    z-index: 9999 !important;
+  }
+  .modal button, .ov button {
+    position: relative;
+    z-index: 10000 !important;
+  }
+
+  /* Paylasim kartindaki alt yazinin mobilde sagdan kesilmesini onle */
+  @media (max-width: 480px) {
+    #krdChatWidget {
+      left: 12px !important;
+      right: auto !important;
+      bottom: 12px !important;
+    }
+    #krdScrollTop {
+      right: 12px !important;
+      bottom: 64px !important;
+    }
+    .modal *, .ov * {
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+  }
+</style>
+
 </head><body><div id="goal">GOL!</div><div class="wrap" id="app"></div><div id="toast"></div>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -2349,6 +2390,26 @@ events.onmessage = async () => {
     updateBackButtonState();
     injectTeamFilter();
   }, 1000);
+})();
+</script>
+
+
+<script id="krdMobileOverlapFixJs">
+(function() {
+  function syncModalState() {
+    const modals = document.querySelectorAll('.modal, .ov, [role="dialog"]');
+    let hasOpen = false;
+    modals.forEach(m => {
+      const st = window.getComputedStyle(m);
+      if (st.display !== 'none' && st.visibility !== 'hidden' && m.offsetHeight > 40) {
+        hasOpen = true;
+      }
+    });
+    if (hasOpen) document.body.classList.add('krd-modal-open');
+    else document.body.classList.remove('krd-modal-open');
+  }
+  setInterval(syncModalState, 250);
+  document.addEventListener('click', () => setTimeout(syncModalState, 50));
 })();
 </script>
 

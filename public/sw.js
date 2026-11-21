@@ -1,4 +1,4 @@
-const CACHE = 'krd-ligi-v1795285889875';
+const CACHE = 'krd-ligi-v1795286077467';
 const ASSETS = ['/', '/manifest.json', '/icon-192.png'];
 
 self.addEventListener('install', event => {
