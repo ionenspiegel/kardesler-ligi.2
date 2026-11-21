@@ -545,10 +545,23 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('X-Frame-Options', 'DENY'); res.setHeader('Referrer-Policy', 'same-origin');
   if (req.url.startsWith('/sw.js')) res.setHeader('Service-Worker-Allowed', '/');
   try {
-    const u = new URL(req.url, 'http://x');
+    
+async function krdDbGet(sql, ...params) {
+  if (typeof get === 'function') return await get(sql, ...params);
+  if (typeof pool !== 'undefined' && typeof pool.query === 'function') {
+    const r = await pool.query(sql, params);
+    return r && r.rows ? r.rows[0] : null;
+  }
+  if (typeof db !== 'undefined' && typeof db.get === 'function') {
+    return await db.get(sql, ...params);
+  }
+  return null;
+}
+
+const u = new URL(req.url, 'http://x');
   // === KRD_EXTRAS_START ===
   if (req.method === 'GET' && u.pathname === '/api/krd-extras') {
-    const r = await get(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_extras_v2');
+    const r = await krdDbGet(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_extras_v2');
     let extras = {};
     try { if (r && r.v) extras = JSON.parse(r.v); } catch {}
     return send(res, 200, { ok: 1, extras });
@@ -559,7 +572,7 @@ const server = http.createServer(async (req, res) => {
     const msg = String(b.msg || '').trim().slice(0, 400);
     if (!msg) return send(res, 400, { error: 'Lütfen sorununuzu yazın.' });
     await tx(async t => {
-      const r = await t.get(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_reports_v1');
+      const r = await t.krdDbGet(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_reports_v1');
       let list = [];
       try { if (r && r.v) list = JSON.parse(r.v); } catch {}
       list.unshift({
@@ -578,8 +591,8 @@ const server = http.createServer(async (req, res) => {
   // === KRD_EXTRAS_END ===
   // === KRD_PRO5_START ===
   if (req.method === 'GET' && u.pathname === '/api/krd-pro5-data') {
-    const bRow = await get(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_club_badges');
-    const cRow = await get(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_super_cup');
+    const bRow = await krdDbGet(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_club_badges');
+    const cRow = await krdDbGet(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_super_cup');
     let badges = {}, cup = {};
     try { if (bRow && bRow.v) badges = JSON.parse(bRow.v); } catch {}
     try { if (cRow && cRow.v) cup = JSON.parse(cRow.v); } catch {}
