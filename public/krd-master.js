@@ -21,17 +21,8 @@
 
   // Eski Service Worker onbellegini temizle
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister())).catch(() => {});
-  }
-
-  const getS = () => (typeof S !== 'undefined' ? S : window._krdLiveS);
-  const isAdm = () => {
-    const st = getS();
-    const sl = (st && st.settings && st.settings.admin_slug) || 'krd-kontrol';
-    return location.hash.startsWith('#/yonetici') || location.hash.startsWith('#/' + sl);
+    navigator.serviceWorker.register('/sw.js').then(r => r.update()).catch(() => {});
   };
-
-  window._krdData = { extras: {}, predictions: {}, archive: [], badges: {}, cup: {} };
 
   const DEFAULT_RULES = [
     '📅 Yürürlük Tarihi: Bu kurallar 22 Kasım 2026 tarihinden itibaren oynanacak maçlarda geçerlidir.',
