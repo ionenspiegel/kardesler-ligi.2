@@ -527,7 +527,7 @@ const server = http.createServer(async (req, res) => {
   try {
     const u = new URL(req.url, 'http://x');
   // === KRD_PRO5_START ===
-  if (req.method === 'GET' && P === '/api/krd-pro5-data') {
+  if (req.method === 'GET' && u.pathname === '/api/krd-pro5-data') {
     const bRow = await get(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_club_badges');
     const cRow = await get(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_super_cup');
     let badges = {}, cup = {};
