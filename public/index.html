@@ -793,6 +793,22 @@ input,select{background:#0b1226;border:1px solid var(--line);border-radius:10px;
   #krdAdminPro5Box{margin-top:14px;background:rgba(15,23,42,.92);border:1px solid rgba(56,189,248,.34);border-radius:14px;padding:12px 14px;display:grid;gap:10px}
 </style>
 
+<style id="krdMega5Css">
+  .krd-rank-delta{display:inline-block;margin-left:4px;font-size:10px;font-weight:900}
+  .krd-delta-up{color:#4ade80}.krd-delta-down{color:#f87171}
+  .krd-streak-pill{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;font-size:9.5px;font-weight:800;background:rgba(250,204,21,.16);color:#fde047;border:1px solid rgba(250,204,21,.32)}
+  #krdPredictDrawer{margin:10px 0;padding:10px 13px}
+  #krdPredictDrawer summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:800;color:#c084fc}
+  #krdPredictDrawer summary::-webkit-details-marker{display:none}
+  .krd-pred-row{display:grid;grid-template-columns:1fr 44px 12px 44px 1fr auto;align-items:center;gap:5px;padding:6px 8px;border-radius:9px;background:rgba(15,23,42,.72);border:1px solid rgba(148,163,184,.16);font-size:11.5px}
+  .krd-pred-row input{width:100%;text-align:center;padding:3px 2px;border-radius:6px;border:1px solid rgba(148,163,184,.3);background:#020617;color:#fff;font-weight:800}
+  #krdPosterModal{position:fixed;inset:0;z-index:10000;background:rgba(2,6,23,.85);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:16px}
+  #krdPosterModal.open{display:flex}
+  .krd-poster-box{width:100%;max-width:440px;background:#0f172a;border:1px solid rgba(250,204,21,.4);border-radius:16px;padding:14px;display:grid;gap:10px;text-align:center}
+  .krd-poster-box img{width:100%;border-radius:10px}
+  #krdAdminArchiveAuditBox{margin-top:14px;background:rgba(15,23,42,.92);border:1px solid rgba(250,204,21,.32);border-radius:14px;padding:12px 14px;display:grid;gap:10px}
+  #krdAnnounceBanner{margin:8px 0;padding:9px 12px;border-radius:11px;background:linear-gradient(90deg,rgba(249,115,22,.18),rgba(250,204,21,.14));border:1px solid rgba(250,204,21,.35);font-size:12.5px;font-weight:700;color:#fef08a}
+</style>
 </head><body><div id="goal">GOL!</div><div class="wrap" id="app"></div><div id="toast"></div>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -3406,16 +3422,16 @@ events.onmessage = async () => {
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   function isAdminRoute() {
-    if (typeof S === 'undefined') return true;
-    const slug = (S.settings && S.settings.admin_slug) ? S.settings.admin_slug : 'krd-kontrol';
+    if (!(typeof S !== 'undefined' ? S : window._krdLiveS)) return true;
+    const slug = (((typeof S !== 'undefined' ? S : window._krdLiveS)?.settings) && ((typeof S !== 'undefined' ? S : window._krdLiveS)?.settings).admin_slug) ? ((typeof S !== 'undefined' ? S : window._krdLiveS)?.settings).admin_slug : 'krd-kontrol';
     return location.hash.startsWith('#/yonetici') || location.hash.startsWith('#/' + slug);
   }
 
   function computeSimpleStandings() {
-    const teams = (S && Array.isArray(S.teams)) ? S.teams : [];
-    const matches = (S && Array.isArray(S.matches)) ? S.matches : [];
-    const winPts = Number((S && S.settings && S.settings.win) ?? 3);
-    const drawPts = Number((S && S.settings && S.settings.draw) ?? 1);
+    const teams = (S && Array.isArray(((typeof S !== 'undefined' ? S : window._krdLiveS)?.teams))) ? ((typeof S !== 'undefined' ? S : window._krdLiveS)?.teams) : [];
+    const matches = (S && Array.isArray(((typeof S !== 'undefined' ? S : window._krdLiveS)?.matches))) ? ((typeof S !== 'undefined' ? S : window._krdLiveS)?.matches) : [];
+    const winPts = Number((S && ((typeof S !== 'undefined' ? S : window._krdLiveS)?.settings) && ((typeof S !== 'undefined' ? S : window._krdLiveS)?.settings).win) ?? 3);
+    const drawPts = Number((S && ((typeof S !== 'undefined' ? S : window._krdLiveS)?.settings) && ((typeof S !== 'undefined' ? S : window._krdLiveS)?.settings).draw) ?? 1);
     const map = {};
     teams.forEach(t => { map[t.id] = { id: t.id, name: t.name, p: 0, av: 0, o: 0 }; });
 
@@ -3433,12 +3449,12 @@ events.onmessage = async () => {
   }
 
   function applyEliteFeatures() {
-    if (isAdminRoute() || typeof S === 'undefined' || !Array.isArray(S.teams) || !S.teams.length) return;
+    if (isAdminRoute() || !(typeof S !== 'undefined' ? S : window._krdLiveS) || !Array.isArray(((typeof S !== 'undefined' ? S : window._krdLiveS)?.teams)) || !((typeof S !== 'undefined' ? S : window._krdLiveS)?.teams).length) return;
     const app = document.getElementById('app');
     if (!app) return;
 
     const standings = computeSimpleStandings();
-    const tMap = Object.fromEntries(S.teams.map(t => [t.id, t.name]));
+    const tMap = Object.fromEntries(((typeof S !== 'undefined' ? S : window._krdLiveS)?.teams).map(t => [t.id, t.name]));
 
     // 1. Zirve Yarisi & Puan Farki Bari
     const hub = document.getElementById('krdLeagueHubDrawer') || app.querySelector('table');
@@ -3488,7 +3504,7 @@ events.onmessage = async () => {
       Array.from(matchGrid.children).forEach(card => {
         if (card.querySelector('.krd-invite-btn')) return;
         const txt = card.textContent || '';
-        const unplayedMatch = (S.matches || []).find(m => {
+        const unplayedMatch = (((typeof S !== 'undefined' ? S : window._krdLiveS)?.matches) || []).find(m => {
           if (m.played) return false;
           const h = tMap[m.home_id] || '';
           const a = tMap[m.away_id] || '';
@@ -3609,6 +3625,104 @@ events.onmessage = async () => {
     app.appendChild(box);
   }
   syncPro5().then(renderPro5Visitor);setInterval(syncPro5,5000);setInterval(()=>{renderPro5Visitor();renderPro5Admin();},1150);
+})();
+</script>
+<script id="krdMega5Js">
+(function(){
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const getS=()=>typeof S!=='undefined'?S:window._krdLiveS;
+  window._krdMegaCache={predictions:{},archive:[],extras:{}};
+  const isAdm=()=>{const st=getS();if(!st)return false;const sl=(st.settings&&st.settings.admin_slug)||'krd-kontrol';return location.hash.startsWith('#/yonetici')||location.hash.startsWith('#/'+sl);};
+  async function fetchMega(){
+    try{const r=await fetch('/api/krd-mega-data?_='+Date.now());const d=await r.json();if(d&&d.ok){window._krdMegaCache.predictions=d.predictions||{};window._krdMegaCache.archive=d.archive||[];}}catch{}
+    try{const r2=await fetch('/api/krd-extras?_='+Date.now());if(r2.ok){const d2=await r2.json();if(d2)window._krdMegaCache.extras=d2.extras||d2||{};}}catch{}
+  }
+  function getStreaks(){
+    const st=getS()||{},teams=st.teams||[],matches=st.matches||[],wP=Number((st.settings&&st.settings.win)??3),dP=Number((st.settings&&st.settings.draw)??1);
+    const played=matches.filter(m=>m.played),maxW=played.length?Math.max(...played.map(m=>Number(m.week||1))):1;
+    const calc=sub=>{const m={};teams.forEach(t=>m[t.id]={id:t.id,p:0,av:0,ag:0});sub.forEach(x=>{if(!m[x.home_id]||!m[x.away_id])return;const hs=+x.hs||0,aw=+x.aws||0;m[x.home_id].av+=hs-aw;m[x.away_id].av+=aw-hs;m[x.home_id].ag+=hs;m[x.away_id].ag+=aw;if(hs>aw)m[x.home_id].p+=wP;else if(aw>hs)m[x.away_id].p+=wP;else{m[x.home_id].p+=dP;m[x.away_id].p+=dP;}});return Object.values(m).sort((a,b)=>(b.p-a.p)||(b.av-a.av)||(b.ag-a.ag));};
+    const nowR={},prevR={},out={};
+    calc(played).forEach((r,i)=>nowR[r.id]=i+1);
+    calc(played.filter(x=>Number(x.week||1)<maxW)).forEach((r,i)=>prevR[r.id]=i+1);
+    teams.forEach(t=>{
+      const my=played.filter(x=>x.home_id===t.id||x.away_id===t.id).sort((a,b)=>(+a.week-+b.week)||(+a.id-+b.id));
+      let unb=0,win=0;
+      for(let i=my.length-1;i>=0;i--){const gf=my[i].home_id===t.id?+my[i].hs:+my[i].aws,ga=my[i].home_id===t.id?+my[i].aws:+my[i].hs;if(gf>=ga)unb++;else break;}
+      for(let i=my.length-1;i>=0;i--){const gf=my[i].home_id===t.id?+my[i].hs:+my[i].aws,ga=my[i].home_id===t.id?+my[i].aws:+my[i].hs;if(gf>ga)win++;else break;}
+      out[t.id]={delta:maxW>1?((prevR[t.id]||nowR[t.id])-nowR[t.id]):0,badge:win>=3?'🔥 '+win+'G Seri':unb>=3?'🛡️ '+unb+'M Yenilmez':''};
+    });
+    return out;
+  }
+  window.krdGenerateStandingsPoster=function(){
+    const st=getS()||{},teams=st.teams||[],matches=st.matches||[],wP=Number((st.settings&&st.settings.win)??3),dP=Number((st.settings&&st.settings.draw)??1);
+    const map={};teams.forEach(t=>map[t.id]={name:t.name,o:0,g:0,b:0,m:0,av:0,p:0});
+    matches.filter(m=>m.played).forEach(x=>{if(!map[x.home_id]||!map[x.away_id])return;const hs=+x.hs||0,aw=+x.aws||0;map[x.home_id].o++;map[x.away_id].o++;map[x.home_id].av+=hs-aw;map[x.away_id].av+=aw-hs;if(hs>aw){map[x.home_id].g++;map[x.home_id].p+=wP;map[x.away_id].m++;}else if(aw>hs){map[x.away_id].g++;map[x.away_id].p+=wP;map[x.home_id].m++;}else{map[x.home_id].b++;map[x.away_id].b++;map[x.home_id].p+=dP;map[x.away_id].p+=dP;}});
+    const rows=Object.values(map).sort((a,b)=>(b.p-a.p)||(b.av-a.av));
+    const c=document.createElement('canvas');c.width=900;c.height=300+rows.length*64;const ctx=c.getContext('2d');
+    const g=ctx.createLinearGradient(0,0,900,c.height);g.addColorStop(0,'#090f1e');g.addColorStop(1,'#111c33');ctx.fillStyle=g;ctx.fillRect(0,0,900,c.height);
+    ctx.fillStyle='#facc15';ctx.fillRect(0,0,900,10);ctx.font='bold 20px sans-serif';ctx.fillText('✦ İONELSPIEGEL SUNAR • RESMİ PUAN DURUMU',46,58);
+    ctx.fillStyle='#fff';ctx.font='900 38px sans-serif';ctx.fillText(((st.settings&&st.settings.name)||'KRD LİGİ').toUpperCase(),46,106);
+    ctx.fillStyle='#94a3b8';ctx.font='600 18px sans-serif';ctx.fillText('Sezon: '+((st.settings&&st.settings.season)||'2026/2027')+'  •  '+((st.settings&&st.settings.week)||1)+'. Hafta',46,138);
+    const sy=185;ctx.fillStyle='rgba(56,189,248,0.16)';ctx.fillRect(40,sy-30,820,42);ctx.fillStyle='#38bdf8';ctx.font='bold 18px sans-serif';
+    ctx.fillText('#',58,sy);ctx.fillText('KULÜP',110,sy);ctx.fillText('O',500,sy);ctx.fillText('G',565,sy);ctx.fillText('B',625,sy);ctx.fillText('M',685,sy);ctx.fillText('AV',745,sy);ctx.fillText('P',820,sy);
+    rows.forEach((r,i)=>{const y=sy+56+i*62;ctx.fillStyle=i===0?'rgba(250,204,21,0.16)':'rgba(255,255,255,0.04)';ctx.fillRect(40,y-34,820,50);ctx.fillStyle=i===0?'#facc15':'#e2e8f0';ctx.font='bold 21px sans-serif';ctx.fillText(String(i+1),58,y);ctx.fillText(r.name,110,y);ctx.fillStyle='#cbd5e1';ctx.font='600 20px sans-serif';ctx.fillText(String(r.o),500,y);ctx.fillText(String(r.g),565,y);ctx.fillText(String(r.b),625,y);ctx.fillText(String(r.m),685,y);ctx.fillText(r.av>0?'+'+r.av:String(r.av),745,y);ctx.fillStyle=i===0?'#facc15':'#38bdf8';ctx.font='900 22px sans-serif';ctx.fillText(String(r.p),820,y);});
+    ctx.fillStyle='#64748b';ctx.font='600 16px sans-serif';ctx.fillText('kardesler-ligi-2.onrender.com  •  Yapımcı: İonelSpiegel',46,c.height-28);
+    const url=c.toDataURL('image/png');let pm=document.getElementById('krdPosterModal');
+    if(!pm){pm=document.createElement('div');pm.id='krdPosterModal';pm.addEventListener('click',e=>{if(e.target===pm)pm.classList.remove('open');});document.body.appendChild(pm);}
+    pm.innerHTML='<div class="krd-poster-box"><div style="display:flex;justify-content:space-between;align-items:center;"><b style="color:#facc15;">📸 Puan Tablosu Afişi</b><button type="button" onclick="document.getElementById('krdPosterModal').classList.remove('open')">✕</button></div><img src="'+url+'"><a href="'+url+'" download="krd-ligi-puan-durumu.png" class="btn pri" style="display:block;padding:10px;border-radius:10px;text-decoration:none;font-weight:800;background:#22c55e;color:#052e16;">⬇️ Görseli İndir (PNG)</a></div>';
+    pm.classList.add('open');
+  };
+  window.krdSubmitPrediction=async function(mid){
+    const nick=(document.getElementById('krdPredNick')?.value||localStorage.getItem('krd_pred_nick')||'').trim();
+    if(!nick)return alert('Lütfen adınızı yazın.');localStorage.setItem('krd_pred_nick',nick);
+    const hs=Number(document.getElementById('pred_hs_'+mid)?.value),aws=Number(document.getElementById('pred_aws_'+mid)?.value);
+    if(Number.isNaN(hs)||Number.isNaN(aws))return alert('Skor girin.');
+    const r=await fetch('/api/krd-predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nick,matchId:mid,hs,aws})});
+    const d=await r.json();if(!r.ok)return alert(d.error||'Hata');window._krdMegaCache.predictions=d.predictions||{};
+    if(typeof toast==='function')toast('🎯 Tahmin kaydedildi!');renderVis(true);
+  };
+  function renderVis(force){
+    const stObj=getS();if(isAdm()||!stObj||!Array.isArray(stObj.teams)||!stObj.teams.length)return;
+    const app=document.getElementById('app');if(!app)return;
+    const ex=window._krdMegaCache.extras||{};
+    if(ex.announcement){let ab=document.getElementById('krdAnnounceBanner');if(!ab){ab=document.createElement('div');ab.id='krdAnnounceBanner';app.prepend(ab);}ab.innerHTML='📢 <b>LİG DUYURUSU:</b> '+esc(ex.announcement)+(ex.mvp?' &nbsp;|&nbsp; ⭐ <b>Haftanın MVP'si:</b> '+esc(ex.mvp):'');}
+    const chatWidget=document.getElementById('krdChatWidget');if(chatWidget&&ex.chatLocked)chatWidget.style.display='none';
+    const st=getStreaks(),tbl=app.querySelector('table:not(#krdSplitTableWrap table)');
+    if(tbl){tbl.querySelectorAll('tbody tr').forEach(tr=>{const cell=tr.children[1]||tr.children[0];if(!cell||cell.dataset.krdSt)return;const tm=stObj.teams.find(t=>(tr.textContent||'').toLowerCase().includes((t.name||'').toLowerCase()));if(!tm||!st[tm.id])return;cell.dataset.krdSt='1';if(st[tm.id].delta>0)cell.insertAdjacentHTML('beforeend','<span class="krd-rank-delta krd-delta-up">▲'+st[tm.id].delta+'</span>');else if(st[tm.id].delta<0)cell.insertAdjacentHTML('beforeend','<span class="krd-rank-delta krd-delta-down">▼'+Math.abs(st[tm.id].delta)+'</span>');if(st[tm.id].badge)cell.insertAdjacentHTML('beforeend','<span class="krd-streak-pill">'+st[tm.id].badge+'</span>');});}
+    const hubBody=document.querySelector('#krdLeagueHubDrawer .krd-hub-body');
+    if(hubBody&&!document.getElementById('krdPngPosterBtn')){const b=document.createElement('button');b.id='krdPngPosterBtn';b.type='button';b.className='pri';b.style.cssText='width:100%;font-size:12px;font-weight:800;';b.textContent='📸 Puan Tablosu Afişi Oluştur & İndir (PNG)';b.onclick=window.krdGenerateStandingsPoster;hubBody.appendChild(b);}
+    const hof=document.getElementById('krdHallOfFame');
+    if(hof&&Array.isArray(window._krdMegaCache.archive)){window._krdMegaCache.archive.forEach(it=>{if(document.getElementById('hof_a_'+it.id))return;const d=document.createElement('div');d.id='hof_a_'+it.id;d.className='krd-hof-item';d.innerHTML='<div><div style="font-size:10.5px;font-weight:800;color:#facc15;">'+esc(it.season).toUpperCase()+' ŞAMPİYONU</div><div style="font-size:14px;font-weight:900;color:#fff;margin-top:2px;">🏆 '+esc(it.champion)+'</div>'+(it.note?'<div style="font-size:11.5px;opacity:.82;">'+esc(it.note)+'</div>':'')+'</div><span style="font-size:24px;">🥇</span>';hof.appendChild(d);});}
+    let pd=document.getElementById('krdPredictDrawer');
+    if(!pd||force){
+      const tMap=Object.fromEntries(stObj.teams.map(t=>[t.id,t.name])),up=(stObj.matches||[]).filter(m=>!m.played).slice(0,6),nick=localStorage.getItem('krd_pred_nick')||'',myP=(window._krdMegaCache.predictions||{})[nick]||{};
+      const playedMap=Object.fromEntries((stObj.matches||[]).filter(m=>m.played).map(m=>[String(m.id),m])),board=[];
+      for(const[nk,uP]of Object.entries(window._krdMegaCache.predictions||{})){let pts=0;for(const[mid,p]of Object.entries(uP||{})){const m=playedMap[mid];if(!m)continue;if(p.hs===+m.hs&&p.aws===+m.aws)pts+=3;else if(Math.sign(p.hs-p.aws)===Math.sign(+m.hs-+m.aws))pts+=1;}board.push({nk,pts});}
+      board.sort((a,b)=>b.pts-a.pts);
+      if(!pd){pd=document.createElement('details');pd.id='krdPredictDrawer';pd.className='card';const anc=document.getElementById('krdHallOfFame')||document.getElementById('krdLeagueHubDrawer')||app.querySelector('table');if(anc&&anc.parentNode)anc.parentNode.insertBefore(pd,anc.nextSibling);}
+      pd.innerHTML='<summary><span>🎯 Haftalık Skor Tahmini & Tahmin Ligi</span><span style="font-size:11px;opacity:.85;">Tahmin Yap ▾</span></summary><div style="margin-top:10px;display:grid;gap:8px;"><input type="text" id="krdPredNick" value="'+esc(nick)+'" placeholder="Adınız / Lakabınız" style="padding:7px 10px;border-radius:9px;border:1px solid rgba(192,132,252,.4);background:rgba(2,6,23,.7);color:#fff;font-size:12px;">'+(up.length?up.map(m=>{const ex=myP[String(m.id)];return'<div class="krd-pred-row"><span style="text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(tMap[m.home_id]||'Ev')+'</span><input type="number" min="0" id="pred_hs_'+m.id+'" value="'+(ex?ex.hs:'')+'" placeholder="0"><span style="text-align:center;">-</span><input type="number" min="0" id="pred_aws_'+m.id+'" value="'+(ex?ex.aws:'')+'" placeholder="0"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(tMap[m.away_id]||'Dep')+'</span><button type="button" onclick="window.krdSubmitPrediction('+m.id+')" style="padding:4px 8px;font-size:11px;">'+(ex?'✓':'Kaydet')+'</button></div>';}).join(''):'<div class="mut" style="font-size:12px;">Açık maç yok.</div>')+(board.length?'<div style="margin-top:4px;padding-top:8px;border-top:1px solid rgba(148,163,184,.18);font-size:11.5px;"><b style="color:#c084fc;">🏅 Tahmin Sıralaması:</b><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:5px;">'+board.slice(0,5).map((b,i)=>'<span style="padding:3px 8px;border-radius:7px;background:rgba(192,132,252,.15);">'+(i+1)+'. <b>'+esc(b.nk)+'</b>: '+b.pts+' P</span>').join('')+'</div></div>':'')+'</div>';
+    }
+  }
+  window.krdArchiveSeasonNow=async function(){
+    const seasonTitle=document.getElementById('admArchSeason').value.trim(),championName=document.getElementById('admArchChamp').value.trim(),summaryNote=document.getElementById('admArchNote').value.trim(),resetMatches=document.getElementById('admArchReset').checked;
+    if(!championName)return alert('Şampiyon kulüp adını girin.');
+    if(resetMatches&&!confirm('Şampiyon Onur Köşesine kaydedilecek ve tüm maçlar yeni sezon için sıfırlanacak. Emin misiniz?'))return;
+    await api('POST','/api/admin/krd-archive-season',{seasonTitle,championName,summaryNote,resetMatches});
+    if(typeof load==='function')await load();await fetchMega();if(typeof render==='function')render();if(typeof toast==='function')toast('🏆 Sezon arşivlendi!');
+  };
+  window.krdSaveExtrasNow=async function(){
+    const ex=Object.assign({},window._krdMegaCache.extras,{announcement:document.getElementById('admExAnn').value.trim(),mvp:document.getElementById('admExMvp').value.trim(),chatLocked:document.getElementById('admExChatLock').checked});
+    await api('POST','/api/krd-extras',ex);window._krdMegaCache.extras=ex;if(typeof toast==='function')toast('📢 Duyuru ve MVP ayarları kaydedildi!');
+  };
+  async function renderAdm(){
+    const stObj=getS();if(!isAdm()||!stObj)return;const app=document.getElementById('app');if(!app)return;
+    const ok=app.querySelector('button')&&(app.textContent||'').includes('Çıkış');if(!ok||document.getElementById('krdAdminArchiveAuditBox'))return;
+    const ex=window._krdMegaCache.extras||{},box=document.createElement('div');box.id='krdAdminArchiveAuditBox';
+    box.innerHTML='<b style="color:#facc15;font-size:13.5px;">📢 Duyuru & MVP + 🏅 Sezon Arşivleme + 🛡️ Güvenlik Kaydı</b><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;"><input type="text" id="admExAnn" value="'+esc(ex.announcement||'')+'" placeholder="Üst Duyuru Bandı Metni" style="padding:7px;border-radius:8px;border:1px solid rgba(148,163,184,.28);background:#020617;color:#fff;"><input type="text" id="admExMvp" value="'+esc(ex.mvp||'')+'" placeholder="Haftanın MVP Kulübü" style="padding:7px;border-radius:8px;border:1px solid rgba(148,163,184,.28);background:#020617;color:#fff;"></div><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:12px;"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="admExChatLock" '+(ex.chatLocked?'checked':'')+'><span>Canlı Sohbeti Kilitle</span></label><button type="button" class="pri" onclick="window.krdSaveExtrasNow()">💾 Duyuru & MVP Kaydet</button></div><hr style="border:none;border-top:1px solid rgba(148,163,184,.18);"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;"><input type="text" id="admArchSeason" value="'+esc((stObj.settings&&stObj.settings.season)||'Sezon 2027')+'" placeholder="Sezon Adı" style="padding:7px;border-radius:8px;border:1px solid rgba(148,163,184,.28);background:#020617;color:#fff;"><input type="text" id="admArchChamp" placeholder="Şampiyon Kulüp Adı" style="padding:7px;border-radius:8px;border:1px solid rgba(148,163,184,.28);background:#020617;color:#fff;"></div><input type="text" id="admArchNote" placeholder="Kısa Not (ör. 27 Puan • Lider Tamamladı)" style="padding:7px;border-radius:8px;border:1px solid rgba(148,163,184,.28);background:#020617;color:#fff;font-size:12px;"><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;"><input type="checkbox" id="admArchReset"><span>Arşivledikten sonra tüm maçları yeni sezon için sıfırla</span></label><div style="display:flex;flex-wrap:wrap;gap:8px;"><button type="button" class="pri" onclick="window.krdArchiveSeasonNow()">🏆 Şampiyonu Onur Köşesine Kaydet</button><button type="button" onclick="api('POST','/api/admin/krd-clear-predictions').then(()=>toast('Tahminler sıfırlandı'))">🗑️ Tahminleri Sıfırla</button></div><div id="krdAuditLogList" style="font-size:11.5px;opacity:.85;border-top:1px solid rgba(148,163,184,.18);padding-top:8px;">🛡️ Güvenlik kayıtları yükleniyor...</div>';
+    app.appendChild(box);
+    try{const res=await api('GET','/api/admin/krd-audit');const el=document.getElementById('krdAuditLogList');if(el&&res&&Array.isArray(res.logs))el.innerHTML=res.logs.length?'<b>🛡️ Güvenlik & İşlem Geçmişi:</b><div style="margin-top:5px;display:grid;gap:4px;max-height:140px;overflow-y:auto;">'+res.logs.map(l=>'<div>• <span style="color:#38bdf8;">['+esc(l.ts)+']</span> <b>'+esc(l.action)+':</b> '+esc(l.detail)+'</div>').join('')+'</div>':'🛡️ Henüz işlem kaydı yok (Brute-Force koruma kalkanı aktif).';}catch{}
+  }
+  fetchMega().then(()=>renderVis(false));setInterval(fetchMega,5000);setInterval(()=>{renderVis(false);renderAdm();},1100);
 })();
 </script>
 </body></html>
