@@ -523,6 +523,151 @@ input,select{background:#0b1226;border:1px solid var(--line);border-radius:10px;
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#0b1120">
+
+<style id="krdCreatorYoutubeCss">
+  /* 1. En Ustte "IonelSpiegel Sunar" Yapimci Seridi */
+  #krdPresenterRibbon {
+    background: linear-gradient(90deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.96));
+    border-bottom: 1px solid rgba(250, 204, 21, 0.28);
+    padding: 5px 12px;
+    text-align: center;
+    font-size: 11.5px;
+    letter-spacing: 0.08em;
+    color: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  #krdPresenterRibbon a {
+    color: #facc15;
+    font-weight: 900;
+    text-decoration: none;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  #krdPresenterRibbon a:hover {
+    text-decoration: underline;
+  }
+
+  /* 2. Ozel YouTube & Yapimci Vitrin Alani */
+  #krdYoutubeShowcase {
+    margin: 18px 0 14px 0;
+    padding: 16px;
+    border-radius: 16px !important;
+    background: linear-gradient(135deg, rgba(220, 38, 38, 0.16), rgba(15, 23, 42, 0.94) 55%, rgba(56, 189, 248, 0.12)) !important;
+    border: 1.5px solid rgba(239, 68, 68, 0.42) !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+    display: grid;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .krd-yt-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .krd-yt-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .krd-yt-logo {
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+    background: linear-gradient(135deg, #ef4444, #b91c1c);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 20px;
+    font-weight: 900;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.45);
+    flex-shrink: 0;
+  }
+  .krd-yt-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    background: rgba(250, 204, 21, 0.16);
+    color: #facc15;
+    border: 1px solid rgba(250, 204, 21, 0.35);
+    text-transform: uppercase;
+  }
+  .krd-yt-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .krd-yt-sub-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 9px 15px !important;
+    border-radius: 11px !important;
+    background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+    color: #fff !important;
+    font-weight: 800 !important;
+    font-size: 12.5px !important;
+    text-decoration: none !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+    cursor: pointer;
+  }
+  .krd-yt-sub-btn:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+  .krd-yt-copy-btn {
+    padding: 8px 12px !important;
+    border-radius: 11px !important;
+    background: rgba(255, 255, 255, 0.07) !important;
+    color: #f1f5f9 !important;
+    border: 1px solid rgba(148, 163, 184, 0.25) !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    cursor: pointer;
+  }
+  .krd-yt-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(148, 163, 184, 0.16);
+  }
+  .krd-yt-tag {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    color: #cbd5e1;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .krd-yt-tag:hover {
+    border-color: #ef4444;
+    color: #fff;
+  }
+  #krdCreatorFooter {
+    text-align: center;
+    font-size: 11.5px;
+    opacity: 0.72;
+    padding: 10px 0 18px 0;
+  }
+</style>
+
 </head><body><div id="goal">GOL!</div><div class="wrap" id="app"></div><div id="toast"></div>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -3037,6 +3182,89 @@ events.onmessage = async () => {
     injectRefreshBtn();
     const dot = document.getElementById('krdConnDot');
     if (dot) dot.style.background = navigator.onLine ? '#22c55e' : '#ef4444';
+  }, 1000);
+})();
+</script>
+
+
+<script id="krdCreatorYoutubeJs">
+(function() {
+  const YT_URL = 'https://www.youtube.com/channel/UCuVteY5Gha1jjET5XUkj1vw';
+
+  function injectPresenterRibbon() {
+    if (document.getElementById('krdPresenterRibbon')) return;
+    const ribbon = document.createElement('div');
+    ribbon.id = 'krdPresenterRibbon';
+    ribbon.innerHTML = `
+      <span>✦ YAPIMCI:</span>
+      <a href="${YT_URL}" target="_blank" rel="noopener noreferrer">İonelSpiegel Sunar</a>
+      <span style="opacity:.6;">•</span>
+      <span style="font-size:10.5px;opacity:.8;">Resmi Lig Platformu</span>
+    `;
+    document.body.insertBefore(ribbon, document.body.firstChild);
+  }
+
+  function injectYoutubeSection() {
+    if (typeof S === 'undefined') return;
+    const slug = (S.settings && S.settings.admin_slug) ? S.settings.admin_slug : 'krd-kontrol';
+    const onAdmin = location.hash.startsWith('#/yonetici') || location.hash.startsWith('#/' + slug);
+    if (onAdmin) return;
+
+    const app = document.getElementById('app');
+    if (!app) return;
+
+    if (!document.getElementById('krdYoutubeShowcase')) {
+      const box = document.createElement('section');
+      box.id = 'krdYoutubeShowcase';
+      box.className = 'card';
+      box.innerHTML = `
+        <div class="krd-yt-top">
+          <div class="krd-yt-brand">
+            <div class="krd-yt-logo">▶</div>
+            <div>
+              <span class="krd-yt-badge">✦ Yapımcı & Resmi Kanal</span>
+              <div style="font-size:16.5px;font-weight:900;color:#fff;margin-top:3px;">İonelSpiegel</div>
+              <div style="font-size:12px;opacity:.82;margin-top:1px;">Maç özetleri, haftanın golleri ve lig özel videoları</div>
+            </div>
+          </div>
+          <div class="krd-yt-actions">
+            <a class="krd-yt-sub-btn" href="${YT_URL}" target="_blank" rel="noopener noreferrer">▶ YouTube'da İzle & Abone Ol</a>
+            <button type="button" class="krd-yt-copy-btn" id="krdCopyYtBtn">🔗 Kanalı Paylaş</button>
+          </div>
+        </div>
+        <div class="krd-yt-tags">
+          <a class="krd-yt-tag" href="${YT_URL}" target="_blank" rel="noopener noreferrer">🎬 Maç Özetleri</a>
+          <a class="krd-yt-tag" href="${YT_URL}" target="_blank" rel="noopener noreferrer">⚽ Haftanın Golleri</a>
+          <a class="krd-yt-tag" href="${YT_URL}" target="_blank" rel="noopener noreferrer">🏆 Şampiyonluk Özel</a>
+          <a class="krd-yt-tag" href="${YT_URL}" target="_blank" rel="noopener noreferrer">📺 Tüm Videolar →</a>
+        </div>
+      `;
+      app.appendChild(box);
+
+      document.getElementById('krdCopyYtBtn').addEventListener('click', () => {
+        const shareMsg = '🏆 İonelSpiegel Sunar — KRD Ligi Resmi YouTube Kanalı:\n' + YT_URL;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(shareMsg).then(() => {
+            if (typeof toast === 'function') toast('YouTube kanal linki kopyalandı!');
+          }).catch(() => alert(shareMsg));
+        } else {
+          alert(shareMsg);
+        }
+      });
+    }
+
+    if (!document.getElementById('krdCreatorFooter')) {
+      const ft = document.createElement('div');
+      ft.id = 'krdCreatorFooter';
+      ft.innerHTML = `Yapımcı: <b style="color:#facc15;">İonelSpiegel</b> • KRD Ligi Resmi Yayın Platformu`;
+      app.appendChild(ft);
+    }
+  }
+
+  injectPresenterRibbon();
+  setInterval(() => {
+    injectPresenterRibbon();
+    injectYoutubeSection();
   }, 1000);
 })();
 </script>
