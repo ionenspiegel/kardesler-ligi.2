@@ -526,6 +526,130 @@ input,select{background:#0b1226;border:1px solid var(--line);border-radius:10px;
   }
 </style>
 
+
+<style id="krdProPack3Css">
+  /* 1. Genel / Ic Saha / Deplasman Sekmeleri */
+  #krdSplitTabs {
+    display: inline-flex;
+    gap: 5px;
+    margin-bottom: 8px;
+    background: rgba(15, 23, 42, 0.7);
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid var(--krd-border, rgba(148, 163, 184, 0.2));
+  }
+  .krd-split-btn {
+    padding: 4px 10px !important;
+    min-height: 28px !important;
+    font-size: 11.5px !important;
+    font-weight: 700;
+    border: none !important;
+    background: transparent;
+    color: var(--krd-text, #f1f5f9);
+    opacity: 0.75;
+    cursor: pointer;
+  }
+  .krd-split-btn.active {
+    background: var(--krd-accent, #38bdf8);
+    color: #09111e;
+    opacity: 1;
+  }
+
+  /* 2. Tiklanabilir Takim Adi */
+  .krd-team-link {
+    cursor: pointer;
+    text-decoration: underline dotted rgba(148, 163, 184, 0.45);
+    text-underline-offset: 3px;
+  }
+  .krd-team-link:hover {
+    color: var(--krd-accent, #38bdf8);
+  }
+
+  /* 3. Oyuncu Profil Modali */
+  #krdTeamModal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(2, 6, 23, 0.78);
+    backdrop-filter: blur(6px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  #krdTeamModal.open { display: flex; }
+  .krd-tm-card {
+    width: 100%;
+    max-width: 420px;
+    background: #0f172a;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+    display: grid;
+    gap: 12px;
+    color: #f1f5f9;
+  }
+  .krd-wdl-bar {
+    display: flex;
+    height: 10px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(148, 163, 184, 0.2);
+  }
+  .krd-fdr-dot {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .krd-fdr-hard { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
+  .krd-fdr-mid  { background: rgba(234, 179, 8, 0.2); color: #fde047; border: 1px solid rgba(234, 179, 8, 0.4); }
+  .krd-fdr-easy { background: rgba(34, 197, 94, 0.2); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.4); }
+
+  /* 4. Siradaki Mac Guc Dengesi Bari */
+  #krdOddsBarWrap {
+    width: 100%;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(148, 163, 184, 0.16);
+  }
+  .krd-odds-track {
+    display: flex;
+    height: 7px;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+
+  /* 5. Hizli Mac Arama Kutusu */
+  #krdMatchSearch {
+    width: 100%;
+    padding: 7px 11px;
+    border-radius: 10px;
+    border: 1px solid var(--krd-border, rgba(148, 163, 184, 0.22));
+    background: rgba(15, 23, 42, 0.65);
+    color: var(--krd-text, #f1f5f9);
+    font-size: 12.5px;
+    margin-bottom: 8px;
+  }
+
+  /* Konfeti Parcasi */
+  .krd-confetti {
+    position: fixed;
+    top: -12px;
+    width: 8px;
+    height: 12px;
+    z-index: 10001;
+    pointer-events: none;
+    animation: krdFall 2.8s linear forwards;
+  }
+  @keyframes krdFall {
+    to { transform: translateY(105vh) rotate(540deg); opacity: 0; }
+  }
+</style>
+
 </head><body><div id="goal">GOL!</div><div class="wrap" id="app"></div><div id="toast"></div>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -3039,6 +3163,291 @@ events.onmessage = async () => {
   }
 
   setInterval(runBroadcastEnhancements, 950);
+})();
+</script>
+
+
+<script id="krdProPack3Js">
+(function() {
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  let tableMode = 'all'; // 'all' | 'home' | 'away'
+  let searchQuery = '';
+  let confettiFired = false;
+
+  function isAdminView() {
+    if (typeof S === 'undefined') return true;
+    const slug = (S.settings && S.settings.admin_slug) ? S.settings.admin_slug : 'krd-kontrol';
+    return location.hash.startsWith('#/yonetici') || location.hash.startsWith('#/' + slug);
+  }
+
+  function buildFullStats() {
+    const teams = (S && Array.isArray(S.teams)) ? S.teams : [];
+    const matches = (S && Array.isArray(S.matches)) ? S.matches : [];
+    const winPts = Number((S && S.settings && S.settings.win) ?? 3);
+    const drawPts = Number((S && S.settings && S.settings.draw) ?? 1);
+    const lossPts = Number((S && S.settings && S.settings.loss) ?? 0);
+
+    const stats = {};
+    teams.forEach(t => {
+      stats[t.id] = {
+        id: t.id, name: t.name,
+        all:  { o: 0, g: 0, b: 0, m: 0, ag: 0, yg: 0, p: 0 },
+        home: { o: 0, g: 0, b: 0, m: 0, ag: 0, yg: 0, p: 0 },
+        away: { o: 0, g: 0, b: 0, m: 0, ag: 0, yg: 0, p: 0 },
+        upcoming: []
+      };
+    });
+
+    matches.forEach(m => {
+      if (!stats[m.home_id] || !stats[m.away_id]) return;
+      if (!m.played) {
+        stats[m.home_id].upcoming.push({ week: m.week, oppId: m.away_id, side: 'Ev' });
+        stats[m.away_id].upcoming.push({ week: m.week, oppId: m.home_id, side: 'Dep' });
+        return;
+      }
+      const hs = Number(m.hs || 0), aws = Number(m.aws || 0);
+      const h = stats[m.home_id], a = stats[m.away_id];
+
+      h.all.o++; h.home.o++; a.all.o++; a.away.o++;
+      h.all.ag += hs; h.all.yg += aws; h.home.ag += hs; h.home.yg += aws;
+      a.all.ag += aws; a.all.yg += hs; a.away.ag += aws; a.away.yg += hs;
+
+      if (hs > aws) {
+        h.all.g++; h.home.g++; h.all.p += winPts; h.home.p += winPts;
+        a.all.m++; a.away.m++; a.all.p += lossPts; a.away.p += lossPts;
+      } else if (aws > hs) {
+        a.all.g++; a.away.g++; a.all.p += winPts; a.away.p += winPts;
+        h.all.m++; h.home.m++; h.all.p += lossPts; h.home.p += lossPts;
+      } else {
+        h.all.b++; h.home.b++; h.all.p += drawPts; h.home.p += drawPts;
+        a.all.b++; a.away.b++; a.all.p += drawPts; a.away.p += drawPts;
+      }
+    });
+    return stats;
+  }
+
+  function ensureTeamModal() {
+    if (document.getElementById('krdTeamModal')) return;
+    const modal = document.createElement('div');
+    modal.id = 'krdTeamModal';
+    modal.className = 'modal';
+    modal.innerHTML = '<div class="krd-tm-card" id="krdTeamModalBody"></div>';
+    modal.addEventListener('click', e => {
+      if (e.target === modal) {
+        modal.classList.remove('open');
+        document.body.classList.remove('krd-modal-open');
+      }
+    });
+    document.body.appendChild(modal);
+  }
+
+  window.openKrdTeamProfile = function(teamId) {
+    ensureTeamModal();
+    const stats = buildFullStats();
+    const st = stats[teamId];
+    if (!st) return;
+    const tMap = Object.fromEntries((S.teams || []).map(t => [t.id, t.name]));
+    const ranked = Object.values(stats).sort((a, b) => (b.all.p - a.all.p) || ((b.all.ag - b.all.yg) - (a.all.ag - a.all.yg)));
+    const rankMap = Object.fromEntries(ranked.map((x, idx) => [x.id, idx + 1]));
+
+    const tot = Math.max(1, st.all.o);
+    const wPct = Math.round((st.all.g / tot) * 100);
+    const dPct = Math.round((st.all.b / tot) * 100);
+    const lPct = Math.max(0, 100 - wPct - dPct);
+    const avgScored = st.all.o ? (st.all.ag / st.all.o).toFixed(2) : '0.00';
+    const avgConc = st.all.o ? (st.all.yg / st.all.o).toFixed(2) : '0.00';
+
+    const body = document.getElementById('krdTeamModalBody');
+    body.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:11px;color:#38bdf8;font-weight:800;">LIG SIRALAMASI: #${rankMap[teamId] || '-'}</div>
+          <div style="font-size:18px;font-weight:900;">${esc(st.name)}</div>
+        </div>
+        <button type="button" onclick="document.getElementById('krdTeamModal').classList.remove('open');document.body.classList.remove('krd-modal-open');" style="padding:4px 10px;">✕</button>
+      </div>
+
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px;">
+          <span style="color:#4ade80;">Galibiyet %${wPct} (${st.all.g})</span>
+          <span style="color:#facc15;">Beraberlik %${dPct} (${st.all.b})</span>
+          <span style="color:#f87171;">Mağlubiyet %${lPct} (${st.all.m})</span>
+        </div>
+        <div class="krd-wdl-bar">
+          <div style="width:${wPct}%;background:#22c55e;"></div>
+          <div style="width:${dPct}%;background:#eab308;"></div>
+          <div style="width:${lPct}%;background:#ef4444;"></div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center;font-size:12px;">
+        <div style="background:rgba(255,255,255,0.05);padding:8px;border-radius:10px;"><b>${avgScored}</b><div style="font-size:10px;opacity:.75;">Maç Başı Gol</div></div>
+        <div style="background:rgba(255,255,255,0.05);padding:8px;border-radius:10px;"><b>${avgConc}</b><div style="font-size:10px;opacity:.75;">Maç Başı Yenen</div></div>
+        <div style="background:rgba(255,255,255,0.05);padding:8px;border-radius:10px;"><b>${st.home.p} / ${st.away.p}</b><div style="font-size:10px;opacity:.75;">Ev / Dep Puan</div></div>
+      </div>
+
+      <div>
+        <div style="font-size:12px;font-weight:800;margin-bottom:6px;color:#facc15;">📅 Kalan Maçlar & Zorluk Derecesi:</div>
+        ${st.upcoming.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;">
+          ${st.upcoming.map(u => {
+            const oppRank = rankMap[u.oppId] || 4;
+            const cls = oppRank <= 2 ? 'krd-fdr-hard' : oppRank <= Math.ceil(ranked.length * 0.65) ? 'krd-fdr-mid' : 'krd-fdr-easy';
+            return `<span class="krd-fdr-dot ${cls}">H${u.week} vs ${esc(tMap[u.oppId] || 'Rakip')} (${u.side})</span>`;
+          }).join('')}
+        </div>` : '<div class="mut" style="font-size:12px;">Kalan maç bulunmuyor.</div>'}
+      </div>
+    `;
+    const modal = document.getElementById('krdTeamModal');
+    modal.classList.add('open');
+    document.body.classList.add('krd-modal-open');
+  };
+
+  function fireChampConfetti() {
+    if (confettiFired) return;
+    confettiFired = true;
+    const colors = ['#facc15', '#38bdf8', '#22c55e', '#f43f5e', '#a855f7'];
+    for (let i = 0; i < 42; i++) {
+      const c = document.createElement('div');
+      c.className = 'krd-confetti';
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.background = colors[i % colors.length];
+      c.style.animationDelay = (Math.random() * 1.1) + 's';
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 4200);
+    }
+  }
+
+  function applyPack3() {
+    if (typeof S === 'undefined' || !Array.isArray(S.teams) || !S.teams.length || isAdminView()) return;
+    const app = document.getElementById('app');
+    if (!app) return;
+
+    const stats = buildFullStats();
+    const tbl = app.querySelector('table');
+
+    // 1. Genel / Ic Saha / Deplasman Sekmeleri + Tiklanabilir Takim Isimleri
+    if (tbl) {
+      if (!document.getElementById('krdSplitTabs')) {
+        const tabs = document.createElement('div');
+        tabs.id = 'krdSplitTabs';
+        tabs.innerHTML = `
+          <button type="button" class="krd-split-btn active" data-mode="all">📊 Genel Tablo</button>
+          <button type="button" class="krd-split-btn" data-mode="home">🏠 İç Saha</button>
+          <button type="button" class="krd-split-btn" data-mode="away">✈️ Deplasman</button>
+        `;
+        tbl.parentNode.insertBefore(tabs, tbl);
+        tabs.querySelectorAll('.krd-split-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            tableMode = btn.getAttribute('data-mode') || 'all';
+            tabs.querySelectorAll('.krd-split-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderSplitTable(tbl, stats);
+          });
+        });
+      }
+
+      // Takim adlarini tiklanabilir profil linkine donustur
+      tbl.querySelectorAll('tbody tr').forEach(tr => {
+        const nameCell = tr.children[1] || tr.children[0];
+        if (!nameCell || nameCell.dataset.krdLinked) return;
+        const rowTxt = (tr.textContent || '').toLowerCase();
+        const tm = S.teams.find(t => rowTxt.includes((t.name || '').toLowerCase()));
+        if (tm) {
+          nameCell.dataset.krdLinked = '1';
+          nameCell.classList.add('krd-team-link');
+          nameCell.title = 'Oyuncu profilini ve kalan maç zorluğunu gör';
+          nameCell.addEventListener('click', () => window.openKrdTeamProfile(tm.id));
+        }
+      });
+
+      if (tableMode !== 'all') renderSplitTable(tbl, stats);
+    }
+
+    // 2. Siradaki Mac Spotlight Kartina Kazanma Ihtimali / Guc Dengesi Cubugu ekle
+    const spot = document.getElementById('krdSpotlightCard');
+    const nextMatch = (S.matches || []).find(m => !m.played);
+    if (spot && nextMatch && !document.getElementById('krdOddsBarWrap')) {
+      const hSt = stats[nextMatch.home_id]?.all || { o: 0, p: 0, ag: 0, yg: 0 };
+      const aSt = stats[nextMatch.away_id]?.all || { o: 0, p: 0, ag: 0, yg: 0 };
+      const hPower = Math.max(15, 45 + (hSt.o ? (hSt.p / hSt.o) * 14 + (hSt.ag - hSt.yg) * 1.5 : 0) + 6);
+      const aPower = Math.max(15, 45 + (aSt.o ? (aSt.p / aSt.o) * 14 + (aSt.ag - aSt.yg) * 1.5 : 0));
+      const dPower = 24;
+      const sum = hPower + aPower + dPower;
+      const hPct = Math.round((hPower / sum) * 100);
+      const dPct = Math.round((dPower / sum) * 100);
+      const aPct = Math.max(5, 100 - hPct - dPct);
+
+      const wrap = document.createElement('div');
+      wrap.id = 'krdOddsBarWrap';
+      wrap.innerHTML = `
+        <div style="display:flex;justify-content:space-between;font-size:10.5px;font-weight:700;opacity:.88;">
+          <span style="color:#4ade80;">Ev %${hPct}</span>
+          <span style="color:#facc15;">Beraberlik %${dPct}</span>
+          <span style="color:#38bdf8;">Dep %${aPct}</span>
+        </div>
+        <div class="krd-odds-track">
+          <div style="width:${hPct}%;background:#22c55e;"></div>
+          <div style="width:${dPct}%;background:#eab308;"></div>
+          <div style="width:${aPct}%;background:#38bdf8;"></div>
+        </div>
+      `;
+      spot.appendChild(wrap);
+    }
+
+    // 3. Fikstur Ustune Hizli Mac & Skor Arama Kutusu ekle
+    const matchGrid = app.querySelector('.grid');
+    if (matchGrid && !document.getElementById('krdMatchSearch')) {
+      const inp = document.createElement('input');
+      inp.id = 'krdMatchSearch';
+      inp.type = 'search';
+      inp.placeholder = '🔎 Oyuncu adı veya skor ara (ör. dexter, 8 - 2)...';
+      matchGrid.parentNode.insertBefore(inp, matchGrid);
+      inp.addEventListener('input', () => {
+        searchQuery = inp.value.trim().toLowerCase();
+        Array.from(matchGrid.children).forEach(card => {
+          if (!searchQuery) { card.style.display = ''; return; }
+          const txt = (card.textContent || '').toLowerCase();
+          card.style.display = txt.includes(searchQuery) ? '' : 'none';
+        });
+      });
+    }
+
+    // 4. Tum Maclar Bittiyse Sampiyonluk Konfetisi
+    const allMatches = S.matches || [];
+    if (allMatches.length > 0 && allMatches.every(m => m.played)) {
+      fireChampConfetti();
+    }
+  }
+
+  function renderSplitTable(tbl, stats) {
+    if (tableMode === 'all') {
+      if (typeof render === 'function') render();
+      return;
+    }
+    const mode = tableMode;
+    const rows = Object.values(stats)
+      .map(s => ({ id: s.id, name: s.name, ...s[mode], av: s[mode].ag - s[mode].yg }))
+      .sort((a, b) => (b.p - a.p) || (b.av - a.av) || (b.ag - a.ag));
+
+    const tbody = tbl.querySelector('tbody');
+    if (!tbody) return;
+    tbody.innerHTML = rows.map((r, i) => `
+      <tr class="${i === 0 ? 'krd-rank-1' : i <= 2 ? 'krd-rank-top' : ''}">
+        <td>${i + 1}</td>
+        <td class="krd-team-link" onclick="window.openKrdTeamProfile(${r.id})"><b>${esc(r.name)}</b></td>
+        <td>${r.o}</td>
+        <td>${r.g}</td>
+        <td>${r.b}</td>
+        <td>${r.m}</td>
+        <td>${r.ag}</td>
+        <td>${r.yg}</td>
+        <td>${r.av > 0 ? '+' + r.av : r.av}</td>
+        <td><b>${r.p}</b></td>
+      </tr>
+    `).join('');
+  }
+
+  setInterval(applyPack3, 1000);
 })();
 </script>
 
