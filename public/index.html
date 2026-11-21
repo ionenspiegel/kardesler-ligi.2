@@ -125,6 +125,163 @@ input,select{background:#0b1226;border:1px solid var(--line);border-radius:10px;
 @keyframes cfall{to{transform:translateY(105vh) rotate(720deg);opacity:0}}
 </style><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0b1220">  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
   <link rel="apple-touch-icon" href="/icon-192.png">
+
+<style id="krdUxPolishCss">
+  :root {
+    --krd-bg: #0b1120;
+    --krd-card: rgba(15, 23, 42, 0.86);
+    --krd-border: rgba(148, 163, 184, 0.18);
+    --krd-accent: #38bdf8;
+    --krd-gold: #facc15;
+    --krd-text: #f1f5f9;
+  }
+  body[data-krd-theme="pitch"] {
+    --krd-bg: #071712;
+    --krd-card: rgba(10, 31, 24, 0.88);
+    --krd-border: rgba(52, 211, 153, 0.22);
+    --krd-accent: #34d399;
+    --krd-gold: #fde047;
+  }
+  body[data-krd-theme="press"] {
+    --krd-bg: #141214;
+    --krd-card: rgba(28, 25, 28, 0.9);
+    --krd-border: rgba(244, 63, 94, 0.22);
+    --krd-accent: #fb7185;
+    --krd-gold: #fbbf24;
+  }
+
+  body {
+    background-color: var(--krd-bg) !important;
+    color: var(--krd-text);
+    transition: background-color 0.25s ease;
+  }
+
+  /* Kart ve tablo renk uyumu + temiz kenarliklar */
+  .card {
+    background: var(--krd-card) !important;
+    border: 1px solid var(--krd-border) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.26);
+    backdrop-filter: blur(8px);
+  }
+  table {
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  th {
+    letter-spacing: 0.04em;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+  td, th {
+    padding: 9px 8px !important;
+  }
+
+  /* Buton dokunmatik ergonomisi */
+  button, .btn {
+    border-radius: 10px !important;
+    min-height: 34px;
+    transition: transform 0.12s ease, opacity 0.15s ease, border-color 0.15s ease;
+  }
+  button:active {
+    transform: scale(0.97);
+  }
+
+  /* Sabit ust navigasyon ve tek noktadan geri tusu */
+  #krdTopNav {
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 14px;
+    background: rgba(9, 14, 28, 0.88);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--krd-border);
+  }
+  #krdBackBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    font-size: 12.5px;
+    font-weight: 700;
+    background: rgba(56, 189, 248, 0.14);
+    color: var(--krd-accent);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    cursor: pointer;
+  }
+  #krdBackBtn.hidden {
+    visibility: hidden;
+    pointer-events: none;
+  }
+  #krdThemeBtn {
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--krd-gold);
+    border: 1px solid var(--krd-border);
+    cursor: pointer;
+  }
+
+  /* Sayfa icindeki daginik/tekrarli geri linklerini gizle (ust barda zaten var) */
+  #app a[href="#/"], #app a[href="#"] {
+    display: none !important;
+  }
+
+  /* Takim/Mac hizli filtre seridi */
+  #krdFilterBar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 8px 0 12px 0;
+  }
+  .krd-chip {
+    padding: 4px 10px !important;
+    min-height: 28px !important;
+    font-size: 12px !important;
+    font-weight: 600;
+    border-radius: 999px !important;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--krd-border);
+    color: var(--krd-text);
+    cursor: pointer;
+  }
+  .krd-chip.active {
+    background: var(--krd-accent);
+    color: #09111e;
+    border-color: var(--krd-accent);
+    font-weight: 800;
+  }
+
+  /* Yukari cik butonu */
+  #krdScrollTop {
+    position: fixed;
+    right: 18px;
+    bottom: 78px;
+    z-index: 880;
+    width: 38px;
+    height: 38px;
+    border-radius: 50% !important;
+    background: var(--krd-card);
+    color: var(--krd-accent);
+    border: 1px solid var(--krd-border);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+    font-size: 16px;
+    font-weight: 900;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+</style>
+
 </head><body><div id="goal">GOL!</div><div class="wrap" id="app"></div><div id="toast"></div>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -2060,6 +2217,138 @@ events.onmessage = async () => {
       throw err;
     }
   };
+})();
+</script>
+
+
+<script id="krdUxPolishJs">
+(function() {
+  const themes = [
+    { id: 'navy', label: '🎨 Gece Mavisi' },
+    { id: 'pitch', label: '🌿 Stadyum' },
+    { id: 'press', label: '📰 Spor Basını' }
+  ];
+
+  let curTheme = localStorage.getItem('krd_theme') || 'navy';
+  function applyTheme(id) {
+    curTheme = id;
+    localStorage.setItem('krd_theme', id);
+    if (id === 'navy') document.body.removeAttribute('data-krd-theme');
+    else document.body.setAttribute('data-krd-theme', id);
+    const btn = document.getElementById('krdThemeBtn');
+    const found = themes.find(t => t.id === id) || themes[0];
+    if (btn) btn.textContent = found.label;
+  }
+
+  // 1. Sabit Ust Bar & Akilli Geri Tusu
+  function ensureTopNav() {
+    if (document.getElementById('krdTopNav')) return;
+    const nav = document.createElement('div');
+    nav.id = 'krdTopNav';
+    nav.innerHTML = `
+      <button type="button" id="krdBackBtn" class="hidden">← Ana Sayfa</button>
+      <span style="font-size:12px;font-weight:800;letter-spacing:.05em;opacity:.85;">KRD LİGİ</span>
+      <button type="button" id="krdThemeBtn" title="Renk Temasını Değiştir">🎨 Gece Mavisi</button>
+    `;
+    document.body.insertBefore(nav, document.body.firstChild);
+
+    document.getElementById('krdBackBtn').addEventListener('click', () => {
+      if (location.hash && location.hash !== '#/' && location.hash !== '#') {
+        location.hash = '#/';
+      } else if (history.length > 1) {
+        history.back();
+      }
+    });
+
+    document.getElementById('krdThemeBtn').addEventListener('click', () => {
+      const idx = themes.findIndex(t => t.id === curTheme);
+      const next = themes[(idx + 1) % themes.length];
+      applyTheme(next.id);
+    });
+
+    applyTheme(curTheme);
+  }
+
+  function updateBackButtonState() {
+    const btn = document.getElementById('krdBackBtn');
+    if (!btn) return;
+    const h = location.hash || '';
+    const isSubPage = h.length > 2 && h !== '#/';
+    if (isSubPage) btn.classList.remove('hidden');
+    else btn.classList.add('hidden');
+  }
+
+  // 2. Fiksturde Hizli Takim Filtresi
+  let activeTeamFilter = '';
+  function injectTeamFilter() {
+    if (typeof S === 'undefined' || !Array.isArray(S.teams) || !S.teams.length) return;
+    const onAdmin = location.hash.startsWith('#/yonetici') || location.hash.startsWith('#/' + ((S.settings && S.settings.admin_slug) || 'krd-kontrol'));
+    if (onAdmin) return;
+
+    const grid = document.querySelector('#app .grid');
+    if (!grid) return;
+
+    let bar = document.getElementById('krdFilterBar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'krdFilterBar';
+      grid.parentNode.insertBefore(bar, grid);
+    }
+
+    const expectedCount = S.teams.length + 1;
+    if (bar.children.length !== expectedCount) {
+      bar.innerHTML = `<button type="button" class="krd-chip ${!activeTeamFilter ? 'active' : ''}" data-team="">Tümü</button>` +
+        S.teams.map(t => `<button type="button" class="krd-chip ${activeTeamFilter === t.name.toLowerCase() ? 'active' : ''}" data-team="${t.name.toLowerCase()}">${t.name}</button>`).join('');
+
+      bar.querySelectorAll('.krd-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          activeTeamFilter = chip.getAttribute('data-team') || '';
+          bar.querySelectorAll('.krd-chip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          applyTeamFilterToCards();
+        });
+      });
+    }
+    applyTeamFilterToCards();
+  }
+
+  function applyTeamFilterToCards() {
+    const grid = document.querySelector('#app .grid');
+    if (!grid) return;
+    Array.from(grid.children).forEach(card => {
+      if (!activeTeamFilter) {
+        card.style.display = '';
+        return;
+      }
+      const txt = (card.textContent || '').toLowerCase();
+      card.style.display = txt.includes(activeTeamFilter) ? '' : 'none';
+    });
+  }
+
+  // 3. Yukari Cik Butonu
+  function ensureScrollTopBtn() {
+    if (document.getElementById('krdScrollTop')) return;
+    const btn = document.createElement('button');
+    btn.id = 'krdScrollTop';
+    btn.type = 'button';
+    btn.title = 'Yukarı Çık';
+    btn.textContent = '↑';
+    document.body.appendChild(btn);
+
+    btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    window.addEventListener('scroll', () => {
+      btn.style.display = window.scrollY > 260 ? 'flex' : 'none';
+    }, { passive: true });
+  }
+
+  ensureTopNav();
+  ensureScrollTopBtn();
+  updateBackButtonState();
+  window.addEventListener('hashchange', updateBackButtonState);
+  setInterval(() => {
+    updateBackButtonState();
+    injectTeamFilter();
+  }, 1000);
 })();
 </script>
 
