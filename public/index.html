@@ -324,232 +324,41 @@ input,select{background:#0b1226;border:1px solid var(--line);border-radius:10px;
 </style>
 
 
-<style id="krdProVisualPackCss">
-  /* 1. Lig Istatistik Seridi */
-  #krdLeagueStatsBar {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin: 10px 0 12px 0;
-  }
-  .krd-stat-pill {
-    background: var(--krd-card, rgba(15, 23, 42, 0.86));
-    border: 1px solid var(--krd-border, rgba(148, 163, 184, 0.18));
-    border-radius: 12px;
-    padding: 8px 10px;
-    text-align: center;
-  }
-  .krd-stat-pill .lbl {
-    font-size: 10.5px;
-    opacity: 0.72;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-  .krd-stat-pill .val {
-    font-size: 14px;
-    font-weight: 800;
-    color: var(--krd-gold, #facc15);
-    margin-top: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  /* 2. Puan Durumu Form Rozetleri (G-B-M) */
-  .krd-form-strip {
-    display: inline-flex;
-    gap: 3px;
-    margin-left: 6px;
-    vertical-align: middle;
-  }
-  .krd-fb {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 900;
-    color: #fff;
-  }
-  .krd-fb.W { background: #16a34a; }
-  .krd-fb.D { background: #ca8a04; }
-  .krd-fb.L { background: #dc2626; }
-
-  /* 3. Kafa Kafaya (H2H) Kutusu */
-  #krdH2HBox {
-    margin: 10px 0 12px 0;
-  }
-  #krdH2HBox summary {
-    cursor: pointer;
-    font-weight: 800;
-    font-size: 13px;
-    color: var(--krd-accent, #38bdf8);
-    list-style: none;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  #krdH2HBox summary::-webkit-details-marker { display: none; }
-
-  /* 4. Mobil Alt Buton Esit Hizalama */
-  @media (max-width: 520px) {
-    body { padding-bottom: 68px !important; }
-    #krdChatWidget {
-      left: 12px !important;
-      bottom: 12px !important;
-      z-index: 890 !important;
-    }
-    #krdChatWidget button {
-      height: 38px !important;
-      padding: 0 12px !important;
-      font-size: 12.5px !important;
-      border-radius: 999px !important;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45) !important;
-    }
-  }
-</style>
-
-
-<style id="krdBroadcastHubCss">
-  /* 1. Puan Tablosu Sira Seritleri */
-  table tbody tr.krd-rank-1 {
-    background: linear-gradient(90deg, rgba(250, 204, 21, 0.16), transparent 65%) !important;
-    box-shadow: inset 4px 0 0 #facc15;
-  }
-  table tbody tr.krd-rank-top {
-    box-shadow: inset 4px 0 0 #38bdf8;
-  }
-  table tbody tr.krd-rank-last {
-    background: linear-gradient(90deg, rgba(239, 68, 68, 0.12), transparent 65%) !important;
-    box-shadow: inset 4px 0 0 #ef4444;
-  }
-  .krd-max-pts {
-    display: inline-block;
-    margin-left: 5px;
-    font-size: 10px;
-    padding: 1px 5px;
-    border-radius: 5px;
-    background: rgba(148, 163, 184, 0.14);
-    color: #94a3b8;
-    font-weight: 700;
-  }
-
-  /* 2. Sezonun Enleri Vitrini */
-  #krdAwardsGrid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    margin: 10px 0 12px 0;
-  }
-  @media (min-width: 640px) {
-    #krdAwardsGrid { grid-template-columns: repeat(4, 1fr); }
-  }
-  .krd-award-card {
-    background: var(--krd-card, rgba(15, 23, 42, 0.86));
-    border: 1px solid var(--krd-border, rgba(148, 163, 184, 0.18));
-    border-radius: 12px;
-    padding: 9px 10px;
-    display: grid;
-    gap: 3px;
-  }
-  .krd-award-card .t {
-    font-size: 10.5px;
-    font-weight: 800;
-    color: var(--krd-accent, #38bdf8);
-    text-transform: uppercase;
-  }
-  .krd-award-card .n {
-    font-size: 13.5px;
-    font-weight: 900;
-    color: #fff;
-  }
-  .krd-award-card .s {
-    font-size: 11px;
-    opacity: 0.78;
-  }
-
-  /* 3. Siradaki Mac Spotlight & Paylasim Arac Cubugu */
-  #krdSpotlightCard {
-    background: linear-gradient(135deg, rgba(56, 189, 248, 0.14), rgba(15, 23, 42, 0.92));
-    border: 1px solid rgba(56, 189, 248, 0.35);
-    border-radius: 14px;
-    padding: 11px 14px;
-    margin: 10px 0;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-  }
-  #krdShareTools {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin: 8px 0;
-  }
-  #krdShareTools button {
-    font-size: 11.5px !important;
-    padding: 5px 10px !important;
-    min-height: 30px !important;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid var(--krd-border, rgba(148, 163, 184, 0.22));
-    color: var(--krd-text, #f1f5f9);
-    cursor: pointer;
-  }
-
-  /* 4. Hafta Secici Haplar */
-  #krdWeekFilterBar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    margin: 6px 0 10px 0;
-  }
-
-  /* 5. Canli Gol Parlama Animasyonu */
-  @keyframes krdGoalFlash {
-    0% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.85); transform: scale(1.02); }
-    50% { box-shadow: 0 0 24px 6px rgba(239, 68, 68, 0.75); }
-    100% { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35); transform: scale(1); }
-  }
-  .krd-goal-flash {
-    animation: krdGoalFlash 1.1s ease-out 2;
-  }
-  #krdSoundBtn {
-    padding: 5px 9px;
-    font-size: 12px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid var(--krd-border, rgba(148, 163, 184, 0.2));
-    color: var(--krd-text, #f1f5f9);
-    cursor: pointer;
-  }
-</style>
 
 
 
 
 
-<style id="krdLiveIntegrationCss">
-  /* 1. Genel / Ic Saha / Deplasman Sekmeleri (Sifir Titreme) */
+
+
+
+
+
+
+
+<style id="krdCleanSuiteCss">
+  /* Eski daginik filtre seritlerini gizle */
+  #krdFilterBar, #krdWeekFilterBar, #krdMatchSearch { display: none !important; }
+
+  /* 1. Sade Puan Tablosu Sekmeleri */
   #krdSplitTabs {
     display: inline-flex;
-    gap: 5px;
-    margin-bottom: 8px;
+    gap: 4px;
+    margin-bottom: 10px;
     background: rgba(15, 23, 42, 0.78);
     padding: 4px;
     border-radius: 10px;
     border: 1px solid var(--krd-border, rgba(148, 163, 184, 0.2));
   }
   .krd-split-btn {
-    padding: 4px 10px !important;
+    padding: 4px 11px !important;
     min-height: 28px !important;
-    font-size: 11.5px !important;
+    font-size: 12px !important;
     font-weight: 700;
     border: none !important;
     background: transparent;
     color: var(--krd-text, #f1f5f9);
-    opacity: 0.75;
+    opacity: 0.72;
     cursor: pointer;
   }
   .krd-split-btn.active {
@@ -557,18 +366,24 @@ input,select{background:#0b1226;border:1px solid var(--line);border-radius:10px;
     color: #09111e;
     opacity: 1;
   }
-  #krdSplitTableWrap {
-    display: none;
-    overflow-x: auto;
+  #krdSplitTableWrap { display: none; overflow-x: auto; }
+  #krdSplitTableWrap.active { display: block; }
+
+  /* Puan Tablosu Sira Seritleri */
+  table tbody tr.krd-rank-1 {
+    background: linear-gradient(90deg, rgba(250, 204, 21, 0.14), transparent 65%) !important;
+    box-shadow: inset 3px 0 0 #facc15;
   }
-  #krdSplitTableWrap.active {
-    display: block;
+  table tbody tr.krd-rank-top { box-shadow: inset 3px 0 0 #38bdf8; }
+  table tbody tr.krd-rank-last {
+    background: linear-gradient(90deg, rgba(239, 68, 68, 0.10), transparent 65%) !important;
+    box-shadow: inset 3px 0 0 #ef4444;
   }
 
-  /* 2. Canli Mac Rozeti (Puan Tablosu & Fikstur) */
+  /* Canli Mac Rozeti & Fikstur Vurgusu */
   @keyframes krdLivePulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.45; transform: scale(0.95); }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
   }
   .krd-live-pill {
     display: inline-flex;
@@ -578,37 +393,96 @@ input,select{background:#0b1226;border:1px solid var(--line);border-radius:10px;
     margin-left: 6px;
     border-radius: 999px;
     font-size: 10px;
-    font-weight: 900;
+    font-weight: 800;
     background: rgba(239, 68, 68, 0.22);
     color: #fca5a5;
-    border: 1px solid rgba(239, 68, 68, 0.55);
-    animation: krdLivePulse 1.3s infinite;
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    animation: krdLivePulse 1.4s infinite;
     vertical-align: middle;
   }
   .krd-live-fixture-card {
-    border: 1.5px solid rgba(239, 68, 68, 0.75) !important;
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.16), rgba(15, 23, 42, 0.92)) !important;
-    box-shadow: 0 0 18px rgba(239, 68, 68, 0.22) !important;
+    border: 1.5px solid rgba(239, 68, 68, 0.72) !important;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.14), rgba(15, 23, 42, 0.92)) !important;
   }
   .krd-live-score-box {
-    display: inline-block;
-    padding: 2px 9px;
-    border-radius: 8px;
+    padding: 2px 8px;
+    border-radius: 7px;
     background: #ef4444;
     color: #fff;
     font-weight: 900;
-    font-size: 13.5px;
-    letter-spacing: 0.04em;
+    font-size: 13px;
   }
 
-  /* 3. Tiklanabilir Takim Adi & Profil Modali */
+  /* 2. Tek Satir Kompakt Fikstur Arama & Filtre Cubugu */
+  #krdUnifiedFilterBar {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr;
+    gap: 6px;
+    margin: 8px 0 12px 0;
+  }
+  @media (max-width: 480px) {
+    #krdUnifiedFilterBar { grid-template-columns: 1fr 1fr; }
+    #krdUnifiedFilterBar input { grid-column: 1 / -1; }
+  }
+  #krdUnifiedFilterBar input,
+  #krdUnifiedFilterBar select {
+    width: 100%;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 9px;
+    border: 1px solid var(--krd-border, rgba(148, 163, 184, 0.22));
+    background: rgba(15, 23, 42, 0.75);
+    color: var(--krd-text, #f1f5f9);
+    font-size: 12px;
+  }
+
+  /* 3. Toplanabilir Lig Merkezi Cekmecesi */
+  #krdLeagueHubDrawer {
+    margin: 12px 0;
+    padding: 10px 12px;
+  }
+  #krdLeagueHubDrawer summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--krd-accent, #38bdf8);
+  }
+  #krdLeagueHubDrawer summary::-webkit-details-marker { display: none; }
+  .krd-hub-body {
+    margin-top: 12px;
+    display: grid;
+    gap: 12px;
+    border-top: 1px solid var(--krd-border, rgba(148, 163, 184, 0.16));
+    padding-top: 12px;
+  }
+  .krd-mini-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  @media (min-width: 640px) {
+    .krd-mini-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  .krd-mini-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--krd-border, rgba(148, 163, 184, 0.14));
+    border-radius: 10px;
+    padding: 8px 10px;
+  }
+  .krd-mini-card .t { font-size: 10px; opacity: 0.75; text-transform: uppercase; font-weight: 700; }
+  .krd-mini-card .v { font-size: 13px; font-weight: 800; color: var(--krd-gold, #facc15); margin-top: 2px; }
+
+  /* 4. Tiklanabilir Oyuncu Profil Modali */
   .krd-team-link {
     cursor: pointer;
     text-decoration: underline dotted rgba(148, 163, 184, 0.45);
     text-underline-offset: 3px;
   }
   .krd-team-link:hover { color: var(--krd-accent, #38bdf8); }
-
   #krdTeamModal {
     position: fixed;
     inset: 0;
@@ -623,69 +497,26 @@ input,select{background:#0b1226;border:1px solid var(--line);border-radius:10px;
   #krdTeamModal.open { display: flex; }
   .krd-tm-card {
     width: 100%;
-    max-width: 420px;
+    max-width: 400px;
     background: #0f172a;
     border: 1px solid rgba(56, 189, 248, 0.35);
     border-radius: 16px;
     padding: 16px;
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
     display: grid;
     gap: 12px;
     color: #f1f5f9;
   }
-  .krd-wdl-bar {
-    display: flex;
-    height: 10px;
-    border-radius: 999px;
-    overflow: hidden;
-    background: rgba(148, 163, 184, 0.2);
-  }
-  .krd-fdr-dot {
-    display: inline-block;
-    padding: 2px 7px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 700;
-  }
-  .krd-fdr-hard { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
-  .krd-fdr-mid  { background: rgba(234, 179, 8, 0.2); color: #fde047; border: 1px solid rgba(234, 179, 8, 0.4); }
-  .krd-fdr-easy { background: rgba(34, 197, 94, 0.2); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.4); }
+  .krd-wdl-bar { display: flex; height: 9px; border-radius: 999px; overflow: hidden; background: rgba(148, 163, 184, 0.2); }
+  .krd-fdr-dot { display: inline-block; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+  .krd-fdr-hard { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+  .krd-fdr-mid  { background: rgba(234, 179, 8, 0.2); color: #fde047; }
+  .krd-fdr-easy { background: rgba(34, 197, 94, 0.2); color: #86efac; }
 
-  /* 4. Siradaki Mac Guc Dengesi & Arama */
-  #krdOddsBarWrap {
-    width: 100%;
-    margin-top: 6px;
-    padding-top: 6px;
-    border-top: 1px solid rgba(148, 163, 184, 0.16);
-  }
-  .krd-odds-track {
-    display: flex;
-    height: 7px;
-    border-radius: 999px;
-    overflow: hidden;
-    margin-top: 4px;
-  }
-  #krdMatchSearch {
-    width: 100%;
-    padding: 7px 11px;
-    border-radius: 10px;
-    border: 1px solid var(--krd-border, rgba(148, 163, 184, 0.22));
-    background: rgba(15, 23, 42, 0.65);
-    color: var(--krd-text, #f1f5f9);
-    font-size: 12.5px;
-    margin-bottom: 8px;
-  }
-  .krd-confetti {
-    position: fixed;
-    top: -12px;
-    width: 8px;
-    height: 12px;
-    z-index: 10001;
-    pointer-events: none;
-    animation: krdFall 2.8s linear forwards;
-  }
-  @keyframes krdFall {
-    to { transform: translateY(105vh) rotate(540deg); opacity: 0; }
+  /* Mobil alt butonlar sade hiza */
+  @media (max-width: 520px) {
+    body { padding-bottom: 66px !important; }
+    #krdChatWidget { left: 12px !important; bottom: 12px !important; z-index: 890 !important; }
+    #krdChatWidget button { height: 36px !important; padding: 0 12px !important; font-size: 12px !important; border-radius: 999px !important; }
   }
 </style>
 
@@ -2780,442 +2611,24 @@ events.onmessage = async () => {
 </script>
 
 
-<script id="krdProVisualPackJs">
-(function() {
-  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-  function isAdminView() {
-    if (typeof S === 'undefined') return true;
-    const slug = (S.settings && S.settings.admin_slug) ? S.settings.admin_slug : 'krd-kontrol';
-    return location.hash.startsWith('#/yonetici') || location.hash.startsWith('#/' + slug);
-  }
-
-  function getTeamForm(teamId) {
-    if (typeof S === 'undefined' || !Array.isArray(S.matches)) return [];
-    const played = S.matches.filter(m => m.played && (m.home_id === teamId || m.away_id === teamId));
-    return played.slice(-5).map(m => {
-      const isHome = m.home_id === teamId;
-      const gf = isHome ? Number(m.hs) : Number(m.aws);
-      const ga = isHome ? Number(m.aws) : Number(m.hs);
-      if (gf > ga) return 'W';
-      if (gf < ga) return 'L';
-      return 'D';
-    });
-  }
-
-  function renderLeagueEnhancements() {
-    if (typeof S === 'undefined' || !Array.isArray(S.teams) || !S.teams.length || isAdminView()) return;
-    const app = document.getElementById('app');
-    if (!app) return;
-
-    const tbl = app.querySelector('table');
-    const tMap = Object.fromEntries(S.teams.map(t => [t.id, t.name]));
-
-    // 1. Puan tablosu satirlarina G-B-M form rozetleri ekle
-    if (tbl) {
-      tbl.querySelectorAll('tbody tr').forEach(tr => {
-        if (tr.querySelector('.krd-form-strip')) return;
-        const rowTxt = (tr.textContent || '').toLowerCase();
-        const tm = S.teams.find(t => rowTxt.includes((t.name || '').toLowerCase()));
-        if (!tm) return;
-        const form = getTeamForm(tm.id);
-        if (!form.length) return;
-        const nameCell = tr.children[1] || tr.children[0];
-        if (!nameCell) return;
-        const span = document.createElement('span');
-        span.className = 'krd-form-strip';
-        span.title = 'Son Maç Formu';
-        span.innerHTML = form.map(r => `<span class="krd-fb ${r}">${r === 'W' ? 'G' : r === 'D' ? 'B' : 'M'}</span>`).join('');
-        nameCell.appendChild(span);
-      });
-
-      // 2. Tablonun ustune Lig Istatistik Seridi ekle
-      if (!document.getElementById('krdLeagueStatsBar')) {
-        const playedMatches = (S.matches || []).filter(m => m.played);
-        const totalGoals = playedMatches.reduce((acc, m) => acc + Number(m.hs || 0) + Number(m.aws || 0), 0);
-        const avgGoals = playedMatches.length ? (totalGoals / playedMatches.length).toFixed(2) : '0.00';
-        let topMatch = '-';
-        if (playedMatches.length) {
-          const best = [...playedMatches].sort((a, b) => (Number(b.hs) + Number(b.aws)) - (Number(a.hs) + Number(a.aws)))[0];
-          topMatch = `${tMap[best.home_id] || 'Ev'} ${best.hs}-${best.aws} ${tMap[best.away_id] || 'Dep'}`;
-        }
-        const bar = document.createElement('div');
-        bar.id = 'krdLeagueStatsBar';
-        bar.innerHTML = `
-          <div class="krd-stat-pill"><div class="lbl">Toplam Gol</div><div class="val">⚽ ${totalGoals}</div></div>
-          <div class="krd-stat-pill"><div class="lbl">Maç Başı Gol</div><div class="val">📈 ${avgGoals}</div></div>
-          <div class="krd-stat-pill"><div class="lbl">En Gollü Maç</div><div class="val" title="${esc(topMatch)}">${esc(topMatch)}</div></div>
-        `;
-        tbl.parentNode.insertBefore(bar, tbl);
-      }
-
-      // 3. Tablonun altina Kafa Kafaya (H2H) Rekabet Kutusu ekle
-      if (!document.getElementById('krdH2HBox') && S.teams.length >= 2) {
-        const box = document.createElement('details');
-        box.id = 'krdH2HBox';
-        box.className = 'card';
-        const opts = S.teams.map((t, i) => `<option value="${t.id}" ${i === 1 ? 'selected' : ''}>${esc(t.name)}</option>`).join('');
-        const optsA = S.teams.map((t, i) => `<option value="${t.id}" ${i === 0 ? 'selected' : ''}>${esc(t.name)}</option>`).join('');
-        box.innerHTML = `
-          <summary>
-            <span>⚔️ Kafa Kafaya (H2H) Rekabet Kıyasla</span>
-            <span class="mut" style="font-size:11px;">Aç / Kapat ▾</span>
-          </summary>
-          <div style="margin-top:10px;display:grid;gap:8px;">
-            <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;">
-              <select id="krdH2HA">${optsA}</select>
-              <b style="font-size:12px;opacity:.7;">VS</b>
-              <select id="krdH2HB">${opts}</select>
-            </div>
-            <div id="krdH2HResult" style="font-size:12.5px;"></div>
-          </div>
-        `;
-        tbl.parentNode.insertBefore(box, tbl.nextSibling);
-
-        const updateH2H = () => {
-          const aId = Number(document.getElementById('krdH2HA').value);
-          const bId = Number(document.getElementById('krdH2HB').value);
-          const out = document.getElementById('krdH2HResult');
-          if (!aId || !bId || aId === bId) {
-            out.innerHTML = '<div class="mut">Karşılaştırmak için iki farklı takım seçin.</div>';
-            return;
-          }
-          const h2h = (S.matches || []).filter(m => m.played && ((m.home_id === aId && m.away_id === bId) || (m.home_id === bId && m.away_id === aId)));
-          if (!h2h.length) {
-            out.innerHTML = '<div class="mut">Bu iki takım arasında henüz oynanmış maç yok.</div>';
-            return;
-          }
-          let aWin = 0, bWin = 0, draw = 0, aGoals = 0, bGoals = 0;
-          h2h.forEach(m => {
-            const ag = m.home_id === aId ? Number(m.hs) : Number(m.aws);
-            const bg = m.home_id === bId ? Number(m.hs) : Number(m.aws);
-            aGoals += ag; bGoals += bg;
-            if (ag > bg) aWin++;
-            else if (bg > ag) bWin++;
-            else draw++;
-          });
-          out.innerHTML = `
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center;margin-bottom:8px;">
-              <div style="background:rgba(34,197,94,0.14);padding:6px;border-radius:8px;"><b>${aWin}</b><div style="font-size:10.5px;opacity:.8;">${esc(tMap[aId])} Gal.</div></div>
-              <div style="background:rgba(148,163,184,0.14);padding:6px;border-radius:8px;"><b>${draw}</b><div style="font-size:10.5px;opacity:.8;">Beraberlik</div></div>
-              <div style="background:rgba(56,189,248,0.14);padding:6px;border-radius:8px;"><b>${bWin}</b><div style="font-size:10.5px;opacity:.8;">${esc(tMap[bId])} Gal.</div></div>
-            </div>
-            <div style="font-size:11.5px;opacity:.85;text-align:center;margin-bottom:6px;">Toplam Goller: <b>${aGoals} - ${bGoals}</b></div>
-            <div style="display:grid;gap:4px;">
-              ${h2h.map(m => `<div style="display:flex;justify-content:space-between;padding:5px 8px;background:rgba(15,23,42,0.5);border-radius:6px;font-size:12px;">
-                <span>H${m.week}: ${esc(tMap[m.home_id])}</span>
-                <b>${m.hs} - ${m.aws}</b>
-                <span>${esc(tMap[m.away_id])}</span>
-              </div>`).join('')}
-            </div>
-          `;
-        };
-        document.getElementById('krdH2HA').addEventListener('change', updateH2H);
-        document.getElementById('krdH2HB').addEventListener('change', updateH2H);
-        updateH2H();
-      }
-    }
-  }
-
-  setInterval(renderLeagueEnhancements, 950);
-})();
-</script>
-
-
-<script id="krdBroadcastHubJs">
-(function() {
-  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  let soundOn = localStorage.getItem('krd_sound') !== '0';
-  let lastLiveSnapshot = '';
-  let activeWeekFilter = '';
-
-  function playGoalChime() {
-    if (!soundOn) return;
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const notes = [523.25, 659.25, 783.99, 1046.5];
-      notes.forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.08, ctx.currentTime + i * 0.11);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.11 + 0.35);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + i * 0.11);
-        osc.stop(ctx.currentTime + i * 0.11 + 0.36);
-      });
-    } catch {}
-  }
-
-  function ensureSoundToggle() {
-    const nav = document.getElementById('krdTopNav');
-    if (!nav || document.getElementById('krdSoundBtn')) return;
-    const themeBtn = document.getElementById('krdThemeBtn');
-    const wrap = document.createElement('div');
-    wrap.style.cssText = 'display:flex;align-items:center;gap:6px;';
-    const sBtn = document.createElement('button');
-    sBtn.id = 'krdSoundBtn';
-    sBtn.type = 'button';
-    sBtn.title = 'Canlı Gol Sesini Aç/Kapat';
-    sBtn.textContent = soundOn ? '🔊' : '🔇';
-    sBtn.addEventListener('click', () => {
-      soundOn = !soundOn;
-      localStorage.setItem('krd_sound', soundOn ? '1' : '0');
-      sBtn.textContent = soundOn ? '🔊' : '🔇';
-      if (soundOn) playGoalChime();
-    });
-    if (themeBtn && themeBtn.parentNode === nav) {
-      nav.insertBefore(wrap, themeBtn);
-      wrap.appendChild(sBtn);
-      wrap.appendChild(themeBtn);
-    }
-  }
-
-  function isAdminView() {
-    if (typeof S === 'undefined') return true;
-    const slug = (S.settings && S.settings.admin_slug) ? S.settings.admin_slug : 'krd-kontrol';
-    return location.hash.startsWith('#/yonetici') || location.hash.startsWith('#/' + slug);
-  }
-
-  function computeTeamStats() {
-    const teams = (S && Array.isArray(S.teams)) ? S.teams : [];
-    const matches = (S && Array.isArray(S.matches)) ? S.matches : [];
-    const winPts = Number((S && S.settings && S.settings.win) ?? 3);
-    const map = {};
-    teams.forEach(t => {
-      map[t.id] = { id: t.id, name: t.name, p: 0, gf: 0, ga: 0, pts: 0, rem: 0, streak: 0 };
-    });
-    matches.forEach(m => {
-      if (!map[m.home_id] || !map[m.away_id]) return;
-      if (!m.played) {
-        map[m.home_id].rem++;
-        map[m.away_id].rem++;
-        return;
-      }
-      const hs = Number(m.hs || 0), aws = Number(m.aws || 0);
-      map[m.home_id].p++; map[m.away_id].p++;
-      map[m.home_id].gf += hs; map[m.home_id].ga += aws;
-      map[m.away_id].gf += aws; map[m.away_id].ga += hs;
-      if (hs > aws) {
-        map[m.home_id].pts += winPts;
-        map[m.home_id].streak++;
-        map[m.away_id].streak = 0;
-      } else if (aws > hs) {
-        map[m.away_id].pts += winPts;
-        map[m.away_id].streak++;
-        map[m.home_id].streak = 0;
-      } else {
-        map[m.home_id].pts += 1;
-        map[m.away_id].pts += 1;
-        map[m.home_id].streak++;
-        map[m.away_id].streak++;
-      }
-    });
-    return { map, winPts };
-  }
-
-  function copyShareText(type) {
-    if (typeof S === 'undefined') return;
-    const tMap = Object.fromEntries((S.teams || []).map(t => [t.id, t.name]));
-    const leagueName = (S.settings && S.settings.name) || 'KRD LİGİ';
-    const season = (S.settings && S.settings.season) || '';
-    let text = '';
-
-    if (type === 'table') {
-      const tbl = document.querySelector('#app table');
-      const rows = tbl ? Array.from(tbl.querySelectorAll('tbody tr')) : [];
-      text = `🏆 ${leagueName} ${season} — PUAN DURUMU\n\n`;
-      rows.forEach((tr, idx) => {
-        const cols = Array.from(tr.children).map(td => td.innerText.replace(/\s+/g, ' ').trim());
-        const medal = idx === 0 ? '👑' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
-        text += `${medal} ${cols[1] || cols[0]} — ${cols[cols.length - 1] || ''} P\n`;
-      });
-    } else {
-      const played = (S.matches || []).filter(m => m.played);
-      const lastWeek = played.length ? Math.max(...played.map(m => Number(m.week || 1))) : 1;
-      const wMatches = played.filter(m => Number(m.week || 1) === lastWeek);
-      text = `⚽ ${leagueName} — ${lastWeek}. HAFTA SONUÇLARI\n\n`;
-      wMatches.forEach(m => {
-        text += `▪️ ${tMap[m.home_id] || 'Ev'} ${m.hs} - ${m.aws} ${tMap[m.away_id] || 'Dep'}\n`;
-      });
-    }
-    text += `\n🔗 Canlı Takip: ${location.origin}`;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text).then(() => {
-        if (typeof toast === 'function') toast('Yayın metni panoya kopyalandı!');
-      }).catch(() => alert(text));
-    } else {
-      alert(text);
-    }
-  }
-
-  function runBroadcastEnhancements() {
-    ensureSoundToggle();
-    if (typeof S === 'undefined' || !Array.isArray(S.teams) || !S.teams.length) return;
-
-    // Canli gol sesi ve parlama kontrolu
-    const live = typeof window.getLiveMatches === 'function' ? window.getLiveMatches() : [];
-    const snap = JSON.stringify(live.map(x => [x.id, x.hs, x.aws]));
-    if (lastLiveSnapshot && snap !== lastLiveSnapshot && live.length) {
-      playGoalChime();
-      const bar = document.getElementById('krdPublicLiveBar');
-      if (bar) {
-        bar.classList.remove('krd-goal-flash');
-        void bar.offsetWidth;
-        bar.classList.add('krd-goal-flash');
-      }
-    }
-    lastLiveSnapshot = snap;
-
-    if (isAdminView()) return;
-    const app = document.getElementById('app');
-    if (!app) return;
-
-    const tbl = app.querySelector('table');
-    const tMap = Object.fromEntries(S.teams.map(t => [t.id, t.name]));
-    const { map: statsMap, winPts } = computeTeamStats();
-
-    // 1. Puan Tablosu Sira Seritleri + Max Puan Rozeti
-    if (tbl) {
-      const trs = Array.from(tbl.querySelectorAll('tbody tr'));
-      trs.forEach((tr, idx) => {
-        tr.classList.remove('krd-rank-1', 'krd-rank-top', 'krd-rank-last');
-        if (idx === 0) tr.classList.add('krd-rank-1');
-        else if (idx <= 2) tr.classList.add('krd-rank-top');
-        else if (idx === trs.length - 1 && trs.length > 3) tr.classList.add('krd-rank-last');
-
-        const rowTxt = (tr.textContent || '').toLowerCase();
-        const tm = S.teams.find(t => rowTxt.includes((t.name || '').toLowerCase()));
-        if (tm && statsMap[tm.id] && !tr.querySelector('.krd-max-pts')) {
-          const st = statsMap[tm.id];
-          const maxPossible = st.pts + st.rem * winPts;
-          const ptsCell = tr.lastElementChild;
-          if (ptsCell) {
-            const b = document.createElement('span');
-            b.className = 'krd-max-pts';
-            b.title = 'Kalan maçları kazanırsa ulaşabileceği maksimum puan';
-            b.textContent = `Max:${maxPossible}`;
-            ptsCell.appendChild(b);
-          }
-        }
-      });
-
-      // 2. Tek Tikla Paylasim Butonlari
-      if (!document.getElementById('krdShareTools')) {
-        const tools = document.createElement('div');
-        tools.id = 'krdShareTools';
-        tools.innerHTML = `
-          <button type="button" id="krdCopyTableBtn">📋 Puan Durumunu Kopyala</button>
-          <button type="button" id="krdCopyWeekBtn">📢 Son Hafta Sonuçlarını Kopyala</button>
-        `;
-        tbl.parentNode.insertBefore(tools, tbl.nextSibling);
-        document.getElementById('krdCopyTableBtn').addEventListener('click', () => copyShareText('table'));
-        document.getElementById('krdCopyWeekBtn').addEventListener('click', () => copyShareText('week'));
-      }
-
-      // 3. Sezonun Enleri Vitrini
-      const playedMatches = (S.matches || []).filter(m => m.played);
-      if (!document.getElementById('krdAwardsGrid') && playedMatches.length) {
-        const allStats = Object.values(statsMap).filter(x => x.p > 0);
-        const bestAtk = [...allStats].sort((a, b) => b.gf - a.gf)[0];
-        const bestDef = [...allStats].sort((a, b) => a.ga - b.ga)[0];
-        const bestStreak = [...allStats].sort((a, b) => b.streak - a.streak)[0];
-        const biggestWin = [...playedMatches].sort((a, b) => Math.abs(Number(b.hs) - Number(b.aws)) - Math.abs(Number(a.hs) - Number(a.aws)))[0];
-
-        const grid = document.createElement('div');
-        grid.id = 'krdAwardsGrid';
-        grid.innerHTML = `
-          <div class="krd-award-card">
-            <div class="t">⚽ En Golcü Takım</div>
-            <div class="n">${esc(bestAtk ? bestAtk.name : '-')}</div>
-            <div class="s">${bestAtk ? bestAtk.gf + ' Gol Attı' : ''}</div>
-          </div>
-          <div class="krd-award-card">
-            <div class="t">🛡️ En İyi Savunma</div>
-            <div class="n">${esc(bestDef ? bestDef.name : '-')}</div>
-            <div class="s">${bestDef ? bestDef.ga + ' Gol Yedi' : ''}</div>
-          </div>
-          <div class="krd-award-card">
-            <div class="t">🔥 Yenilmezlik Serisi</div>
-            <div class="n">${esc(bestStreak ? bestStreak.name : '-')}</div>
-            <div class="s">${bestStreak ? bestStreak.streak + ' Maçtır Yenilmiyor' : ''}</div>
-          </div>
-          <div class="krd-award-card">
-            <div class="t">💥 En Farklı Skor</div>
-            <div class="n">${biggestWin ? esc(tMap[biggestWin.home_id]) + ' ' + biggestWin.hs + '-' + biggestWin.aws + ' ' + esc(tMap[biggestWin.away_id]) : '-'}</div>
-            <div class="s">${biggestWin ? biggestWin.week + '. Hafta' : ''}</div>
-          </div>
-        `;
-        const anchor = document.getElementById('krdH2HBox') || document.getElementById('krdShareTools') || tbl;
-        anchor.parentNode.insertBefore(grid, anchor.nextSibling);
-      }
-    }
-
-    // 4. Siradaki Kritik Mac Spotlight Karti
-    const nextMatch = (S.matches || []).find(m => !m.played);
-    if (nextMatch && !document.getElementById('krdSpotlightCard')) {
-      const fBar = document.getElementById('krdFilterBar') || app.querySelector('.grid');
-      if (fBar && fBar.parentNode) {
-        const spot = document.createElement('div');
-        spot.id = 'krdSpotlightCard';
-        spot.innerHTML = `
-          <div>
-            <div style="font-size:10.5px;font-weight:800;color:#38bdf8;text-transform:uppercase;">⚡ Sıradaki Maç • ${nextMatch.week}. Hafta</div>
-            <div style="font-size:14.5px;font-weight:900;margin-top:2px;">${esc(tMap[nextMatch.home_id] || 'Ev')} <span style="color:#facc15;margin:0 6px;">VS</span> ${esc(tMap[nextMatch.away_id] || 'Dep')}</div>
-          </div>
-          <span style="font-size:11px;padding:4px 9px;border-radius:8px;background:rgba(56,189,248,0.16);color:#38bdf8;font-weight:700;">Oynanacak</span>
-        `;
-        fBar.parentNode.insertBefore(spot, fBar);
-      }
-    }
-
-    // 5. Hafta Bazli Fikstur Filtresi
-    const weeks = [...new Set((S.matches || []).map(m => Number(m.week || 1)))].sort((a, b) => a - b);
-    const matchGrid = app.querySelector('.grid');
-    if (matchGrid && weeks.length > 1) {
-      let wBar = document.getElementById('krdWeekFilterBar');
-      if (!wBar) {
-        wBar = document.createElement('div');
-        wBar.id = 'krdWeekFilterBar';
-        matchGrid.parentNode.insertBefore(wBar, matchGrid);
-      }
-      if (wBar.children.length !== weeks.length + 1) {
-        wBar.innerHTML = `<button type="button" class="krd-chip ${!activeWeekFilter ? 'active' : ''}" data-wk="">Tüm Haftalar</button>` +
-          weeks.map(w => `<button type="button" class="krd-chip ${activeWeekFilter === String(w) ? 'active' : ''}" data-wk="${w}">H${w}</button>`).join('');
-        wBar.querySelectorAll('.krd-chip').forEach(btn => {
-          btn.addEventListener('click', () => {
-            activeWeekFilter = btn.getAttribute('data-wk') || '';
-            wBar.querySelectorAll('.krd-chip').forEach(c => c.classList.remove('active'));
-            btn.classList.add('active');
-            Array.from(matchGrid.children).forEach(card => {
-              if (!activeWeekFilter) { card.style.display = ''; return; }
-              const txt = card.textContent || '';
-              const hit = txt.includes(`Hafta ${activeWeekFilter}`) || txt.includes(`H${activeWeekFilter}`) || txt.includes(`${activeWeekFilter}. Hafta`);
-              card.style.display = hit ? '' : 'none';
-            });
-          });
-        });
-      }
-    }
-  }
-
-  setInterval(runBroadcastEnhancements, 950);
-})();
-</script>
 
 
 
 
 
-<script id="krdLiveIntegrationJs">
+
+
+
+
+
+
+
+<script id="krdCleanSuiteJs">
 (function() {
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   let tableMode = 'all';
-  let lastSplitSig = '';
-  let lastLiveSig = '';
-  let confettiFired = false;
+  let lastTableSig = '';
+  let fQuery = '', fWeek = '', fTeam = '';
 
   function isAdminView() {
     if (typeof S === 'undefined') return true;
@@ -3226,16 +2639,14 @@ events.onmessage = async () => {
   function getLiveMap() {
     const list = typeof window.getLiveMatches === 'function' ? window.getLiveMatches() : [];
     const map = {};
-    list.forEach(item => {
-      if (item && item.id) map[Number(item.id)] = { hs: Number(item.hs) || 0, aws: Number(item.aws) || 0 };
-    });
+    list.forEach(x => { if (x && x.id) map[Number(x.id)] = { hs: Number(x.hs) || 0, aws: Number(x.aws) || 0 }; });
     return map;
   }
 
-  function buildStats(includeLive) {
+  function computeStats() {
     const teams = (S && Array.isArray(S.teams)) ? S.teams : [];
     const matches = (S && Array.isArray(S.matches)) ? S.matches : [];
-    const liveMap = includeLive ? getLiveMap() : {};
+    const liveMap = getLiveMap();
     const winPts = Number((S && S.settings && S.settings.win) ?? 3);
     const drawPts = Number((S && S.settings && S.settings.draw) ?? 1);
     const lossPts = Number((S && S.settings && S.settings.loss) ?? 0);
@@ -3253,22 +2664,16 @@ events.onmessage = async () => {
 
     matches.forEach(m => {
       if (!stats[m.home_id] || !stats[m.away_id]) return;
-      const liveEntry = !m.played ? liveMap[Number(m.id)] : null;
-
-      if (!m.played && !liveEntry) {
+      const live = !m.played ? liveMap[Number(m.id)] : null;
+      if (!m.played && !live) {
         stats[m.home_id].upcoming.push({ week: m.week, oppId: m.away_id, side: 'Ev' });
         stats[m.away_id].upcoming.push({ week: m.week, oppId: m.home_id, side: 'Dep' });
         return;
       }
-
-      const hs = liveEntry ? liveEntry.hs : Number(m.hs || 0);
-      const aws = liveEntry ? liveEntry.aws : Number(m.aws || 0);
+      const hs = live ? live.hs : Number(m.hs || 0);
+      const aws = live ? live.aws : Number(m.aws || 0);
       const h = stats[m.home_id], a = stats[m.away_id];
-
-      if (liveEntry) {
-        h.isLive = true;
-        a.isLive = true;
-      }
+      if (live) { h.isLive = true; a.isLive = true; }
 
       h.all.o++; h.home.o++; a.all.o++; a.away.o++;
       h.all.ag += hs; h.all.yg += aws; h.home.ag += hs; h.home.yg += aws;
@@ -3288,51 +2693,43 @@ events.onmessage = async () => {
     return stats;
   }
 
-  function ensureTeamModal() {
-    if (document.getElementById('krdTeamModal')) return;
-    const modal = document.createElement('div');
-    modal.id = 'krdTeamModal';
-    modal.className = 'modal';
-    modal.innerHTML = '<div class="krd-tm-card" id="krdTeamModalBody"></div>';
-    modal.addEventListener('click', e => {
-      if (e.target === modal) {
-        modal.classList.remove('open');
-        document.body.classList.remove('krd-modal-open');
-      }
-    });
-    document.body.appendChild(modal);
-  }
-
   window.openKrdTeamProfile = function(teamId) {
-    ensureTeamModal();
-    const stats = buildStats(true);
+    let modal = document.getElementById('krdTeamModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'krdTeamModal';
+      modal.className = 'modal';
+      modal.innerHTML = '<div class="krd-tm-card" id="krdTeamModalBody"></div>';
+      modal.addEventListener('click', e => {
+        if (e.target === modal) { modal.classList.remove('open'); document.body.classList.remove('krd-modal-open'); }
+      });
+      document.body.appendChild(modal);
+    }
+    const stats = computeStats();
     const st = stats[teamId];
     if (!st) return;
     const tMap = Object.fromEntries((S.teams || []).map(t => [t.id, t.name]));
     const ranked = Object.values(stats).sort((a, b) => (b.all.p - a.all.p) || ((b.all.ag - b.all.yg) - (a.all.ag - a.all.yg)));
-    const rankMap = Object.fromEntries(ranked.map((x, idx) => [x.id, idx + 1]));
+    const rankMap = Object.fromEntries(ranked.map((x, i) => [x.id, i + 1]));
 
     const tot = Math.max(1, st.all.o);
     const wPct = Math.round((st.all.g / tot) * 100);
     const dPct = Math.round((st.all.b / tot) * 100);
     const lPct = Math.max(0, 100 - wPct - dPct);
-    const avgScored = st.all.o ? (st.all.ag / st.all.o).toFixed(2) : '0.00';
-    const avgConc = st.all.o ? (st.all.yg / st.all.o).toFixed(2) : '0.00';
 
-    const body = document.getElementById('krdTeamModalBody');
-    body.innerHTML = `
+    document.getElementById('krdTeamModalBody').innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <div>
-          <div style="font-size:11px;color:#38bdf8;font-weight:800;">LİG SIRALAMASI: #${rankMap[teamId] || '-'} ${st.isLive ? '• 🔴 ŞU AN MAÇTA' : ''}</div>
+          <div style="font-size:11px;color:#38bdf8;font-weight:800;">SIRA #${rankMap[teamId] || '-'} ${st.isLive ? '• 🔴 CANLI MAÇTA' : ''}</div>
           <div style="font-size:18px;font-weight:900;">${esc(st.name)}</div>
         </div>
         <button type="button" onclick="document.getElementById('krdTeamModal').classList.remove('open');document.body.classList.remove('krd-modal-open');" style="padding:4px 10px;">✕</button>
       </div>
       <div>
         <div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px;">
-          <span style="color:#4ade80;">Galibiyet %${wPct} (${st.all.g})</span>
-          <span style="color:#facc15;">Beraberlik %${dPct} (${st.all.b})</span>
-          <span style="color:#f87171;">Mağlubiyet %${lPct} (${st.all.m})</span>
+          <span style="color:#4ade80;">G %${wPct} (${st.all.g})</span>
+          <span style="color:#facc15;">B %${dPct} (${st.all.b})</span>
+          <span style="color:#f87171;">M %${lPct} (${st.all.m})</span>
         </div>
         <div class="krd-wdl-bar">
           <div style="width:${wPct}%;background:#22c55e;"></div>
@@ -3341,251 +2738,264 @@ events.onmessage = async () => {
         </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center;font-size:12px;">
-        <div style="background:rgba(255,255,255,0.05);padding:8px;border-radius:10px;"><b>${avgScored}</b><div style="font-size:10px;opacity:.75;">Maç Başı Gol</div></div>
-        <div style="background:rgba(255,255,255,0.05);padding:8px;border-radius:10px;"><b>${avgConc}</b><div style="font-size:10px;opacity:.75;">Maç Başı Yenen</div></div>
-        <div style="background:rgba(255,255,255,0.05);padding:8px;border-radius:10px;"><b>${st.home.p} / ${st.away.p}</b><div style="font-size:10px;opacity:.75;">Ev / Dep Puan</div></div>
+        <div style="background:rgba(255,255,255,0.05);padding:8px;border-radius:10px;"><b>${st.all.o ? (st.all.ag / st.all.o).toFixed(1) : '0.0'}</b><div style="font-size:10px;opacity:.75;">Gol Ort.</div></div>
+        <div style="background:rgba(255,255,255,0.05);padding:8px;border-radius:10px;"><b>${st.all.o ? (st.all.yg / st.all.o).toFixed(1) : '0.0'}</b><div style="font-size:10px;opacity:.75;">Yenen Ort.</div></div>
+        <div style="background:rgba(255,255,255,0.05);padding:8px;border-radius:10px;"><b>${st.home.p} / ${st.away.p}</b><div style="font-size:10px;opacity:.75;">Ev / Dep P</div></div>
       </div>
       <div>
-        <div style="font-size:12px;font-weight:800;margin-bottom:6px;color:#facc15;">📅 Kalan Maçlar & Zorluk Derecesi:</div>
-        ${st.upcoming.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <div style="font-size:11.5px;font-weight:800;margin-bottom:5px;color:#facc15;">Kalan Maçlar:</div>
+        ${st.upcoming.length ? `<div style="display:flex;flex-wrap:wrap;gap:5px;">
           ${st.upcoming.map(u => {
-            const oppRank = rankMap[u.oppId] || 4;
-            const cls = oppRank <= 2 ? 'krd-fdr-hard' : oppRank <= Math.ceil(ranked.length * 0.65) ? 'krd-fdr-mid' : 'krd-fdr-easy';
-            return `<span class="krd-fdr-dot ${cls}">H${u.week} vs ${esc(tMap[u.oppId] || 'Rakip')} (${u.side})</span>`;
+            const r = rankMap[u.oppId] || 4;
+            const cls = r <= 2 ? 'krd-fdr-hard' : r <= Math.ceil(ranked.length * 0.65) ? 'krd-fdr-mid' : 'krd-fdr-easy';
+            return `<span class="krd-fdr-dot ${cls}">H${u.week} ${esc(tMap[u.oppId] || '')} (${u.side})</span>`;
           }).join('')}
-        </div>` : '<div class="mut" style="font-size:12px;">Kalan maç bulunmuyor.</div>'}
+        </div>` : '<div class="mut" style="font-size:12px;">Kalan maç yok.</div>'}
       </div>
     `;
-    const modal = document.getElementById('krdTeamModal');
     modal.classList.add('open');
     document.body.classList.add('krd-modal-open');
   };
 
-  function renderSplitOrLiveTable(origTbl, stats) {
-    let wrap = document.getElementById('krdSplitTableWrap');
-    if (!wrap) {
-      wrap = document.createElement('div');
-      wrap.id = 'krdSplitTableWrap';
-      origTbl.parentNode.insertBefore(wrap, origTbl.nextSibling);
-    }
-
-    const liveMap = getLiveMap();
-    const hasLive = Object.keys(liveMap).length > 0;
-    const showCustom = (tableMode !== 'all') || hasLive;
-
-    if (!showCustom) {
-      origTbl.style.display = '';
-      wrap.classList.remove('active');
-      lastSplitSig = '';
-      return;
-    }
-
-    origTbl.style.display = 'none';
-    wrap.classList.add('active');
-
-    const modeKey = tableMode === 'home' ? 'home' : tableMode === 'away' ? 'away' : 'all';
-    const rows = Object.values(stats)
-      .map(s => ({ id: s.id, name: s.name, isLive: s.isLive, ...s[modeKey], av: s[modeKey].ag - s[modeKey].yg }))
-      .sort((a, b) => (b.p - a.p) || (b.av - a.av) || (b.ag - a.ag));
-
-    const sig = modeKey + '|' + JSON.stringify(rows);
-    if (sig === lastSplitSig) return;
-    lastSplitSig = sig;
-
-    const badgeTitle = modeKey === 'home' ? '🏠 İÇ SAHA SIRALAMASI' : modeKey === 'away' ? '✈️ DEPLASMAN SIRALAMASI' : '🔴 CANLI PUAN DURUMU (Anlık Skorlar Dahil)';
-
-    wrap.innerHTML = `
-      <div style="font-size:11px;font-weight:800;color:${modeKey === 'all' ? '#fca5a5' : '#38bdf8'};margin-bottom:6px;letter-spacing:.03em;">${badgeTitle}</div>
-      <table style="width:100%;">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th style="text-align:left;">Oyuncu</th>
-            <th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>AV</th><th>P</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows.map((r, i) => `
-            <tr class="${i === 0 ? 'krd-rank-1' : i <= 2 ? 'krd-rank-top' : i === rows.length - 1 && rows.length > 3 ? 'krd-rank-last' : ''}">
-              <td><b>${i + 1}</b></td>
-              <td style="text-align:left;" class="krd-team-link" onclick="window.openKrdTeamProfile(${r.id})">
-                <b>${esc(r.name)}</b>${r.isLive ? '<span class="krd-live-pill">🔴 CANLI</span>' : ''}
-              </td>
-              <td>${r.o}</td><td>${r.g}</td><td>${r.b}</td><td>${r.m}</td>
-              <td>${r.ag}</td><td>${r.yg}</td>
-              <td>${r.av > 0 ? '+' + r.av : r.av}</td>
-              <td><b style="color:${r.isLive ? '#fca5a5' : 'inherit'};">${r.p}</b></td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    `;
-  }
-
-  function enhanceFixtureCardsWithLive() {
-    const app = document.getElementById('app');
-    if (!app) return;
-    const liveMap = getLiveMap();
-    const liveIds = Object.keys(liveMap).map(Number);
+  function copyPublishText(type) {
     const tMap = Object.fromEntries((S.teams || []).map(t => [t.id, t.name]));
-
-    const sig = JSON.stringify(liveMap);
-    const cards = Array.from(app.querySelectorAll('.grid > div, .card'));
-
-    cards.forEach(card => {
-      if (card.id === 'krdSpotlightCard' || card.id === 'krdH2HBox') return;
-      const txt = card.textContent || '';
-      let matchedLive = null;
-
-      for (const mid of liveIds) {
-        const m = (S.matches || []).find(x => Number(x.id) === mid);
-        if (!m) continue;
-        const hName = tMap[m.home_id] || '';
-        const aName = tMap[m.away_id] || '';
-        if (hName && aName && txt.includes(hName) && txt.includes(aName) && !m.played) {
-          matchedLive = { m, score: liveMap[mid] };
-          break;
-        }
-      }
-
-      if (matchedLive) {
-        card.classList.add('krd-live-fixture-card');
-        let badge = card.querySelector('.krd-card-live-banner');
-        if (!badge) {
-          badge = document.createElement('div');
-          badge.className = 'krd-card-live-banner';
-          badge.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid rgba(239,68,68,0.3);';
-          card.insertBefore(badge, card.firstChild);
-        }
-        const nextBanner = `<span class="krd-live-pill" style="margin-left:0;">🔴 CANLI OYNANIYOR</span><span class="krd-live-score-box">${matchedLive.score.hs} - ${matchedLive.score.aws}</span>`;
-        if (badge.innerHTML !== nextBanner) badge.innerHTML = nextBanner;
-      } else {
-        card.classList.remove('krd-live-fixture-card');
-        const old = card.querySelector('.krd-card-live-banner');
-        if (old) old.remove();
-      }
-    });
-    lastLiveSig = sig;
+    const name = (S.settings && S.settings.name) || 'KRD LİGİ';
+    let txt = '';
+    if (type === 'table') {
+      const stats = computeStats();
+      const rows = Object.values(stats).sort((a, b) => (b.all.p - a.all.p) || ((b.all.ag - b.all.yg) - (a.all.ag - a.all.yg)));
+      txt = `🏆 ${name} — PUAN DURUMU\n\n` + rows.map((r, i) => `${i === 0 ? '👑' : (i + 1) + '.'} ${r.name} — ${r.all.p} P (AV ${r.all.ag - r.all.yg})`).join('\n');
+    } else {
+      const played = (S.matches || []).filter(m => m.played);
+      const wk = played.length ? Math.max(...played.map(m => Number(m.week || 1))) : 1;
+      txt = `⚽ ${name} — ${wk}. HAFTA SONUÇLARI\n\n` + played.filter(m => Number(m.week || 1) === wk).map(m => `▪️ ${tMap[m.home_id]} ${m.hs}-${m.aws} ${tMap[m.away_id]}`).join('\n');
+    }
+    navigator.clipboard?.writeText(txt).then(() => typeof toast === 'function' && toast('Panoya kopyalandı!'));
   }
 
-  function applyAllEnhancements() {
+  function applyFixtureFilters() {
+    const grid = document.querySelector('#app .grid');
+    if (!grid) return;
+    Array.from(grid.children).forEach(card => {
+      const txt = (card.textContent || '').toLowerCase();
+      const okQ = !fQuery || txt.includes(fQuery);
+      const okT = !fTeam || txt.includes(fTeam);
+      const okW = !fWeek || txt.includes(`hafta ${fWeek}`) || txt.includes(`h${fWeek}`) || txt.includes(`${fWeek}. hafta`);
+      card.style.display = (okQ && okT && okW) ? '' : 'none';
+    });
+  }
+
+  function syncCleanUI() {
     if (typeof S === 'undefined' || !Array.isArray(S.teams) || !S.teams.length || isAdminView()) return;
     const app = document.getElementById('app');
     if (!app) return;
 
-    const stats = buildStats(true);
-    const origTbl = app.querySelector('table:not(#krdSplitTableWrap table)');
+    const stats = computeStats();
+    const liveMap = getLiveMap();
+    const hasLive = Object.keys(liveMap).length > 0;
+    const tMap = Object.fromEntries(S.teams.map(t => [t.id, t.name]));
 
+    // 1. Puan Tablosu (Genel / Ic Saha / Deplasman + Canli Skor)
+    const origTbl = app.querySelector('table:not(#krdSplitTableWrap table)');
     if (origTbl) {
-      // Sekme Cubugu (Sifir Titreme)
       if (!document.getElementById('krdSplitTabs')) {
         const tabs = document.createElement('div');
         tabs.id = 'krdSplitTabs';
         tabs.innerHTML = `
-          <button type="button" class="krd-split-btn active" data-mode="all">📊 Genel Tablo</button>
-          <button type="button" class="krd-split-btn" data-mode="home">🏠 İç Saha</button>
-          <button type="button" class="krd-split-btn" data-mode="away">✈️ Deplasman</button>
+          <button type="button" class="krd-split-btn active" data-mode="all">Genel</button>
+          <button type="button" class="krd-split-btn" data-mode="home">İç Saha</button>
+          <button type="button" class="krd-split-btn" data-mode="away">Deplasman</button>
         `;
         origTbl.parentNode.insertBefore(tabs, origTbl);
-        tabs.querySelectorAll('.krd-split-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
-            tableMode = btn.getAttribute('data-mode') || 'all';
-            lastSplitSig = '';
-            tabs.querySelectorAll('.krd-split-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderSplitOrLiveTable(origTbl, buildStats(true));
+        tabs.querySelectorAll('.krd-split-btn').forEach(b => {
+          b.addEventListener('click', () => {
+            tableMode = b.dataset.mode || 'all';
+            lastTableSig = '';
+            tabs.querySelectorAll('.krd-split-btn').forEach(x => x.classList.remove('active'));
+            b.classList.add('active');
+            syncCleanUI();
           });
         });
       }
 
-      // Ana tablodaki takim adlarini tiklanabilir yap
-      origTbl.querySelectorAll('tbody tr').forEach(tr => {
-        const nameCell = tr.children[1] || tr.children[0];
-        if (!nameCell || nameCell.dataset.krdLinked) return;
-        const rowTxt = (tr.textContent || '').toLowerCase();
-        const tm = S.teams.find(t => rowTxt.includes((t.name || '').toLowerCase()));
-        if (tm) {
-          nameCell.dataset.krdLinked = '1';
-          nameCell.classList.add('krd-team-link');
-          nameCell.title = 'Oyuncu profilini ve kalan maç zorluğunu gör';
-          nameCell.addEventListener('click', () => window.openKrdTeamProfile(tm.id));
+      let wrap = document.getElementById('krdSplitTableWrap');
+      if (!wrap) {
+        wrap = document.createElement('div');
+        wrap.id = 'krdSplitTableWrap';
+        origTbl.parentNode.insertBefore(wrap, origTbl.nextSibling);
+      }
+
+      const useCustom = tableMode !== 'all' || hasLive;
+      if (!useCustom) {
+        origTbl.style.display = '';
+        wrap.classList.remove('active');
+        lastTableSig = '';
+        origTbl.querySelectorAll('tbody tr').forEach((tr, idx) => {
+          tr.classList.remove('krd-rank-1', 'krd-rank-top', 'krd-rank-last');
+          if (idx === 0) tr.classList.add('krd-rank-1');
+          else if (idx <= 2) tr.classList.add('krd-rank-top');
+          const cell = tr.children[1] || tr.children[0];
+          if (cell && !cell.dataset.krdLinked) {
+            const tm = S.teams.find(t => (tr.textContent || '').toLowerCase().includes((t.name || '').toLowerCase()));
+            if (tm) {
+              cell.dataset.krdLinked = '1';
+              cell.classList.add('krd-team-link');
+              cell.addEventListener('click', () => window.openKrdTeamProfile(tm.id));
+            }
+          }
+        });
+      } else {
+        origTbl.style.display = 'none';
+        wrap.classList.add('active');
+        const mode = tableMode;
+        const rows = Object.values(stats)
+          .map(s => ({ id: s.id, name: s.name, isLive: s.isLive, ...s[mode], av: s[mode].ag - s[mode].yg }))
+          .sort((a, b) => (b.p - a.p) || (b.av - a.av) || (b.ag - a.ag));
+        const sig = mode + '|' + JSON.stringify(rows);
+        if (sig !== lastTableSig) {
+          lastTableSig = sig;
+          wrap.innerHTML = `
+            <table style="width:100%;">
+              <thead><tr><th>#</th><th style="text-align:left;">Oyuncu</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>AV</th><th>P</th></tr></thead>
+              <tbody>
+                ${rows.map((r, i) => `
+                  <tr class="${i === 0 ? 'krd-rank-1' : i <= 2 ? 'krd-rank-top' : ''}">
+                    <td><b>${i + 1}</b></td>
+                    <td style="text-align:left;" class="krd-team-link" onclick="window.openKrdTeamProfile(${r.id})">
+                      <b>${esc(r.name)}</b>${r.isLive ? '<span class="krd-live-pill">🔴 CANLI</span>' : ''}
+                    </td>
+                    <td>${r.o}</td><td>${r.g}</td><td>${r.b}</td><td>${r.m}</td>
+                    <td>${r.ag}</td><td>${r.yg}</td>
+                    <td>${r.av > 0 ? '+' + r.av : r.av}</td>
+                    <td><b>${r.p}</b></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+        }
+      }
+
+      // 2. Toplanabilir Lig Merkezi Cekmecesi (Istatistikler + Oduller + H2H + Kopyala)
+      if (!document.getElementById('krdLeagueHubDrawer')) {
+        const played = (S.matches || []).filter(m => m.played);
+        const totalGoals = played.reduce((s, m) => s + Number(m.hs || 0) + Number(m.aws || 0), 0);
+        const allArr = Object.values(stats).filter(x => x.all.o > 0);
+        const bestAtk = [...allArr].sort((a, b) => b.all.ag - a.all.ag)[0];
+        const bestDef = [...allArr].sort((a, b) => a.all.yg - b.all.yg)[0];
+
+        const drawer = document.createElement('details');
+        drawer.id = 'krdLeagueHubDrawer';
+        drawer.className = 'card';
+        const optsA = S.teams.map((t, i) => `<option value="${t.id}" ${i === 0 ? 'selected' : ''}>${esc(t.name)}</option>`).join('');
+        const optsB = S.teams.map((t, i) => `<option value="${t.id}" ${i === 1 ? 'selected' : ''}>${esc(t.name)}</option>`).join('');
+
+        drawer.innerHTML = `
+          <summary>
+            <span>📊 Lig Merkezi (İstatistikler, H2H & Paylaşım)</span>
+            <span class="mut" style="font-size:11px;">Aç ▾</span>
+          </summary>
+          <div class="krd-hub-body">
+            <div class="krd-mini-grid">
+              <div class="krd-mini-card"><div class="t">Toplam Gol</div><div class="v">⚽ ${totalGoals}</div></div>
+              <div class="krd-mini-card"><div class="t">Maç Ortalaması</div><div class="v">📈 ${played.length ? (totalGoals / played.length).toFixed(2) : '0.00'}</div></div>
+              <div class="krd-mini-card"><div class="t">En Golcü</div><div class="v">${esc(bestAtk ? bestAtk.name + ' (' + bestAtk.all.ag + ')' : '-')}</div></div>
+              <div class="krd-mini-card"><div class="t">En İyi Savunma</div><div class="v">${esc(bestDef ? bestDef.name + ' (' + bestDef.all.yg + ')' : '-')}</div></div>
+            </div>
+
+            <div style="display:grid;gap:6px;background:rgba(255,255,255,0.03);padding:10px;border-radius:10px;">
+              <div style="font-size:11.5px;font-weight:800;">⚔️ Kafa Kafaya (H2H) Karşılaştır</div>
+              <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;">
+                <select id="krdHubH2HA">${optsA}</select>
+                <span class="mut" style="font-size:11px;">VS</span>
+                <select id="krdHubH2HB">${optsB}</select>
+              </div>
+              <div id="krdHubH2HOut" style="font-size:12px;"></div>
+            </div>
+
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+              <button type="button" id="krdHubCopyTbl" style="font-size:11.5px;">📋 Puan Durumu Kopyala</button>
+              <button type="button" id="krdHubCopyWk" style="font-size:11.5px;">📢 Son Hafta Kopyala</button>
+            </div>
+          </div>
+        `;
+        wrap.parentNode.insertBefore(drawer, wrap.nextSibling);
+
+        const calcH2H = () => {
+          const aId = Number(document.getElementById('krdHubH2HA').value);
+          const bId = Number(document.getElementById('krdHubH2HB').value);
+          const out = document.getElementById('krdHubH2HOut');
+          if (!aId || !bId || aId === bId) { out.innerHTML = '<span class="mut">İki farklı oyuncu seçin.</span>'; return; }
+          const list = played.filter(m => (m.home_id === aId && m.away_id === bId) || (m.home_id === bId && m.away_id === aId));
+          if (!list.length) { out.innerHTML = '<span class="mut">Henüz maç oynamadılar.</span>'; return; }
+          let aw = 0, bw = 0, dr = 0;
+          list.forEach(m => {
+            const ag = m.home_id === aId ? Number(m.hs) : Number(m.aws);
+            const bg = m.home_id === bId ? Number(m.hs) : Number(m.aws);
+            if (ag > bg) aw++; else if (bg > ag) bw++; else dr++;
+          });
+          out.innerHTML = `<b>${esc(tMap[aId])}: ${aw}G</b> • Beraberlik: ${dr} • <b>${esc(tMap[bId])}: ${bw}G</b>`;
+        };
+        document.getElementById('krdHubH2HA').addEventListener('change', calcH2H);
+        document.getElementById('krdHubH2HB').addEventListener('change', calcH2H);
+        document.getElementById('krdHubCopyTbl').addEventListener('click', () => copyPublishText('table'));
+        document.getElementById('krdHubCopyWk').addEventListener('click', () => copyPublishText('week'));
+        calcH2H();
+      }
+    }
+
+    // 3. Tek Satir Kompakt Fikstur Filtresi
+    const matchGrid = app.querySelector('.grid');
+    if (matchGrid && !document.getElementById('krdUnifiedFilterBar')) {
+      const weeks = [...new Set((S.matches || []).map(m => Number(m.week || 1)))].sort((a, b) => a - b);
+      const uBar = document.createElement('div');
+      uBar.id = 'krdUnifiedFilterBar';
+      uBar.innerHTML = `
+        <input type="search" id="krdUniSearch" placeholder="🔎 Oyuncu veya skor ara...">
+        <select id="krdUniWeek"><option value="">Tüm Haftalar</option>${weeks.map(w => `<option value="${w}">${w}. Hafta</option>`).join('')}</select>
+        <select id="krdUniTeam"><option value="">Tüm Oyuncular</option>${S.teams.map(t => `<option value="${esc(t.name.toLowerCase())}">${esc(t.name)}</option>`).join('')}</select>
+      `;
+      matchGrid.parentNode.insertBefore(uBar, matchGrid);
+
+      document.getElementById('krdUniSearch').addEventListener('input', e => { fQuery = e.target.value.trim().toLowerCase(); applyFixtureFilters(); });
+      document.getElementById('krdUniWeek').addEventListener('change', e => { fWeek = e.target.value; applyFixtureFilters(); });
+      document.getElementById('krdUniTeam').addEventListener('change', e => { fTeam = e.target.value; applyFixtureFilters(); });
+    }
+
+    // 4. Fikstur Kartlarinda Canli Mac Vurgusu
+    if (matchGrid) {
+      const liveIds = Object.keys(liveMap).map(Number);
+      Array.from(matchGrid.children).forEach(card => {
+        const txt = card.textContent || '';
+        let hit = null;
+        for (const mid of liveIds) {
+          const m = (S.matches || []).find(x => Number(x.id) === mid);
+          if (m && !m.played && txt.includes(tMap[m.home_id] || '') && txt.includes(tMap[m.away_id] || '')) {
+            hit = liveMap[mid];
+            break;
+          }
+        }
+        if (hit) {
+          card.classList.add('krd-live-fixture-card');
+          let b = card.querySelector('.krd-card-live-banner');
+          if (!b) {
+            b = document.createElement('div');
+            b.className = 'krd-card-live-banner';
+            b.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(239,68,68,0.28);';
+            card.insertBefore(b, card.firstChild);
+          }
+          const nextH = `<span class="krd-live-pill" style="margin-left:0;">🔴 CANLI</span><span class="krd-live-score-box">${hit.hs} - ${hit.aws}</span>`;
+          if (b.innerHTML !== nextH) b.innerHTML = nextH;
+        } else {
+          card.classList.remove('krd-live-fixture-card');
+          card.querySelector('.krd-card-live-banner')?.remove();
         }
       });
-
-      renderSplitOrLiveTable(origTbl, stats);
-    }
-
-    // Fikstur kartlarinda canli maclari goster
-    enhanceFixtureCardsWithLive();
-
-    // Siradaki Mac Guc Dengesi Bari
-    const spot = document.getElementById('krdSpotlightCard');
-    const liveMap = getLiveMap();
-    const nextMatch = (S.matches || []).find(m => !m.played && !liveMap[Number(m.id)]);
-    if (spot && nextMatch && !document.getElementById('krdOddsBarWrap')) {
-      const hSt = stats[nextMatch.home_id]?.all || { o: 0, p: 0, ag: 0, yg: 0 };
-      const aSt = stats[nextMatch.away_id]?.all || { o: 0, p: 0, ag: 0, yg: 0 };
-      const hPower = Math.max(15, 45 + (hSt.o ? (hSt.p / hSt.o) * 14 + (hSt.ag - hSt.yg) * 1.5 : 0) + 6);
-      const aPower = Math.max(15, 45 + (aSt.o ? (aSt.p / aSt.o) * 14 + (aSt.ag - aSt.yg) * 1.5 : 0));
-      const dPower = 24;
-      const sum = hPower + aPower + dPower;
-      const hPct = Math.round((hPower / sum) * 100);
-      const dPct = Math.round((dPower / sum) * 100);
-      const aPct = Math.max(5, 100 - hPct - dPct);
-
-      const wrap = document.createElement('div');
-      wrap.id = 'krdOddsBarWrap';
-      wrap.innerHTML = `
-        <div style="display:flex;justify-content:space-between;font-size:10.5px;font-weight:700;opacity:.88;">
-          <span style="color:#4ade80;">Ev %${hPct}</span>
-          <span style="color:#facc15;">Beraberlik %${dPct}</span>
-          <span style="color:#38bdf8;">Dep %${aPct}</span>
-        </div>
-        <div class="krd-odds-track">
-          <div style="width:${hPct}%;background:#22c55e;"></div>
-          <div style="width:${dPct}%;background:#eab308;"></div>
-          <div style="width:${aPct}%;background:#38bdf8;"></div>
-        </div>
-      `;
-      spot.appendChild(wrap);
-    }
-
-    // Fikstur Arama Kutusu
-    const matchGrid = app.querySelector('.grid');
-    if (matchGrid && !document.getElementById('krdMatchSearch')) {
-      const inp = document.createElement('input');
-      inp.id = 'krdMatchSearch';
-      inp.type = 'search';
-      inp.placeholder = '🔎 Oyuncu adı veya skor ara (ör. dexter, 8 - 2)...';
-      matchGrid.parentNode.insertBefore(inp, matchGrid);
-      inp.addEventListener('input', () => {
-        const q = inp.value.trim().toLowerCase();
-        Array.from(matchGrid.children).forEach(card => {
-          if (!q) { card.style.display = ''; return; }
-          const txt = (card.textContent || '').toLowerCase();
-          card.style.display = txt.includes(q) ? '' : 'none';
-        });
-      });
-    }
-
-    // Sampiyonluk konfetisi
-    const allMatches = S.matches || [];
-    if (allMatches.length > 0 && allMatches.every(m => m.played) && !confettiFired) {
-      confettiFired = true;
-      const colors = ['#facc15', '#38bdf8', '#22c55e', '#f43f5e', '#a855f7'];
-      for (let i = 0; i < 42; i++) {
-        const c = document.createElement('div');
-        c.className = 'krd-confetti';
-        c.style.left = Math.random() * 100 + 'vw';
-        c.style.background = colors[i % colors.length];
-        c.style.animationDelay = (Math.random() * 1.1) + 's';
-        document.body.appendChild(c);
-        setTimeout(() => c.remove(), 4200);
-      }
     }
   }
 
-  setInterval(applyAllEnhancements, 700);
+  // Tek hafif motor (1.1 sn)
+  setInterval(syncCleanUI, 1100);
 })();
 </script>
 
