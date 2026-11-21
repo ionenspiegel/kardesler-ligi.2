@@ -671,6 +671,161 @@ input,select{background:#0b1226;border:1px solid var(--line);border-radius:10px;
 
 
 
+
+<style id="krdMobileGameBulkCss">
+  /* 1. Mobil Optimizasyon & Dokunmatik Ergonomi */
+  html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+  @media (max-width: 600px) {
+    #app {
+      padding-left: 10px !important;
+      padding-right: 10px !important;
+    }
+    input, select, textarea {
+      font-size: 16px !important; /* iOS/Android otomatik zoom engeli */
+      min-height: 40px;
+    }
+    button, .btn {
+      min-height: 38px;
+      touch-action: manipulation;
+    }
+    table {
+      display: block;
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    table thead, table tbody {
+      display: table;
+      width: 100%;
+    }
+    th, td {
+      padding: 8px 6px !important;
+      font-size: 12px !important;
+      white-space: nowrap;
+    }
+    #krdPresenterRibbon {
+      font-size: 10.5px !important;
+      padding: 4px 8px !important;
+    }
+    #krdTopNav {
+      padding: 6px 10px !important;
+    }
+    .krd-yt-top {
+      flex-direction: column;
+      align-items: flex-start !important;
+    }
+    .krd-yt-actions {
+      width: 100%;
+    }
+    .krd-yt-sub-btn, .krd-yt-copy-btn {
+      flex: 1;
+      text-align: center;
+      justify-content: center;
+    }
+  }
+
+  /* 2. Penalti Mini Oyunu */
+  #krdMiniGameDrawer {
+    margin: 10px 0 12px 0;
+    padding: 10px 12px;
+  }
+  #krdMiniGameDrawer summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 800;
+    color: #4ade80;
+  }
+  #krdMiniGameDrawer summary::-webkit-details-marker { display: none; }
+  .krd-goal-pitch {
+    margin-top: 10px;
+    background: linear-gradient(180deg, rgba(16, 185, 129, 0.14), rgba(6, 78, 59, 0.35));
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-bottom: none;
+    border-radius: 12px 12px 0 0;
+    padding: 14px 10px 10px 10px;
+    text-align: center;
+    display: grid;
+    gap: 10px;
+  }
+  .krd-shoot-btns {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .krd-shoot-btns button {
+    background: rgba(15, 23, 42, 0.85) !important;
+    border: 1px solid rgba(74, 222, 128, 0.45) !important;
+    color: #f8fafc !important;
+    font-weight: 800 !important;
+    font-size: 12.5px !important;
+  }
+
+  /* 3. Yonetici Tek Seferde Toplu Mac Duzenleyici */
+  #krdBulkMatchBox {
+    margin-top: 14px;
+    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid rgba(56, 189, 248, 0.32);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: grid;
+    gap: 10px;
+  }
+  #krdBulkMatchBox summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 800;
+    font-size: 13.5px;
+    color: #38bdf8;
+  }
+  #krdBulkMatchBox summary::-webkit-details-marker { display: none; }
+  .krd-bulk-row {
+    display: grid;
+    grid-template-columns: 44px 1fr 54px 14px 54px 1fr auto;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 8px;
+    border-radius: 10px;
+    background: rgba(2, 6, 23, 0.55);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    font-size: 12px;
+  }
+  .krd-bulk-row.dirty {
+    border-color: #facc15;
+    background: rgba(250, 204, 21, 0.08);
+  }
+  .krd-bulk-row input[type="number"] {
+    width: 100%;
+    text-align: center;
+    padding: 4px 2px;
+    min-height: 32px !important;
+    font-size: 14px !important;
+    font-weight: 800;
+    border-radius: 7px;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    background: #0f172a;
+    color: #fff;
+  }
+  @media (max-width: 540px) {
+    .krd-bulk-row {
+      grid-template-columns: 36px 1fr 48px 10px 48px 1fr auto;
+      gap: 4px;
+      padding: 6px;
+      font-size: 11px;
+    }
+  }
+</style>
+
 </head><body><div id="goal">GOL!</div><div class="wrap" id="app"></div><div id="toast"></div>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -3274,6 +3429,168 @@ events.onmessage = async () => {
 
 
 
+
+
+<script id="krdMobileGameBulkJs">
+(function() {
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  function isAdminRoute() {
+    if (typeof S === 'undefined') return false;
+    const slug = (S.settings && S.settings.admin_slug) ? S.settings.admin_slug : 'krd-kontrol';
+    return location.hash.startsWith('#/yonetici') || location.hash.startsWith('#/' + slug);
+  }
+
+  // 1. Mini Oyun: Penalti Atisi
+  let streak = 0;
+  let bestStreak = Number(localStorage.getItem('krd_pen_best') || 0);
+
+  window.krdShootPenalty = function(dir) {
+    const dirs = ['sol', 'orta', 'sag'];
+    const labels = { sol: '⬅️ Sol Köşe', orta: '⬆️ Orta', sag: '➡️ Sağ Köşe' };
+    const keeper = dirs[Math.floor(Math.random() * 3)];
+    const statusEl = document.getElementById('krdPenStatus');
+    const keeperEl = document.getElementById('krdKeeperPos');
+    const scoreEl = document.getElementById('krdPenScore');
+    if (!statusEl) return;
+
+    if (keeperEl) keeperEl.textContent = '🧤 Kaleci atladı: ' + labels[keeper];
+    if (dir === keeper) {
+      streak = 0;
+      statusEl.innerHTML = '<span style="color:#f87171;font-weight:900;">❌ KURTARDI! Seri sıfırlandı.</span>';
+    } else {
+      streak++;
+      if (streak > bestStreak) {
+        bestStreak = streak;
+        localStorage.setItem('krd_pen_best', String(bestStreak));
+      }
+      statusEl.innerHTML = '<span style="color:#4ade80;font-weight:900;">⚽ GOOOLLL! Harika vuruş!</span>';
+    }
+    if (scoreEl) scoreEl.textContent = `Seri: ${streak} | Rekor: ${bestStreak}`;
+  };
+
+  function injectMiniGame() {
+    if (isAdminRoute() || typeof S === 'undefined') return;
+    const app = document.getElementById('app');
+    if (!app || document.getElementById('krdMiniGameDrawer')) return;
+
+    const drawer = document.createElement('details');
+    drawer.id = 'krdMiniGameDrawer';
+    drawer.className = 'card';
+    drawer.innerHTML = `
+      <summary>
+        <span>⚽ Mini Oyun: Penaltı Atışı</span>
+        <span id="krdPenScore" style="font-size:11px;color:#facc15;font-weight:800;">Seri: ${streak} | Rekor: ${bestStreak}</span>
+      </summary>
+      <div class="krd-goal-pitch">
+        <div id="krdKeeperPos" style="font-size:12px;font-weight:700;opacity:.88;">🧤 Kaleci hazır! Köşeni seç ve şut çek:</div>
+        <div id="krdPenStatus" style="font-size:13px;min-height:20px;">Top beyaz noktada ⚽</div>
+        <div class="krd-shoot-btns">
+          <button type="button" onclick="window.krdShootPenalty('sol')">⬅️ Sol</button>
+          <button type="button" onclick="window.krdShootPenalty('orta')">⬆️ Orta</button>
+          <button type="button" onclick="window.krdShootPenalty('sag')">➡️ Sağ</button>
+        </div>
+      </div>
+    `;
+    const anchor = document.getElementById('krdLeagueHubDrawer') || app.querySelector('table');
+    if (anchor && anchor.parentNode) {
+      anchor.parentNode.insertBefore(drawer, anchor.nextSibling);
+    } else {
+      app.appendChild(drawer);
+    }
+  }
+
+  // 2. Yonetici Tek Seferde Toplu Mac Duzenleyici
+  window.krdSaveAllBulkMatches = async function() {
+    const rows = Array.from(document.querySelectorAll('.krd-bulk-row.dirty'));
+    if (!rows.length) {
+      if (typeof toast === 'function') toast('Değişiklik yapılmış maç yok.');
+      return;
+    }
+    const btn = document.getElementById('krdBulkSaveBtn');
+    if (btn) { btn.disabled = true; btn.textContent = `⏳ Kaydediliyor (${rows.length} maç)...`; }
+
+    let okCount = 0;
+    try {
+      for (const r of rows) {
+        const mid = Number(r.dataset.mid);
+        const hs = Math.max(0, Number(r.querySelector('.bk-hs').value || 0));
+        const aws = Math.max(0, Number(r.querySelector('.bk-aws').value || 0));
+        const played = r.querySelector('.bk-played').checked ? 1 : 0;
+        await api('PUT', '/api/admin/matches/' + mid, { hs, aws, played });
+        r.classList.remove('dirty');
+        okCount++;
+      }
+      if (typeof load === 'function') await load();
+      if (typeof render === 'function') render();
+      if (typeof toast === 'function') toast(`✅ ${okCount} maç tek seferde kaydedildi!`);
+    } catch (err) {
+      alert('Toplu Kayıt Hatası: ' + (err && err.message ? err.message : err));
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '💾 Tüm Değişiklikleri Tek Seferde Kaydet'; }
+    }
+  };
+
+  function injectBulkMatchEditor() {
+    if (!isAdminRoute() || typeof S === 'undefined' || !Array.isArray(S.matches) || !Array.isArray(S.teams)) return;
+    const app = document.getElementById('app');
+    if (!app) return;
+    const isLoggedIn = app.querySelector('button') && (app.textContent || '').includes('Çıkış');
+    if (!isLoggedIn || document.getElementById('krdBulkMatchBox')) return;
+
+    const tMap = Object.fromEntries(S.teams.map(t => [t.id, t.name]));
+    const sorted = [...S.matches].sort((a, b) => (Number(a.week) - Number(b.week)) || (Number(a.id) - Number(b.id)));
+
+    const box = document.createElement('details');
+    box.id = 'krdBulkMatchBox';
+    box.open = true;
+    box.innerHTML = `
+      <summary>
+        <span>📝 Tüm Maçları Tek Seferde Düzenle (${sorted.length} Maç)</span>
+        <span style="font-size:11px;color:#facc15;">Toplu Editör ▾</span>
+      </summary>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:space-between;align-items:center;">
+        <span style="font-size:11.5px;opacity:.8;">Skorları yazıp kutucuğu işaretleyin, alttan hepsini tek tıkla kaydedin.</span>
+        <button type="button" id="krdBulkSaveBtn" class="pri" onclick="window.krdSaveAllBulkMatches()">💾 Tüm Değişiklikleri Tek Seferde Kaydet</button>
+      </div>
+      <div id="krdBulkList" style="display:grid;gap:6px;max-height:430px;overflow-y:auto;padding-right:2px;">
+        ${sorted.map(m => `
+          <div class="krd-bulk-row" data-mid="${m.id}">
+            <span style="font-weight:800;color:#38bdf8;">H${m.week}</span>
+            <span style="text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(tMap[m.home_id] || 'Ev')}">${esc(tMap[m.home_id] || 'Ev')}</span>
+            <input type="number" min="0" class="bk-hs" value="${Number(m.hs || 0)}">
+            <span style="text-align:center;opacity:.6;">-</span>
+            <input type="number" min="0" class="bk-aws" value="${Number(m.aws || 0)}">
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(tMap[m.away_id] || 'Dep')}">${esc(tMap[m.away_id] || 'Dep')}</span>
+            <label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;" title="Oynandı">
+              <input type="checkbox" class="bk-played" ${m.played ? 'checked' : ''} style="min-height:18px !important;width:18px;">
+              <span>Oyn.</span>
+            </label>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    app.appendChild(box);
+
+    box.querySelectorAll('.krd-bulk-row input').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const row = inp.closest('.krd-bulk-row');
+        if (!row) return;
+        if (inp.type === 'number') {
+          const chk = row.querySelector('.bk-played');
+          if (chk) chk.checked = true;
+        }
+        row.classList.add('dirty');
+      });
+    });
+  }
+
+  setInterval(() => {
+    injectMiniGame();
+    injectBulkMatchEditor();
+  }, 950);
+})();
+</script>
 
 </body></html>
 
