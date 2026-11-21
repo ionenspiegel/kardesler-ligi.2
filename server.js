@@ -1,3 +1,11 @@
+// === KRD_MEGA_PACK_START ===
+const krdLoginGuard = new Map();
+const krdAuditTrail = [];
+function pushAudit(action, detail) {
+  krdAuditTrail.unshift({ ts: new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' }), action, detail });
+  if (krdAuditTrail.length > 40) krdAuditTrail.length = 40;
+}
+// === KRD_MEGA_PACK_END ===
 'use strict';
 // KRD Ligi — takım tabanlı lig. Veritabanı: PostgreSQL (Neon), bağlantı: DATABASE_URL.
 const http = require('http'), fs = require('fs'), path = require('path'), crypto = require('crypto');
@@ -224,6 +232,49 @@ async function api(req, res, u) {
     return send(res, 200, { ok: 1 }, { 'Set-Cookie': cookie(mkToken(), 43200) });
   }
   if (M === 'POST' && P === '/api/admin/logout') return send(res, 200, { ok: 1 }, { 'Set-Cookie': cookie('', 0) });
+  if (M === 'POST' && P === '/api/admin/krd-pro5-save') {
+    const b = await body(req);
+    await tx(async t => {
+      if (b.badges !== undefined) {
+        await t.run(`DELETE FROM ${SETTINGS} WHERE k=$1`, 'krd_club_badges');
+        await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES($1,$2)`, 'krd_club_badges', JSON.stringify(b.badges));
+      }
+      if (b.cup !== undefined) {
+        await t.run(`DELETE FROM ${SETTINGS} WHERE k=$1`, 'krd_super_cup');
+        await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES($1,$2)`, 'krd_super_cup', JSON.stringify(b.cup));
+      }
+    });
+    if (typeof pushAudit === 'function') pushAudit('Kulüp/Kupa Güncellendi', 'Arma veya Süper Kupa ayarları kaydedildi.');
+    if (typeof notifyClients === 'function') notifyClients();
+    return send(res, 200, { ok: 1 });
+  }
+  if (M === 'GET' && P === '/api/admin/krd-audit') return send(res, 200, { ok: 1, logs: krdAuditTrail });
+  if (M === 'POST' && P === '/api/admin/krd-archive-season') {
+    const b = await body(req);
+    const seasonTitle = String(b.seasonTitle || 'Sezon 2027').trim(), championName = String(b.championName || '').trim(), summaryNote = String(b.summaryNote || '').trim();
+    if (!championName) return send(res, 400, { error: 'Şampiyon adı gerekli.' });
+    let archive = [];
+    await tx(async t => {
+      const hRow = await t.get(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_hof_archive');
+      try { if (hRow && hRow.v) archive = JSON.parse(hRow.v); } catch {}
+      archive.unshift({ id: Date.now(), season: seasonTitle, champion: championName, note: summaryNote });
+      await t.run(`DELETE FROM ${SETTINGS} WHERE k=$1`, 'krd_hof_archive');
+      await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES($1,$2)`, 'krd_hof_archive', JSON.stringify(archive));
+      if (b.resetMatches) {
+        await t.run(`UPDATE ${MATCHES} SET hs=0, aws=0, played=0`);
+        await t.run(`DELETE FROM ${SETTINGS} WHERE k=$1`, 'krd_predictions');
+      }
+    });
+    pushAudit('Sezon Arşivlendi', seasonTitle + ' • ' + championName);
+    if (typeof notifyClients === 'function') notifyClients();
+    return send(res, 200, { ok: 1, archive });
+  }
+  if (M === 'POST' && P === '/api/admin/krd-clear-predictions') {
+    await tx(async t => { await t.run(`DELETE FROM ${SETTINGS} WHERE k=$1`, 'krd_predictions'); });
+    pushAudit('Tahminler Sıfırlandı', 'Tüm skor tahminleri silindi.');
+    if (typeof notifyClients === 'function') notifyClients();
+    return send(res, 200, { ok: 1 });
+  }
 
   
 
@@ -475,6 +526,52 @@ const server = http.createServer(async (req, res) => {
   if (req.url.startsWith('/sw.js')) res.setHeader('Service-Worker-Allowed', '/');
   try {
     const u = new URL(req.url, 'http://x');
+  // === KRD_PRO5_START ===
+  if (req.method === 'GET' && P === '/api/krd-pro5-data') {
+    const bRow = await get(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_club_badges');
+    const cRow = await get(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_super_cup');
+    let badges = {}, cup = {};
+    try { if (bRow && bRow.v) badges = JSON.parse(bRow.v); } catch {}
+    try { if (cRow && cRow.v) cup = JSON.parse(cRow.v); } catch {}
+    return send(res, 200, { ok: 1, badges, cup });
+  }
+  // === KRD_PRO5_END ===
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  if (M === 'POST' && P === '/api/admin/login') {
+    const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'x').split(',')[0].trim();
+    const rec = krdLoginGuard.get(ip);
+    if (rec && rec.lockUntil && Date.now() < rec.lockUntil) {
+      return send(res, 429, { error: 'Çok fazla hatalı deneme. ' + Math.ceil((rec.lockUntil - Date.now()) / 60000) + ' dk bekleyin.' });
+    }
+  }
+  if (req.method === 'GET' && P === '/api/krd-mega-data') {
+    const pRow = await get(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_predictions');
+    const hRow = await get(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_hof_archive');
+    let predictions = {}, archive = [];
+    try { if (pRow && pRow.v) predictions = JSON.parse(pRow.v); } catch {}
+    try { if (hRow && hRow.v) archive = JSON.parse(hRow.v); } catch {}
+    return send(res, 200, { ok: 1, predictions, archive });
+  }
+  if (M === 'POST' && P === '/api/krd-predict') {
+    const b = await body(req);
+    const nick = String(b.nick || '').trim().slice(0, 24);
+    const matchId = Number(b.matchId), hs = Math.max(0, Math.min(99, Number(b.hs))), aws = Math.max(0, Math.min(99, Number(b.aws)));
+    if (!nick || !matchId || Number.isNaN(hs) || Number.isNaN(aws)) return send(res, 400, { error: 'Geçersiz tahmin.' });
+    const mRow = await get(`SELECT played FROM ${MATCHES} WHERE id=$1`, matchId);
+    if (!mRow || mRow.played) return send(res, 400, { error: 'Bu maça tahmin yapılamaz.' });
+    let predictions = {};
+    await tx(async t => {
+      const pRow = await t.get(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_predictions');
+      try { if (pRow && pRow.v) predictions = JSON.parse(pRow.v); } catch {}
+      if (!predictions[nick]) predictions[nick] = {};
+      predictions[nick][String(matchId)] = { hs, aws, at: Date.now() };
+      await t.run(`DELETE FROM ${SETTINGS} WHERE k=$1`, 'krd_predictions');
+      await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES($1,$2)`, 'krd_predictions', JSON.stringify(predictions));
+    });
+    if (typeof notifyClients === 'function') notifyClients();
+    return send(res, 200, { ok: 1, predictions });
+  }
 
   
 
