@@ -3400,23 +3400,31 @@ events.onmessage = async () => {
     return location.hash.startsWith('#/yonetici') || location.hash.startsWith('#/' + slug);
   }
 
+  window._krdExtrasCache = window._krdExtrasCache || {};
+
+  async function syncKrdExtrasFromServer() {
+    try {
+      const r = await fetch('/api/krd-extras?_=' + Date.now());
+      if (!r.ok) return;
+      const d = await r.json();
+      if (d && d.extras) {
+        window._krdExtrasCache = Object.assign({}, window._krdExtrasCache, d.extras);
+        if (typeof S !== 'undefined' && S.settings) {
+          Object.assign(S.settings, window._krdExtrasCache);
+        }
+      }
+    } catch {}
+  }
+
   async function saveExtraSettings(patch, successMsg) {
     try {
-      const cur = (S && S.settings) ? S.settings : {};
-      const payload = {
-        name: cur.name || 'KRD Ligi',
-        season: cur.season || '2026/2027',
-        win: Number(cur.win ?? 3),
-        draw: Number(cur.draw ?? 1),
-        loss: Number(cur.loss ?? 0),
-        week: Number(patch.week !== undefined ? patch.week : (cur.week ?? 1)),
-        penalties: cur.penalties || '[]',
-        ...patch
-      };
-      await api('PUT', '/api/admin/settings', payload);
-      if (S && S.settings) Object.assign(S.settings, payload);
-      if (typeof load === 'function') await load();
-      if (typeof render === 'function') render();
+      const res = await api('POST', '/api/admin/krd-extras', patch);
+      const saved = (res && res.extras) ? res.extras : patch;
+      window._krdExtrasCache = Object.assign({}, window._krdExtrasCache, saved);
+      if (typeof S !== 'undefined' && S.settings) {
+        Object.assign(S.settings, window._krdExtrasCache);
+      }
+      renderPublicAdminFeatures();
       if (successMsg && typeof toast === 'function') toast(successMsg);
     } catch (err) {
       alert('Kayıt Hatası: ' + (err && err.message ? err.message : err));
@@ -3447,6 +3455,7 @@ events.onmessage = async () => {
         await api('PUT', '/api/admin/matches/' + mid, { hs: 0, aws: 0, played: 0 });
       }
       if (typeof load === 'function') await load();
+      await syncKrdExtrasFromServer();
       if (typeof render === 'function') render();
       if (typeof toast === 'function') toast(mode === 'reset' ? 'Maç oynanmadı olarak sıfırlandı!' : '3-0 Hükmen skor işlendi!');
     } catch (err) {
@@ -3457,7 +3466,20 @@ events.onmessage = async () => {
   window.krdAdminStepWeek = async function(delta) {
     const curW = Number((S && S.settings && S.settings.week) || 1);
     const nextW = Math.max(1, curW + delta);
-    await saveExtraSettings({ week: nextW }, `Aktif hafta ${nextW}. hafta olarak ayarlandı!`);
+    const cur = (S && S.settings) ? S.settings : {};
+    await api('PUT', '/api/admin/settings', {
+      name: cur.name || 'KRD Ligi',
+      season: cur.season || '2026/2027',
+      win: Number(cur.win ?? 3),
+      draw: Number(cur.draw ?? 1),
+      loss: Number(cur.loss ?? 0),
+      week: nextW,
+      penalties: cur.penalties || '[]'
+    });
+    if (typeof load === 'function') await load();
+    await syncKrdExtrasFromServer();
+    if (typeof render === 'function') render();
+    if (typeof toast === 'function') toast(`Aktif hafta ${nextW}. hafta olarak ayarlandı!`);
   };
 
   window.krdAdminSaveLocks = async function() {
@@ -3504,7 +3526,7 @@ events.onmessage = async () => {
 
     if (document.getElementById('krdAdminProSuite')) return;
 
-    const st = S.settings || {};
+    const st = Object.assign({}, S.settings || {}, window._krdExtrasCache || {});
     const tMap = Object.fromEntries(S.teams.map(t => [t.id, t.name]));
     const matches = S.matches || [];
     const playedCount = matches.filter(m => m.played).length;
@@ -3742,10 +3764,15 @@ events.onmessage = async () => {
     }
   }
 
+  syncKrdExtrasFromServer().then(() => { renderAdminSuperSuite(); renderPublicAdminFeatures(); });
+  setInterval(syncKrdExtrasFromServer, 3500);
   setInterval(() => {
+    if (typeof S !== 'undefined' && S.settings && window._krdExtrasCache) {
+      Object.assign(S.settings, window._krdExtrasCache);
+    }
     renderAdminSuperSuite();
     renderPublicAdminFeatures();
-  }, 900);
+  }, 850);
 })();
 </script>
 

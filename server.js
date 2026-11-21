@@ -225,6 +225,24 @@ async function api(req, res, u) {
   }
   if (M === 'POST' && P === '/api/admin/logout') return send(res, 200, { ok: 1 }, { 'Set-Cookie': cookie('', 0) });
 
+  if (M === 'POST' && P === '/api/admin/krd-extras') {
+    const b = await body(req);
+    const keys = ['announcement_text', 'announcement_type', 'mvp_team_id', 'mvp_note', 'maintenance_mode', 'chat_locked', 'rules_text', 'yt_url', 'yt_subtitle'];
+    const out = {};
+    await tx(async t => {
+      for (const k of keys) {
+        if (b[k] !== undefined) {
+          const val = String(b[k]);
+          await t.run(`DELETE FROM ${SETTINGS} WHERE k=$1`, k);
+          await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES($1,$2)`, k, val);
+          out[k] = val;
+        }
+      }
+    });
+    if (typeof notifyClients === 'function') notifyClients();
+    return send(res, 200, { ok: 1, extras: out });
+  }
+
   if (M === 'POST' && P === '/api/admin/live-matches') {
     const b = await body(req);
     const list = Array.isArray(b.live) ? b.live.slice(0, 4).map(x => ({
@@ -473,6 +491,16 @@ const server = http.createServer(async (req, res) => {
   if (req.url.startsWith('/sw.js')) res.setHeader('Service-Worker-Allowed', '/');
   try {
     const u = new URL(req.url, 'http://x');
+
+  if (req.method === 'GET' && u.pathname === '/api/krd-extras') {
+    const keys = ['announcement_text', 'announcement_type', 'mvp_team_id', 'mvp_note', 'maintenance_mode', 'chat_locked', 'rules_text', 'yt_url', 'yt_subtitle'];
+    const out = {};
+    for (const k of keys) {
+      const row = await get(`SELECT v FROM ${SETTINGS} WHERE k=$1`, k);
+      if (row && row.v !== undefined) out[k] = row.v;
+    }
+    return send(res, 200, { ok: 1, extras: out });
+  }
 
   if (req.method === 'GET' && u.pathname === '/.well-known/assetlinks.json') {
     const raw = process.env.ASSETLINKS_JSON || (fs.existsSync(path.join(__dirname, 'public/.well-known/assetlinks.json')) ? fs.readFileSync(path.join(__dirname, 'public/.well-known/assetlinks.json'), 'utf8') : '[]');
