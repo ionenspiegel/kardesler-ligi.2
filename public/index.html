@@ -3409,8 +3409,8 @@ events.onmessage = async () => {
       const second = standings[1];
       const diff = first.p - second.p;
       const diffText = diff === 0
-        ? `⚖️ <b>${esc(first.name)}</b> ve <b>${esc(second.name)}</b> ${first.p} puanla zirveyi paylaşıyor!`
-        : `👑 Lider <b>${esc(first.name)}</b> (${first.p} P), takipçisi <b>${esc(second.name)}</b>'in <span style="color:#facc15;font-weight:800;">+${diff} puan</span> önünde!`;
+        ? `<div style="display:flex;align-items:center;gap:6px;"><span>⚖️</span><span>Ortak Liderler: <b>${esc(first.name)}</b> & <b>${esc(second.name)}</b></span></div><span style="padding:3px 9px;border-radius:999px;background:rgba(250,204,21,0.18);color:#facc15;font-weight:800;font-size:11px;">${first.p} Puan</span>`
+        : `<div style="display:flex;align-items:center;gap:6px;"><span>👑</span><span>Lider: <b style="color:#fff;">${esc(first.name)}</b> <span style="color:#facc15;font-weight:800;">(${first.p} P)</span></span></div><span style="padding:3px 9px;border-radius:999px;background:rgba(56,189,248,0.16);color:#7dd3fc;font-weight:800;font-size:11px;">Takipçi: ${esc(second.name)} • Fark: +${diff} P</span>`;
       if (race.innerHTML !== diffText) race.innerHTML = diffText;
     }
 
