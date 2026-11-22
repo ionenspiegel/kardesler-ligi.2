@@ -850,3 +850,63 @@
   window.addEventListener('hashchange', () => setTimeout(() => { attachAppObserver(); syncView(true); }, 80));
   setTimeout(() => { attachAppObserver(); syncView(true); }, 450);
 })();
+
+
+// --- ANLIK BAKIM MODU SENKRONIZASYONU (YENILEME GEREKTIRMEZ) ---
+(function(){
+  if (window.__krdLiveMaintTimer) clearInterval(window.__krdLiveMaintTimer);
+  let lastMaintState = null;
+  let lastMaintNote = null;
+
+  function applyMaintFromData(data) {
+    const ex = (data && data.settings && data.settings.extra) ? data.settings.extra
+      : (typeof S !== 'undefined' && S && S.settings && S.settings.extra) ? S.settings.extra : null;
+    if (!ex) return;
+
+    const isMaint = !!ex.maintenance;
+    const noteText = String(ex.maintNote || '');
+    if (lastMaintState === isMaint && lastMaintNote === noteText) return;
+    lastMaintState = isMaint;
+    lastMaintNote = noteText;
+
+    if (typeof S !== 'undefined' && S && S.settings) {
+      S.settings.extra = { ...(S.settings.extra || {}), maintenance: isMaint, maintNote: noteText };
+    }
+
+    let maint = document.getElementById('krdMaintScreen');
+    if (isMaint) {
+      if (!maint) {
+        maint = document.createElement('div');
+        maint.id = 'krdMaintScreen';
+        document.body.appendChild(maint);
+      }
+      const safeNote = (typeof esc === 'function')
+        ? esc(noteText)
+        : noteText.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      maint.innerHTML = '<div style="font-size:44px;margin-bottom:10px;">🛠️</div><h2 style="margin:0 0 8px;color:#facc15;">KRD LİGİ BAKIMDA</h2>' + (safeNote ? '<p style="max-width:440px;opacity:.9;line-height:1.5;">' + safeNote + '</p>' : '<p style="opacity:.8;">Kısa bir güncelleme yapılıyor, az sonra tekrar dene.</p>');
+      if (typeof render === 'function') {
+        try { render(); } catch {}
+      }
+    } else if (maint) {
+      maint.remove();
+      if (typeof render === 'function') {
+        try { render(); } catch {}
+      }
+    }
+  }
+
+  async function pollMaintenanceStatus() {
+    try {
+      const res = await fetch('/api/league?_t=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) return;
+      const json = await res.json();
+      applyMaintFromData(json);
+    } catch {}
+  }
+
+  window.__krdLiveMaintTimer = setInterval(pollMaintenanceStatus, 3000);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) pollMaintenanceStatus();
+  });
+  setTimeout(pollMaintenanceStatus, 800);
+})();
