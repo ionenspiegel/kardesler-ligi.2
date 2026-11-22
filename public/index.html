@@ -3547,6 +3547,13 @@ events.onmessage = async () => {
       ]);
       const d = await r1.json();
       const ex = r2 ? await r2.json().catch(() => ({})) : {};
+      const lb = ex && ex.lastBroadcast;
+      if (lb && lb.id && String(lb.id) !== localStorage.getItem('krd_last_bc_id')) {
+        localStorage.setItem('krd_last_bc_id', String(lb.id));
+        if (!silentInit) {
+          await window.krdShowLocalNotice(lb.title || '📢 KRD Ligi Duyuru', lb.body || '');
+        }
+      }
       const ann = (ex && ex.extras && (ex.extras.announcement || ex.extras.duyuru || ex.extras.ticker)) || '';
       const news = (d && d.settings && d.settings.custom_news) || '';
       const played = Array.isArray(d && d.matches) ? d.matches.filter(m => m.played).map(m => m.id + ':' + m.hs + '-' + m.aws).join(',') : '';
