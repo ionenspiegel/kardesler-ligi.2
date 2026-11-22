@@ -1002,7 +1002,7 @@ function h2hSection(){
 function copyTable(){
  const rows=liveStandings().rows;
  const lines=[`🏆 ${S.settings.name} — Puan Durumu (${S.matches.filter(m=>m.played).length} Maç Oynandı)`,''];
- rows.forEach((t,i)=>lines.push(`${i+1}. ${t.name} | O:${t.p} G:${t.w} B:${t.d} M:${t.l} Av:${t.gd>0?'+':''}${t.gd} P:${t.pts}`));
+ rows.forEach((t,i)=>lines.push(`${i+1}. ${esc(t.name)} | O:${t.p} G:${t.w} B:${t.d} M:${t.l} Av:${t.gd>0?'+':''}${t.gd} P:${t.pts}`));
  navigator.clipboard?.writeText(lines.join('\n')).then(()=>toast('Puan durumu panoya kopyalandı!')).catch(()=>toast('Kopyalanamadı',1));
 }
 
@@ -2519,7 +2519,7 @@ events.onmessage = async () => {
   window.copyPressSummary = function() {
     let news = {};
     try { news = JSON.parse((S.settings && S.settings.custom_news) || '{}') || {}; } catch { news = {}; }
-    const top3 = (S.table || []).slice(0, 3).map((t, i) => `${i + 1}. ${t.name} (${t.pts} P)`).join(' | ');
+    const top3 = (S.table || []).slice(0, 3).map((t, i) => `${i + 1}. ${esc(t.name)} (${t.pts} P)`).join(' | ');
     const txt = `🏆 KRD LİGİ GÜNCEL RAPOR\n${news.text || 'Ligde heyecan devam ediyor!'}\n📊 Zirve: ${top3}`;
     if (navigator.clipboard) navigator.clipboard.writeText(txt).then(() => toast('Sosyal medya özeti panoya kopyalandı!'));
     else prompt('Kopyalamak için seç:', txt);
@@ -2796,7 +2796,7 @@ events.onmessage = async () => {
     const expectedCount = S.teams.length + 1;
     if (bar.children.length !== expectedCount) {
       bar.innerHTML = `<button type="button" class="krd-chip ${!activeTeamFilter ? 'active' : ''}" data-team="">Tümü</button>` +
-        S.teams.map(t => `<button type="button" class="krd-chip ${activeTeamFilter === t.name.toLowerCase() ? 'active' : ''}" data-team="${t.name.toLowerCase()}">${t.name}</button>`).join('');
+        S.teams.map(t => `<button type="button" class="krd-chip ${activeTeamFilter === t.name.toLowerCase() ? 'active' : ''}" data-team="${t.name.toLowerCase()}">${esc(t.name)}</button>`).join('');
 
       bar.querySelectorAll('.krd-chip').forEach(chip => {
         chip.addEventListener('click', () => {

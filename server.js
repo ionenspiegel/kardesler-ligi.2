@@ -11,6 +11,14 @@ function pushAudit(action, detail) {
 
 // === KRD_SEC_GUARD ===
 const _krdRateMap = new Map();
+const _krdRateCleanup = setInterval(() => {
+  const now = Date.now();
+  for (const [k, arr] of _krdRateMap.entries()) {
+    const valid = arr.filter(t => now - t < 60000);
+    if (!valid.length) _krdRateMap.delete(k); else _krdRateMap.set(k, valid);
+  }
+}, 60000);
+_krdRateCleanup.unref?.();
 const _krdLoginFail = new Map();
 function krdCheckRate(ip, key, maxPerMin) {
   const now = Date.now();
@@ -22,7 +30,12 @@ function krdCheckRate(ip, key, maxPerMin) {
   return true;
 }
 function krdGetIp(req) {
-  return String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '0.0.0.0').split(',')[0].trim();
+  const fwd = String(req.headers['x-forwarded-for'] || '');
+  if (fwd) {
+    const parts = fwd.split(',').map(s => s.trim()).filter(Boolean);
+    if (parts.length) return parts[parts.length - 1];
+  }
+  return String(req.socket?.remoteAddress || '0.0.0.0');
 }
 
 const http = require('http'), fs = require('fs'), path = require('path'), crypto = require('crypto');
@@ -621,7 +634,9 @@ const u = new URL(req.url, 'http://x');
   }
   // === KRD_PRO5_END ===
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   if (req.method === 'POST' && u.pathname === '/api/admin/login') {
     const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'x').split(',')[0].trim();
     const rec = krdLoginGuard.get(ip);
@@ -650,6 +665,7 @@ const u = new URL(req.url, 'http://x');
     try {
       const b = await body(req);
       const nick = String(b.nick || '').trim().slice(0, 24);
+    if (!nick || ['__proto__', 'constructor', 'prototype', 'toString', 'valueOf'].includes(nick)) return send(res, 400, { error: 'Geçersiz kullanıcı adı' });
       const matchId = Number(b.matchId);
       const hs = Math.max(0, Math.min(99, Number(b.hs)));
       const aws = Math.max(0, Math.min(99, Number(b.aws)));
