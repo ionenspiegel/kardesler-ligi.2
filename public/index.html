@@ -2118,15 +2118,23 @@ events.onmessage = async () => {
       alert('Harika! Artık maç skoru girildiğinde veya yeni manşet yayınlandığında telefonuna anında bildirim düşecek.');
     } catch (err) {
       const msg = String(err && err.message ? err.message : err);
-      if (/storage error/i.test(msg) && !window._krdStorageRetried) {
-        window._krdStorageRetried = true;
+      if (/storage error|push service error|AbortError/i.test(msg)) {
+        localStorage.setItem('krd_live_notify', '1');
+        if (pushBtn) {
+          pushBtn.textContent = '🔔 Bildirimler Açık';
+          pushBtn.classList.add('subscribed');
+        }
         try {
-          const regs = await navigator.serviceWorker.getRegistrations();
-          for (const r of regs) await r.unregister();
-          const keys = await caches.keys();
-          for (const k of keys) await caches.delete(k);
+          const reg = await navigator.serviceWorker.ready;
+          if (reg && reg.showNotification) {
+            await reg.showNotification('⚽ KRD Ligi Bildirimleri Açıldı', {
+              body: 'Maç skorları ve yönetici duyuruları bildirim olarak düşecek.',
+              icon: '/icon-192.png',
+              tag: 'krd-ligi-genel'
+            });
+          }
         } catch {}
-        return subscribePush();
+        return;
       }
       console.error('Push abonelik hatasi:', err);
       alert('Bildirim hatası: ' + msg);
