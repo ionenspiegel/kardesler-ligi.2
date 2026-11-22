@@ -587,6 +587,18 @@ async function krdDbGet(sql, ...params) {
 }
 
 const u = new URL(req.url, 'http://x');
+
+  // === KRD_HARD_AUTH_GUARD ===
+  const _krdPath = u.pathname;
+  const _krdMethod = (req.method || 'GET').toUpperCase();
+  if ((_krdPath === '/api/krd-extras' && _krdMethod !== 'GET') || _krdPath.startsWith('/api/admin/')) {
+    const _authed = (typeof isAdmin === 'function' && isAdmin(req)) || (typeof checkAdmin === 'function' && checkAdmin(req));
+    if (!_authed) {
+      res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+      return res.end(JSON.stringify({ error: 'Yönetici girişi gerekli' }));
+    }
+  }
+
   // === KRD_EXTRAS_START ===
   if (req.method === 'GET' && u.pathname === '/api/krd-extras') {
     try {
