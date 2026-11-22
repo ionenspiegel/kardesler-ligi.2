@@ -3,15 +3,15 @@
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[c]));
 
-  // Canli S verisini yakala
+  // Bildirim ve push rotalarina dokunmadan sadece lig verisini yakala
   window._krdLiveS = window._krdLiveS || null;
   const origFetch = window.fetch;
-  window.fetch = async function (...args) {
-    const res = await origFetch.apply(this, args);
+  window.fetch = async function (input, init) {
+    const res = await origFetch.apply(this, arguments);
     try {
-      const c = res.clone();
-      if ((c.headers.get('content-type') || '').includes('application/json')) {
-        c.json().then(d => {
+      const url = typeof input === 'string' ? input : (input && input.url) || '';
+      if (url.includes('/api/state') || url.includes('/api/data') || url.includes('/api/league')) {
+        res.clone().json().then(d => {
           if (d && Array.isArray(d.teams) && Array.isArray(d.matches)) window._krdLiveS = d;
         }).catch(() => {});
       }
@@ -19,10 +19,14 @@
     return res;
   };
 
-  // Eski Service Worker onbellegini temizle
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').then(r => r.update()).catch(() => {});
+  const getS = () => (typeof S !== 'undefined' ? S : window._krdLiveS);
+  const isAdm = () => {
+    const st = getS();
+    const sl = (st && st.settings && st.settings.admin_slug) || 'krd-kontrol';
+    return location.hash.startsWith('#/yonetici') || location.hash.startsWith('#/' + sl);
   };
+
+  window._krdData = { extras: {}, predictions: {}, archive: [], badges: {}, cup: {} };
 
   const DEFAULT_RULES = [
     '📅 Yürürlük Tarihi: Bu kurallar 22 Kasım 2026 tarihinden itibaren oynanacak maçlarda geçerlidir.',
@@ -34,9 +38,9 @@
   async function pullAll() {
     try {
       const [r1, r2, r3] = await Promise.all([
-        fetch('/api/krd-extras?_=' + Date.now()),
-        fetch('/api/krd-mega-data?_=' + Date.now()),
-        fetch('/api/krd-pro5-data?_=' + Date.now())
+        origFetch('/api/krd-extras?_=' + Date.now()),
+        origFetch('/api/krd-mega-data?_=' + Date.now()),
+        origFetch('/api/krd-pro5-data?_=' + Date.now())
       ]);
       if (r1.ok) { const d1 = await r1.json(); window._krdData.extras = d1.extras || {}; }
       if (r2.ok) { const d2 = await r2.json(); window._krdData.predictions = d2.predictions || {}; window._krdData.archive = d2.archive || []; }
@@ -63,6 +67,9 @@
       .krd-box-acc summary::-webkit-details-marker{display:none}
       .krd-pred-line{display:grid;grid-template-columns:1fr 44px 12px 44px 1fr auto;align-items:center;gap:5px;padding:6px 8px;border-radius:9px;background:rgba(15,23,42,.75);border:1px solid rgba(148,163,184,.18);font-size:11.5px}
       .krd-pred-line input{width:100%;text-align:center;padding:3px;border-radius:6px;border:1px solid #334155;background:#020617;color:#fff;font-weight:800}
+      .krd-cup-grid{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+      @media(max-width:540px){.krd-cup-grid{grid-template-columns:1fr}}
+      .krd-cup-box{background:rgba(2,6,23,.65);border:1px solid rgba(56,189,248,.25);border-radius:10px;padding:8px 10px;font-size:12px;display:grid;gap:4px}
       .krd-derby{border:1.5px solid rgba(250,204,21,.7)!important;box-shadow:0 0 18px rgba(250,204,21,.18)}
       .krd-derby-badge{display:inline-block;margin-bottom:5px;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:900;background:linear-gradient(90deg,#facc15,#f97316);color:#090d16}
       .krd-png-btn{margin-top:6px;width:100%;padding:5px 8px!important;font-size:11px!important;font-weight:700!important;border-radius:8px!important;background:rgba(250,204,21,.15)!important;border:1px solid rgba(250,204,21,.35)!important;color:#fde047!important;cursor:pointer}
@@ -179,7 +186,7 @@
     localStorage.setItem('krd_pred_nick', nick);
     const hs = Number(document.getElementById('phs_' + mid)?.value), aws = Number(document.getElementById('paws_' + mid)?.value);
     if (Number.isNaN(hs) || Number.isNaN(aws)) return alert('Skor girin.');
-    const r = await fetch('/api/krd-predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nick, matchId: mid, hs, aws }) });
+    const r = await origFetch('/api/krd-predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nick, matchId: mid, hs, aws }) });
     const d = await r.json();
     if (!r.ok) return alert(d.error || 'Hata');
     window._krdData.predictions = d.predictions || {};
@@ -191,17 +198,21 @@
     const sender = (document.getElementById('krdRepSender')?.value || '').trim() || 'Ziyaretçi';
     const msg = (document.getElementById('krdRepMsg')?.value || '').trim();
     if (!msg) return alert('Lütfen bildirmek istediğiniz sorunu yazın.');
-    const r = await fetch('/api/krd-report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sender, msg }) });
+    const r = await origFetch('/api/krd-report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sender, msg }) });
     if (r.ok) {
       document.getElementById('krdRepMsg').value = '';
       if (typeof toast === 'function') toast('📩 Sorun bildiriminiz yöneticiye iletildi!');
     } else alert('Gönderilemedi.');
   };
 
+  function getAnchor(app) {
+    return document.getElementById('krdLeagueHubDrawer')
+      || app.querySelector('table:not(#krdSplitTableWrap table)')
+      || app.firstElementChild;
+  }
+
   function renderAll(force) {
     injectStyles();
-    const st = getS();
-    if (!st || !Array.isArray(st.teams) || !st.teams.length) return;
     const app = document.getElementById('app');
     if (!app) return;
 
@@ -223,10 +234,6 @@
 
     if (isAdm()) return;
 
-    const { table, streaks } = calcStats();
-    const top3 = new Set(table.slice(0, 3).map(x => x.id));
-    const tMap = Object.fromEntries(st.teams.map(t => [t.id, t.name]));
-
     // 1. SABIT DUYURU BANDI
     let ann = document.getElementById('krdPinnedAnn');
     if (ex.announcement || ex.mvp) {
@@ -236,11 +243,45 @@
         (ex.mvp ? `⭐ <b>Haftanın MVP Kulübü:</b> ${esc(ex.mvp)}` : '');
     } else if (ann) ann.remove();
 
-    // Sohbet kilidi
     const cw = document.getElementById('krdChatWidget');
     if (cw) cw.style.display = ex.chatLocked ? 'none' : '';
 
-    // 2. PUAN TABLOSUNA KULUP ARMASI + SIRA OKLARI + SERI ROZETI
+    // 2. RESMI KURALLAR KUTUSU (Veri yuklenmese bile hemen gorunur)
+    let rBox = document.getElementById('krdRulesBox');
+    if (!rBox || force) {
+      if (!rBox) {
+        rBox = document.createElement('details'); rBox.id = 'krdRulesBox'; rBox.className = 'card krd-box-acc';
+        const anc = getAnchor(app);
+        if (anc && anc.parentNode) anc.parentNode.insertBefore(rBox, anc.nextSibling);
+        else app.appendChild(rBox);
+      }
+      const txt = (ex.rules && ex.rules.trim()) ? ex.rules : DEFAULT_RULES;
+      rBox.innerHTML = `<summary style="color:#fb923c;"><span>📜 Resmi Lig Kuralları & Cezalar</span><span style="font-size:11px;opacity:.85;">Kuralları Oku ▾</span></summary>
+        <div style="margin-top:8px;display:grid;gap:6px;font-size:12px;">${txt.split('\n').filter(Boolean).map(l => `<div style="padding:6px 9px;border-radius:8px;background:rgba(2,6,23,.55);border:1px solid rgba(251,146,60,.22);">${esc(l)}</div>`).join('')}</div>`;
+    }
+
+    // 3. HATA / SORUN BILDIR KUTUSU (Her zaman gorunur, dogrudan yoneticiye duser)
+    if (!document.getElementById('krdReportBox')) {
+      const rep = document.createElement('details'); rep.id = 'krdReportBox'; rep.className = 'card krd-box-acc';
+      rep.innerHTML = `<summary style="color:#f87171;"><span>🐞 Hata / Sorun Bildir (Yöneticiye İlet)</span><span style="font-size:11px;opacity:.85;">Bildir ▾</span></summary>
+        <div style="margin-top:8px;display:grid;gap:7px;">
+          <input type="text" id="krdRepSender" placeholder="Adınız / Kulübünüz" style="padding:7px 10px;border-radius:8px;border:1px solid rgba(248,113,113,.35);background:#020617;color:#fff;font-size:12px;">
+          <textarea id="krdRepMsg" rows="2" placeholder="Karşılaştığınız hatayı veya itirazınızı yazın..." style="padding:7px 10px;border-radius:8px;border:1px solid rgba(248,113,113,.35);background:#020617;color:#fff;font-size:12px;"></textarea>
+          <button type="button" class="pri" onclick="window.krdSendReport()" style="background:#ef4444;color:#fff;">📩 Yöneticiye Gönder</button>
+        </div>`;
+      const anc = document.getElementById('krdRulesBox') || getAnchor(app);
+      if (anc && anc.parentNode) anc.parentNode.insertBefore(rep, anc.nextSibling);
+      else app.appendChild(rep);
+    }
+
+    const st = getS();
+    if (!st || !Array.isArray(st.teams) || !st.teams.length) return;
+
+    const { table, streaks } = calcStats();
+    const top3 = new Set(table.slice(0, 3).map(x => x.id));
+    const tMap = Object.fromEntries(st.teams.map(t => [t.id, t.name]));
+
+    // 4. PUAN TABLOSUNA KULUP ARMASI + SIRA OKLARI + SERI ROZETI
     const tbl = app.querySelector('table:not(#krdSplitTableWrap table)');
     if (tbl) {
       tbl.querySelectorAll('tbody tr').forEach(tr => {
@@ -259,7 +300,7 @@
       });
     }
 
-    // 3. ODUL PODYUMU
+    // 5. ODUL PODYUMU
     const played = (st.matches || []).filter(m => m.played);
     if (played.length && table.length && !document.getElementById('krdPodium')) {
       const pod = document.createElement('div'); pod.id = 'krdPodium';
@@ -270,7 +311,7 @@
         <div class="krd-pod-item"><span style="font-size:10px;font-weight:800;color:#facc15;">⚽ ALTIN AYAKKABI</span><b>${esc(atk.name)}</b><span style="font-size:11px;opacity:.8;">${atk.ag} Gol</span></div>
         <div class="krd-pod-item"><span style="font-size:10px;font-weight:800;color:#38bdf8;">🧤 ALTIN ELDİVEN</span><b>${esc(def.name)}</b><span style="font-size:11px;opacity:.8;">${def.yg} Yenen Gol</span></div>
         <div class="krd-pod-item"><span style="font-size:10px;font-weight:800;color:#fb7185;">⚡ EN GOLLÜ MAÇ</span><b>${esc(tMap[hm.home_id] || 'Ev')} ${hm.hs}-${hm.aws} ${esc(tMap[hm.away_id] || 'Dep')}</b><span style="font-size:11px;opacity:.8;">Hafta ${hm.week}</span></div>`;
-      const anc = document.getElementById('krdLeagueHubDrawer') || tbl;
+      const anc = document.getElementById('krdReportBox') || getAnchor(app);
       if (anc && anc.parentNode) anc.parentNode.insertBefore(pod, anc.nextSibling);
     }
 
@@ -284,25 +325,12 @@
       hubBody.appendChild(b);
     }
 
-    // 4. RESMI KURALLAR KUTUSU (22 Kasim 2026)
-    let rBox = document.getElementById('krdRulesBox');
-    if (!rBox || force) {
-      if (!rBox) {
-        rBox = document.createElement('details'); rBox.id = 'krdRulesBox'; rBox.className = 'card krd-box-acc';
-        const anc = document.getElementById('krdPodium') || tbl;
-        if (anc && anc.parentNode) anc.parentNode.insertBefore(rBox, anc.nextSibling);
-      }
-      const txt = (ex.rules && ex.rules.trim()) ? ex.rules : DEFAULT_RULES;
-      rBox.innerHTML = `<summary style="color:#fb923c;"><span>📜 Resmi Lig Kuralları & Cezalar</span><span style="font-size:11px;opacity:.85;">Kuralları Oku ▾</span></summary>
-        <div style="margin-top:8px;display:grid;gap:6px;font-size:12px;">${txt.split('\n').filter(Boolean).map(l => `<div style="padding:6px 9px;border-radius:8px;background:rgba(2,6,23,.55);border:1px solid rgba(251,146,60,.22);">${esc(l)}</div>`).join('')}</div>`;
-    }
-
-    // 5. HAFTALIK SKOR TAHMINI
+    // 6. HAFTALIK SKOR TAHMINI
     let pBox = document.getElementById('krdPredictBox');
     if (!pBox || force) {
       if (!pBox) {
         pBox = document.createElement('details'); pBox.id = 'krdPredictBox'; pBox.className = 'card krd-box-acc';
-        const anc = document.getElementById('krdRulesBox') || tbl;
+        const anc = document.getElementById('krdPodium') || document.getElementById('krdReportBox');
         if (anc && anc.parentNode) anc.parentNode.insertBefore(pBox, anc.nextSibling);
       }
       const up = (st.matches || []).filter(m => !m.played).slice(0, 6);
@@ -318,20 +346,27 @@
         </div>`;
     }
 
-    // 6. SORUN / HATA BILDIR KUTUSU (Dogrudan Yonetici Paneline Duser)
-    if (!document.getElementById('krdReportBox')) {
-      const rep = document.createElement('details'); rep.id = 'krdReportBox'; rep.className = 'card krd-box-acc';
-      rep.innerHTML = `<summary style="color:#f87171;"><span>🐞 Sorun / Hata Bildir (Yöneticiye İlet)</span><span style="font-size:11px;opacity:.85;">Mesaj Yaz ▾</span></summary>
-        <div style="margin-top:8px;display:grid;gap:7px;">
-          <input type="text" id="krdRepSender" placeholder="Adınız / Kulübünüz" style="padding:7px 10px;border-radius:8px;border:1px solid rgba(248,113,113,.35);background:#020617;color:#fff;font-size:12px;">
-          <textarea id="krdRepMsg" rows="2" placeholder="Karşılaştığınız hatayı veya kural itirazını yazın..." style="padding:7px 10px;border-radius:8px;border:1px solid rgba(248,113,113,.35);background:#020617;color:#fff;font-size:12px;"></textarea>
-          <button type="button" class="pri" onclick="window.krdSendReport()" style="background:#ef4444;color:#fff;">📩 Yöneticiye Gönder</button>
-        </div>`;
-      const anc = document.getElementById('krdPredictBox') || tbl;
-      if (anc && anc.parentNode) anc.parentNode.insertBefore(rep, anc.nextSibling);
+    // 7. SUPER KUPA ELEME AGACI
+    if (table.length >= 4 && !document.getElementById('krdSuperCupBox')) {
+      const cupBox = document.createElement('details');
+      cupBox.id = 'krdSuperCupBox'; cupBox.className = 'card krd-box-acc';
+      const cD = window._krdData.cup || {};
+      const [c1, c2, c3, c4] = table;
+      const sf1Ok = cD.sf1_h !== '' && cD.sf1_h !== undefined && cD.sf1_a !== '' && cD.sf1_a !== undefined;
+      const sf2Ok = cD.sf2_h !== '' && cD.sf2_h !== undefined && cD.sf2_a !== '' && cD.sf2_a !== undefined;
+      const f1 = sf1Ok ? (Number(cD.sf1_h) >= Number(cD.sf1_a) ? c1 : c4) : { name: '1. Yarı Final Galibi' };
+      const f2 = sf2Ok ? (Number(cD.sf2_h) >= Number(cD.sf2_a) ? c2 : c3) : { name: '2. Yarı Final Galibi' };
+      cupBox.innerHTML = `<summary style="color:#38bdf8;"><span>🏆 İlk 4 KRD Süper Kupa Eleme Ağacı</span><span style="font-size:11px;opacity:.85;">Play-Off ▾</span></summary>
+        <div class="krd-cup-grid">
+          <div class="krd-cup-box"><b style="color:#facc15;">YARI FİNAL 1 (1. vs 4.)</b><div>${esc(c1.name)} <b>${sf1Ok ? cD.sf1_h : '-'}</b></div><div>${esc(c4.name)} <b>${sf1Ok ? cD.sf1_a : '-'}</b></div></div>
+          <div class="krd-cup-box"><b style="color:#facc15;">YARI FİNAL 2 (2. vs 3.)</b><div>${esc(c2.name)} <b>${sf2Ok ? cD.sf2_h : '-'}</b></div><div>${esc(c3.name)} <b>${sf2Ok ? cD.sf2_a : '-'}</b></div></div>
+        </div>
+        <div class="krd-cup-box" style="margin-top:8px;border-color:rgba(250,204,21,.45);"><b style="color:#4ade80;">👑 SÜPER KUPA FİNALİ</b><div>${esc(f1.name)} <b>${cD.f_h !== undefined && cD.f_h !== '' ? cD.f_h : '-'}</b> vs <b>${cD.f_a !== undefined && cD.f_a !== '' ? cD.f_a : '-'}</b> ${esc(f2.name)}</div></div>`;
+      const anc = document.getElementById('krdPredictBox') || document.getElementById('krdReportBox');
+      if (anc && anc.parentNode) anc.parentNode.insertBefore(cupBox, anc.nextSibling);
     }
 
-    // 7. FIKSTUR KARTLARINA DERBI & TEK MAC PNG
+    // 8. FIKSTUR KARTLARINA DERBI & TEK MAC PNG
     const grid = app.querySelector('.grid');
     if (grid) {
       Array.from(grid.children).forEach(card => {
@@ -364,6 +399,14 @@
         color: document.getElementById('bcol_' + t.id)?.value || '#2563eb'
       };
     });
+    const cup = {
+      sf1_h: document.getElementById('cup_sf1_h')?.value ?? '',
+      sf1_a: document.getElementById('cup_sf1_a')?.value ?? '',
+      sf2_h: document.getElementById('cup_sf2_h')?.value ?? '',
+      sf2_a: document.getElementById('cup_sf2_a')?.value ?? '',
+      f_h: document.getElementById('cup_f_h')?.value ?? '',
+      f_a: document.getElementById('cup_f_a')?.value ?? ''
+    };
     const ex = {
       announcement: document.getElementById('admAnn')?.value.trim() || '',
       mvp: document.getElementById('admMvp')?.value.trim() || '',
@@ -373,20 +416,20 @@
       rules: document.getElementById('admRules')?.value.trim() || DEFAULT_RULES
     };
     await api('POST', '/api/krd-extras', ex);
-    await api('POST', '/api/admin/krd-pro5-save', { badges });
+    await api('POST', '/api/admin/krd-pro5-save', { badges, cup });
     await pullAll();
     if (typeof toast === 'function') toast('✅ Duyuru, Bakım Modu, Kurallar ve Armalar kaydedildi!');
   };
 
   async function renderAdminPanel() {
-    const st = getS();
-    if (!isAdm() || !st) return;
+    if (!isAdm()) return;
     const app = document.getElementById('app');
     if (!app) return;
     const ok = app.querySelector('button') && (app.textContent || '').includes('Çıkış');
     if (!ok || document.getElementById('krdMasterAdmBox')) return;
 
-    const ex = window._krdData.extras || {}, bMap = window._krdData.badges || {};
+    const st = getS() || {};
+    const ex = window._krdData.extras || {}, bMap = window._krdData.badges || {}, c = window._krdData.cup || {};
     const box = document.createElement('div'); box.id = 'krdMasterAdmBox'; box.className = 'krd-adm-box';
     box.innerHTML = `
       <b style="color:#facc15;font-size:14px;">⚙️ Duyuru Sabitleme, Bakım Modu, Kurallar & Gelen Sorunlar</b>
@@ -407,6 +450,12 @@
           const o = bMap[String(t.id)] || {};
           return `<div style="display:grid;grid-template-columns:1fr 70px 44px;gap:6px;align-items:center;"><span>${esc(t.name)}</span><input type="text" maxlength="4" id="bc_${t.id}" value="${esc(o.code || '')}" placeholder="Kod" style="padding:4px;border-radius:6px;border:1px solid #334155;background:#020617;color:#fff;text-align:center;"><input type="color" id="bcol_${t.id}" value="${esc(o.color || '#2563eb')}" style="width:100%;height:28px;border:none;background:none;"></div>`;
         }).join('')}
+      </div>
+      <b style="color:#4ade80;font-size:12px;">🏆 Süper Kupa Play-Off Skorları:</b>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:12px;">
+        <div>YF1: <input type="number" id="cup_sf1_h" value="${esc(c.sf1_h ?? '')}" style="width:40px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;">-<input type="number" id="cup_sf1_a" value="${esc(c.sf1_a ?? '')}" style="width:40px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;"></div>
+        <div>YF2: <input type="number" id="cup_sf2_h" value="${esc(c.sf2_h ?? '')}" style="width:40px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;">-<input type="number" id="cup_sf2_a" value="${esc(c.sf2_a ?? '')}" style="width:40px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;"></div>
+        <div>FİNAL: <input type="number" id="cup_f_h" value="${esc(c.f_h ?? '')}" style="width:40px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;">-<input type="number" id="cup_f_a" value="${esc(c.f_a ?? '')}" style="width:40px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;"></div>
       </div>
       <button type="button" class="pri" onclick="window.krdSaveAdminMaster()">💾 Tüm Ayarları Kaydet</button>
       <div id="krdInboxReports" style="border-top:1px solid rgba(148,163,184,.2);padding-top:8px;font-size:12px;">📩 Gelen sorun bildirimleri yükleniyor...</div>
