@@ -483,7 +483,123 @@
     } catch {}
   }
 
-  pullAll().then(() => renderAll(false));
+  
+  // === KRD_SECTIONS_START ===
+  window._krdActiveTab = window._krdActiveTab || 'all';
+
+  function injectTabStyles() {
+    if (document.getElementById('krdTabsCss')) return;
+    const st = document.createElement('style');
+    st.id = 'krdTabsCss';
+    st.textContent = `
+      #krdNavTabs {
+        position: sticky; top: 6px; z-index: 900;
+        display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
+        padding: 7px; margin: 8px 0 12px; border-radius: 14px;
+        background: rgba(9, 13, 24, 0.88); backdrop-filter: blur(10px);
+        border: 1px solid rgba(56, 189, 248, 0.28);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      }
+      #krdNavTabs::-webkit-scrollbar { display: none; }
+      .krd-tab-btn {
+        flex: 0 0 auto; padding: 7px 12px; border-radius: 10px;
+        font-size: 12px; font-weight: 800; cursor: pointer;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        background: rgba(15, 23, 42, 0.75); color: #cbd5e1;
+        transition: all 0.18s ease; white-space: nowrap;
+      }
+      .krd-tab-btn:hover { border-color: rgba(56, 189, 248, 0.5); color: #fff; }
+      .krd-tab-btn.active {
+        background: linear-gradient(135deg, #0284c7, #2563eb);
+        color: #fff; border-color: #38bdf8;
+        box-shadow: 0 3px 12px rgba(37, 99, 235, 0.4);
+      }
+      .krd-tab-hidden { display: none !important; }
+    `;
+    document.head.appendChild(st);
+  }
+
+  window.krdSwitchTab = function (tab) {
+    window._krdActiveTab = tab;
+    document.querySelectorAll('.krd-tab-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === tab);
+    });
+    applyTabFilter();
+  };
+
+  function applyTabFilter() {
+    const app = document.getElementById('app');
+    if (!app) return;
+    const nav = document.getElementById('krdNavTabs');
+    if (isAdm()) {
+      if (nav) nav.remove();
+      app.querySelectorAll('.krd-tab-hidden').forEach(el => el.classList.remove('krd-tab-hidden'));
+      return;
+    }
+
+    injectTabStyles();
+    if (!nav) {
+      const bar = document.createElement('div');
+      bar.id = 'krdNavTabs';
+      const tabs = [
+        { id: 'all', label: '🏠 Tümü' },
+        { id: 'table', label: '📊 Puan & Ödüller' },
+        { id: 'fixtures', label: '📅 Fikstür & Maçlar' },
+        { id: 'predict', label: '🎯 Tahmin & Kupa' },
+        { id: 'rules', label: '📜 Kurallar & Bildir' }
+      ];
+      bar.innerHTML = tabs.map(t =>
+        `<button type="button" class="krd-tab-btn ${window._krdActiveTab === t.id ? 'active' : ''}" data-tab="${t.id}" onclick="window.krdSwitchTab('${t.id}')">${t.label}</button>`
+      ).join('');
+      const ann = document.getElementById('krdPinnedAnn');
+      if (ann && ann.nextSibling) app.insertBefore(bar, ann.nextSibling);
+      else app.prepend(bar);
+    }
+
+    const tab = window._krdActiveTab || 'all';
+    const blocks = Array.from(app.children).filter(el =>
+      el.id !== 'krdNavTabs' && el.id !== 'krdPinnedAnn'
+    );
+
+    blocks.forEach(el => {
+      if (tab === 'all') {
+        el.classList.remove('krd-tab-hidden');
+        return;
+      }
+
+      const id = el.id || '';
+      const txt = (el.textContent || '').toLowerCase();
+      const hasTable = Boolean(el.querySelector('table')) || el.tagName === 'TABLE';
+      const hasGrid = el.classList.contains('grid') || Boolean(el.querySelector('.grid'));
+
+      let group = 'table';
+      if (id === 'krdRulesBox' || id === 'krdReportBox') {
+        group = 'rules';
+      } else if (id === 'krdPredictBox' || id === 'krdSuperCupBox' || id === 'krdHallOfFame') {
+        group = 'predict';
+      } else if (
+        hasGrid ||
+        id === 'krdRemainingMatchesBox' ||
+        id === 'krdUnifiedSearchBar' ||
+        (txt.includes('hafta') && !hasTable && id !== 'krdPodium' && id !== 'krdLeagueHubDrawer')
+      ) {
+        group = 'fixtures';
+      } else if (
+        hasTable ||
+        id === 'krdPodium' ||
+        id === 'krdTitleRaceBar' ||
+        id === 'krdLeagueHubDrawer' ||
+        id === 'krdSplitTableWrap'
+      ) {
+        group = 'table';
+      }
+
+      el.classList.toggle('krd-tab-hidden', group !== tab);
+    });
+  }
+  // === KRD_SECTIONS_END ===
+
+  pullAll().then(() => { renderAll(false); applyTabFilter(); });
   setInterval(pullAll, 5000);
-  setInterval(() => { renderAll(false); renderAdminPanel(); }, 1000);
+  setInterval(() => { renderAll(false); applyTabFilter(); renderAdminPanel(); }, 900);
 })();
