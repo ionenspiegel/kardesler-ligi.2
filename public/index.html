@@ -1648,8 +1648,11 @@ function adminNotifyTab(){
     </div>
     <div class="row" style="flex-wrap:wrap;gap:6px">
       <button type="button" onclick="fillPushTpl('⚽ Maçlar Başlıyor!','Haftanın kritik karşılaşmaları birazdan başlıyor, yerini al!')">⚽ Maçlar Başlıyor</button>
-      <button type="button" onclick="fillPushTpl('📊 Puan Durumu Güncellendi!','Son skorlar işlendi, güncel puan durumunu ve sıralamayı kontrol et!')">📊 Puan Güncellendi</button>
-      <button type="button" onclick="fillPushTpl('🏆 Şampiyonluk Haftası!','Zirve yarışı kızıştı! Son hafta maçları ve kupa heyecanı başlıyor.')">🏆 Şampiyonluk Haftası</button>
+    <button type="button" onclick="fillPushTpl('📊 Puan Durumu Güncellendi!','Son skorlar işlendi, güncel puan durumunu ve sıralamayı kontrol et!')">📊 Puan Durumu</button>
+    <button type="button" onclick="fillPushTpl('🏆 Şampiyonluk Haftası!','Zirve yarışı kızıştı! Son hafta maçları ve kupa heyecanı başlıyor.')">🏆 Şampiyonluk</button>
+    <button type="button" onclick="fillPushTpl('🔥 Lider Değişti!','Zirvede yeni lider var! Güncel puan tablosuna hemen göz at.')">🔥 Lider Değişti</button>
+    <button type="button" onclick="fillPushTpl('⚖️ Hükmen Karar İşlendi','Lig kuralları gereği hükmen sonuçlar puan durumuna yansıtıldı.')">⚖️ Hükmen Karar</button>
+    <button type="button" onclick="fillPushTpl('⏰ Son Çağrı!','Haftanın kalan maçlarını tamamlamak için son saatler, skorları girelim!')">⏰ Maç Çağrısı</button>
     </div>
     <label>Bildirim Başlığı<input id="admPushTitle" name="title" value="📢 KRD Ligi Duyuru" maxlength="60" required></label>
     <label>Duyuru Mesajı<textarea id="admPushBody" name="body" rows="3" maxlength="200" placeholder="Tüm abonelere gönderilecek mesajı yaz..." required style="width:100%;padding:8px;border-radius:8px;background:rgba(15,23,42,0.6);color:inherit;border:1px solid rgba(148,163,184,0.25)"></textarea></label>
@@ -2053,7 +2056,7 @@ events.onmessage = async () => {
   .krd-form-M { background: #dc2626; color: #fff; }
 </style>
 
-<div style="position:fixed;right:14px;bottom:16px;z-index:9990;display:flex;gap:8px;align-items:center;"><button id="krdPushBtn" class="krd-push-btn" style="position:static;" type="button">🔔 Bildirimleri Aç</button></div>
+<button id="krdPushBtn" class="krd-push-btn" title="Bildirimleri Aç" aria-label="Bildirimler" style="position:fixed;left:14px;top:14px;right:auto;bottom:auto;width:42px;height:42px;padding:0;border-radius:50%;justify-content:center;font-size:18px;z-index:9995;">🔔</button>
 
 <div id="krdTeamStatsModal" role="dialog" aria-modal="true">
   <div class="krd-stat-card" id="krdTeamStatsBody"></div>
@@ -2073,18 +2076,29 @@ events.onmessage = async () => {
 
   const pushBtn = document.getElementById('krdPushBtn');
   async function updatePushBtnState() {
+    if (!pushBtn) return;
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      if (pushBtn) pushBtn.style.display = 'none';
+      pushBtn.style.display = 'none';
       return;
     }
-    if (Notification.permission === 'granted') {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      if (sub && pushBtn) {
-        pushBtn.textContent = '🔔 Bildirimler Açık'; 
-        pushBtn.classList.add('subscribed');
-      }
+    const savedOn = localStorage.getItem('krd_live_notify') === '1' || localStorage.getItem('krd_push_subscribed') === '1';
+    if (Notification.permission === 'granted' && savedOn) {
+      pushBtn.innerHTML = '🔔<span style="position:absolute;top:2px;right:2px;width:9px;height:9px;background:#22c55e;border-radius:50%;border:1.5px solid #0f172a;"></span>';
+      pushBtn.title = 'Bildirimler Açık';
+      pushBtn.classList.add('subscribed');
     }
+    try {
+      if (Notification.permission === 'granted') {
+        const reg = await navigator.serviceWorker.getRegistration();
+        const sub = reg ? await reg.pushManager.getSubscription() : null;
+        if (sub) {
+          localStorage.setItem('krd_push_subscribed', '1');
+          pushBtn.innerHTML = '🔔<span style="position:absolute;top:2px;right:2px;width:9px;height:9px;background:#22c55e;border-radius:50%;border:1.5px solid #0f172a;"></span>';
+          pushBtn.title = 'Bildirimler Açık';
+          pushBtn.classList.add('subscribed');
+        }
+      }
+    } catch {}
   }
 
   async function subscribePush() {
@@ -2114,6 +2128,7 @@ events.onmessage = async () => {
         body: JSON.stringify({ subscription: sub })
       });
       if (!saveRes.ok) throw new Error('Sunucu abonelik kaydı başarısız (' + saveRes.status + ')');
+      localStorage.setItem('krd_push_subscribed', '1');
       updatePushBtnState();
       alert('Harika! Artık maç skoru girildiğinde veya yeni manşet yayınlandığında telefonuna anında bildirim düşecek.');
     } catch (err) {
@@ -2121,7 +2136,7 @@ events.onmessage = async () => {
       if (/storage error|push service error|AbortError/i.test(msg)) {
         localStorage.setItem('krd_live_notify', '1');
         if (pushBtn) {
-          pushBtn.textContent = '🔔 Bildirimler Açık';
+          updatePushBtnState();
           pushBtn.classList.add('subscribed');
         }
         try {
@@ -3529,6 +3544,101 @@ events.onmessage = async () => {
   window.addEventListener('load', () => syncCheck(true));
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncCheck(false); });
   setInterval(() => syncCheck(false), 10000);
+})();
+</script>
+<script id="krdChampSimulator">
+(function(){
+  function mountSimulator() {
+    if (typeof S === 'undefined' || !Array.isArray(S.teams) || !Array.isArray(S.matches)) return;
+    const slug = (S.settings && S.settings.admin_slug) ? S.settings.admin_slug : 'krd-kontrol';
+    if (location.hash.startsWith('#/yonetici') || location.hash.startsWith('#/' + slug)) return;
+    const app = document.getElementById('app');
+    if (!app || document.getElementById('krdSimBox')) return;
+
+    const rem = S.matches.filter(m => !m.played);
+    if (!rem.length) return;
+    const tMap = Object.fromEntries(S.teams.map(t => [t.id, t]));
+
+    const box = document.createElement('details');
+    box.id = 'krdSimBox';
+    box.className = 'card';
+    box.style.marginTop = '12px';
+    box.innerHTML = `
+      <summary style="cursor:pointer;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:space-between;">
+        <span>🧮 Canlı Şampiyonluk & Averaj Simülatörü (${rem.length} Kalan Maç)</span>
+        <span style="font-size:11px;opacity:.75;font-weight:600;">Tahmini Skor Gir ▾</span>
+      </summary>
+      <div style="margin-top:10px;font-size:12px;opacity:.82;">Kalan maçlara tahmini skor yaz; şampiyonluk yarışını ve averaj sıralamasını canlı gör (veritabanını değiştirmez).</div>
+      <div id="krdSimMatches" style="display:grid;gap:6px;margin-top:10px;max-height:240px;overflow-y:auto;padding-right:4px;">
+        ${rem.map(m => `
+          <div data-sim-mid="${m.id}" data-hid="${m.home_id}" data-aid="${m.away_id}" style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:6px 8px;background:rgba(15,23,42,0.55);border-radius:8px;font-size:12.5px;">
+            <span style="font-size:10.5px;opacity:.65;min-width:26px;">H${m.week}</span>
+            <span style="flex:1;text-align:right;font-weight:700;">${(tMap[m.home_id]?.name || 'Ev')}</span>
+            <input type="number" min="0" max="30" placeholder="-" data-shs style="width:40px;text-align:center;padding:3px;border-radius:6px;">
+            <span>:</span>
+            <input type="number" min="0" max="30" placeholder="-" data-saws style="width:40px;text-align:center;padding:3px;border-radius:6px;">
+            <span style="flex:1;text-align:left;font-weight:700;">${(tMap[m.away_id]?.name || 'Dep')}</span>
+          </div>
+        `).join('')}
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+        <button type="button" id="krdSimReset" class="xs">↺ Tahminleri Sıfırla</button>
+      </div>
+      <div id="krdSimTable" style="margin-top:10px;"></div>
+    `;
+
+    app.appendChild(box);
+
+    function calcSim() {
+      const stats = {};
+      S.teams.forEach(t => { stats[t.id] = { id: t.id, name: t.name, o: 0, g: 0, b: 0, m: 0, ag: 0, yg: 0, p: 0 }; });
+      const allMatches = S.matches.map(m => ({ ...m }));
+      box.querySelectorAll('[data-sim-mid]').forEach(row => {
+        const hsVal = row.querySelector('[data-shs]').value;
+        const awsVal = row.querySelector('[data-saws]').value;
+        if (hsVal !== '' && awsVal !== '') {
+          const target = allMatches.find(x => String(x.id) === row.dataset.simMid);
+          if (target) { target.played = 1; target.hs = parseInt(hsVal, 10) || 0; target.aws = parseInt(awsVal, 10) || 0; }
+        }
+      });
+      allMatches.filter(m => m.played).forEach(m => {
+        const h = stats[m.home_id], a = stats[m.away_id];
+        if (!h || !a) return;
+        h.o++; a.o++; h.ag += m.hs; h.yg += m.aws; a.ag += m.aws; a.yg += m.hs;
+        if (m.hs > m.aws) { h.g++; h.p += 3; a.m++; }
+        else if (m.hs < m.aws) { a.g++; a.p += 3; h.m++; }
+        else { h.b++; a.b++; h.p++; a.p++; }
+      });
+      const list = Object.values(stats).sort((x, y) => (y.p - x.p) || ((y.ag - y.yg) - (x.ag - x.yg)) || (y.ag - x.ag));
+      document.getElementById('krdSimTable').innerHTML = `
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead><tr style="opacity:.75;border-bottom:1px solid rgba(148,163,184,0.2);">
+            <th style="text-align:left;padding:4px;">#</th><th style="text-align:left;padding:4px;">Takım</th>
+            <th style="padding:4px;">O</th><th style="padding:4px;">AV</th><th style="padding:4px;">P</th>
+          </tr></thead>
+          <tbody>
+            ${list.map((t, idx) => `
+              <tr style="border-bottom:1px solid rgba(148,163,184,0.1);${idx === 0 ? 'background:rgba(22,163,74,0.18);font-weight:800;' : ''}">
+                <td style="padding:5px 4px;">${idx === 0 ? '👑' : idx + 1}</td>
+                <td style="padding:5px 4px;">${t.name}</td>
+                <td style="text-align:center;padding:5px 4px;">${t.o}</td>
+                <td style="text-align:center;padding:5px 4px;">${(t.ag - t.yg) > 0 ? '+' + (t.ag - t.yg) : (t.ag - t.yg)}</td>
+                <td style="text-align:center;padding:5px 4px;font-weight:800;">${t.p}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    box.addEventListener('input', calcSim);
+    document.getElementById('krdSimReset').addEventListener('click', () => {
+      box.querySelectorAll('input').forEach(i => i.value = '');
+      calcSim();
+    });
+    calcSim();
+  }
+  setInterval(mountSimulator, 1200);
 })();
 </script>
 </body></html>
