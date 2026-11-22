@@ -2117,8 +2117,19 @@ events.onmessage = async () => {
       updatePushBtnState();
       alert('Harika! Artık maç skoru girildiğinde veya yeni manşet yayınlandığında telefonuna anında bildirim düşecek.');
     } catch (err) {
+      const msg = String(err && err.message ? err.message : err);
+      if (/storage error/i.test(msg) && !window._krdStorageRetried) {
+        window._krdStorageRetried = true;
+        try {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          for (const r of regs) await r.unregister();
+          const keys = await caches.keys();
+          for (const k of keys) await caches.delete(k);
+        } catch {}
+        return subscribePush();
+      }
       console.error('Push abonelik hatasi:', err);
-      alert('Bildirim hatası: ' + (err && err.message ? err.message : err));
+      alert('Bildirim hatası: ' + msg);
     }
   }
 
