@@ -73,7 +73,7 @@
       .krd-derby{border:1.5px solid rgba(250,204,21,.7)!important;box-shadow:0 0 18px rgba(250,204,21,.18)}
       .krd-derby-badge{display:inline-block;margin-bottom:5px;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:900;background:linear-gradient(90deg,#facc15,#f97316);color:#090d16}
       .krd-png-btn{margin-top:6px;width:100%;padding:5px 8px!important;font-size:11px!important;font-weight:700!important;border-radius:8px!important;background:rgba(250,204,21,.15)!important;border:1px solid rgba(250,204,21,.35)!important;color:#fde047!important;cursor:pointer}
-      #krdPosterPop{position:fixed;inset:0;z-index:10000;background:rgba(2,6,23,.85);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:16px}
+      #krdPosterPop{position:fixed;inset:0;z-index:10000;background:rgba(2,6,23,.85);display:none;align-items:center;justify-content:center;padding:16px}
       #krdPosterPop.open{display:flex}
       .krd-poster-in{width:100%;max-width:440px;background:#0f172a;border:1px solid rgba(250,204,21,.4);border-radius:16px;padding:14px;display:grid;gap:10px;text-align:center}
       .krd-poster-in img{width:100%;border-radius:10px}
@@ -490,7 +490,7 @@
   
 
   
-  setInterval(pullAll, 5000);
+  setInterval(() => { if (!document.hidden) pullAll(); }, 25000);
   
 
   
@@ -517,7 +517,7 @@
         max-width: 980px; margin: 8px auto 12px;
         display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
         padding: 7px; border-radius: 14px;
-        background: rgba(9, 13, 24, 0.96); backdrop-filter: blur(12px);
+        background: rgba(9, 13, 24, 0.96); 
         border: 1px solid rgba(56, 189, 248, 0.38);
         box-shadow: 0 6px 22px rgba(0, 0, 0, 0.48);
       }
@@ -612,6 +612,8 @@
 
   // Son 5 mac form baloncuklarini puan tablosuna ekle
   function enrichFormBadges() {
+    const tblCheck = document.querySelector('#app table:not(#krdSplitTableWrap table) tbody tr td');
+    if (tblCheck && tblCheck.dataset.krdFormDone) return;
     const st = getS();
     const app = document.getElementById('app');
     if (!st || !app || isAdm()) return;
@@ -854,9 +856,11 @@
     const app = document.getElementById('app');
     if (!app || app.dataset.krdObs) return;
     app.dataset.krdObs = '1';
+    let _obsTimer = null;
     const obs = new MutationObserver(() => {
       if (_isApplying) return;
-      syncView(false);
+      clearTimeout(_obsTimer);
+      _obsTimer = setTimeout(() => syncView(false), 180);
     });
     obs.observe(app, { childList: true });
   }
