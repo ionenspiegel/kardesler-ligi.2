@@ -678,27 +678,66 @@
     if (typeof toast === 'function') toast('✅ Duyuru, Bakım Modu, Kurallar ve Armalar kaydedildi!');
   };
 
+  
+  window._krdAdmSubTab = window._krdAdmSubTab || 'main';
+
+  window.krdOpenAdmMasterTab = function (openMaster) {
+    window._krdAdmSubTab = openMaster ? 'master' : 'main';
+    renderAdminPanel();
+  };
+
   async function renderAdminPanel() {
-    if (!isAdm()) {
-      document.querySelectorAll('#krdMasterAdmBox, .krd-adm-box').forEach(el => el.remove());
-      return;
-    }
-    const existingAdmBox = document.getElementById('krdMasterAdmBox');
     const app = document.getElementById('app');
     if (!app) return;
-    const hasLogout = Array.from(app.querySelectorAll('button')).some(b => (b.textContent || '').trim() === 'Çıkış');
-    if (!hasLogout) {
-      document.querySelectorAll('#krdMasterAdmBox, .krd-adm-box').forEach(el => el.remove());
+
+    if (!isAdm()) {
+      document.querySelectorAll('#krdMasterAdmBox, #krdAdmSwitchBar').forEach(el => el.remove());
       return;
     }
-    if (existingAdmBox) return;
+
+    const hasLogout = Array.from(app.querySelectorAll('button')).some(b => (b.textContent || '').trim() === 'Çıkış');
+    if (!hasLogout) {
+      document.querySelectorAll('#krdMasterAdmBox, #krdAdmSwitchBar').forEach(el => el.remove());
+      return;
+    }
+
+    // Yonetici ust gecis cubugu: [Lig Yonetimi] vs [Duyuru, Bakim & Kurallar]
+    let bar = document.getElementById('krdAdmSwitchBar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'krdAdmSwitchBar';
+      bar.style.cssText = 'box-sizing:border-box;width:100%;max-width:960px;margin:10px auto 12px;display:flex;gap:8px;padding:7px;border-radius:12px;background:#0b1120;border:1px solid rgba(250,204,21,0.4);';
+      app.prepend(bar);
+    }
+    const isMaster = window._krdAdmSubTab === 'master';
+    bar.innerHTML = `
+      <button type="button" onclick="window.krdOpenAdmMasterTab(false)" style="flex:1;padding:8px 12px;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;border:1px solid ${!isMaster ? '#38bdf8' : 'rgba(148,163,184,0.25)'};background:${!isMaster ? 'linear-gradient(135deg,#0284c7,#2563eb)' : '#131c31'};color:#fff;">📋 Lig & Maç Yönetimi</button>
+      <button type="button" onclick="window.krdOpenAdmMasterTab(true)" style="flex:1;padding:8px 12px;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;border:1px solid ${isMaster ? '#facc15' : 'rgba(148,163,184,0.25)'};background:${isMaster ? 'linear-gradient(135deg,#d97706,#eab308)' : '#131c31'};color:${isMaster ? '#090d16' : '#fef08a'};">⚙️ Duyuru, Bakım & Kurallar</button>
+    `;
+
+    // Diger yonetici ogelerini sekme secimine gore gizle/goster
+    Array.from(app.children).forEach(el => {
+      if (el.id === 'krdAdmSwitchBar' || el.id === 'krdMasterAdmBox') return;
+      el.style.display = isMaster ? 'none' : '';
+    });
+
+    let box = document.getElementById('krdMasterAdmBox');
+    if (!isMaster) {
+      if (box) box.style.display = 'none';
+      return;
+    }
+
+    if (box) {
+      box.style.display = 'grid';
+      return;
+    }
 
     const st = getS() || {};
     const ex = (window._krdData && window._krdData.extras) || {};
     const bMap = (window._krdData && window._krdData.badges) || {};
     const c = (window._krdData && window._krdData.cup) || {};
 
-    const box = document.createElement('div');
+    box = document.createElement('div');
     box.id = 'krdMasterAdmBox';
     box.innerHTML = `
       <b style="color:#facc15;font-size:14px;">⚙️ Duyuru Sabitleme, Bakım Modu, Kurallar & Gelen Sorunlar</b>
