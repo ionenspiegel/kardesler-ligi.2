@@ -2000,30 +2000,7 @@ events.onmessage = async () => {
   }
 
   async function subscribePush() {
-    try {
-      const perm = await Notification.requestPermission();
-      if (perm !== 'granted') {
-        alert('Bildirim izni verilmedi. Tarayıcı veya telefon ayarlarından KRD Ligi bildirimlerine izin verebilirsin.');
-        return;
-      }
-      const reg = await navigator.serviceWorker.ready;
-      const keyRes = await fetch('/api/push/key');
-      const { publicKey } = await keyRes.json();
-      if (!publicKey) return;
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey)
-      });
-      await fetch('/api/push/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscription: sub })
-      });
-      updatePushBtnState();
-      alert('Harika! Artık maç skoru girildiğinde veya yeni manşet yayınlandığında telefonuna anında bildirim düşecek.');
-    } catch (err) {
-      console.error('Push abonelik hatasi:', err); alert('Bildirim hatası: ' + (err && err.message ? err.message : err));
-    }
+    if (window.krdResetAndSubscribePush) return window.krdResetAndSubscribePush();
   }
 
   
@@ -2691,30 +2668,6 @@ events.onmessage = async () => {
   }
 
   setInterval(renderPublicLiveBar, 1200);
-})();
-</script>
-
-
-<script id="krdPushAutoRecover">
-(function(){
-  const origSubscribe = window.PushManager && PushManager.prototype && PushManager.prototype.subscribe;
-  if (!origSubscribe) return;
-  PushManager.prototype.subscribe = async function(opts) {
-    try {
-      return await origSubscribe.call(this, opts);
-    } catch (err) {
-      if (String(err && err.message || err).toLowerCase().includes('push service error')) {
-        try {
-          const oldSub = await this.getSubscription();
-          if (oldSub) await oldSub.unsubscribe();
-          return await origSubscribe.call(this, opts);
-        } catch (retryErr) {
-          throw new Error('Telefonun Google Play Hizmetleri / Bildirim servisi engelliyor. Chrome izinlerinden bildirimleri sıfırlayıp güç tasarrufunu kapatın.');
-        }
-      }
-      throw err;
-    }
-  };
 })();
 </script>
 
@@ -3475,7 +3428,7 @@ events.onmessage = async () => {
     } catch (err) {
       localStorage.setItem('krd_push_fallback', '1');
       updatePushButtons(true);
-      alert('Google Push servisi engellendi (' + (err && err.name ? err.name : 'Hata') + ': ' + (err && err.message ? err.message : '') + '). Canlı sayfa içi bildirim modu aktif edildi!');
+      alert('Standart arka plan bildirim servisi bu pencerede kısıtlı (' + (err && err.name ? err.name : 'Hata') + '). Canlı bildirim modu etkinleştirildi; kalıcı arka plan bildirimi için sayfayı sağ üstteki (⋮) menüsünden "Chrome uygulamasında aç" diyerek açın.');
     }
   };
 
