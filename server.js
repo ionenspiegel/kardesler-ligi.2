@@ -244,7 +244,7 @@ const body = req => new Promise((ok, no) => { let d = ''; req.on('data', c => { 
 const cookie = (v, age) => `kl_s=${v}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${age}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
 
 async function api(req, res, u) {
-  const M = req.method, P = u.pathname, ip = req.socket.remoteAddress;
+  const M = req.method, P = u.pathname, ip = (typeof krdGetIp === 'function' ? krdGetIp(req) : req.socket.remoteAddress);
   if (M === 'GET' && P === '/api/league') return send(res, 200, await league());
   if (M === 'GET' && P === '/api/me') return send(res, 200, { admin: isAdmin(req), needsSetup: await needsSetup() });
   if (M !== 'GET' && req.headers['x-kl'] !== '1') throw E(403, 'Geçersiz istek');
@@ -262,6 +262,10 @@ async function api(req, res, u) {
     return send(res, 200, { ok: 1 }, { 'Set-Cookie': cookie(mkToken(), 43200) });
   }
   if (M === 'POST' && P === '/api/admin/logout') return send(res, 200, { ok: 1 }, { 'Set-Cookie': cookie('', 0) });
+  // === KRD_HARD_AUTH_GUARD ===
+  if ((M !== 'GET' && P === '/api/krd-extras') || P.startsWith('/api/admin/')) {
+    if (!isAdmin(req)) throw E(401, 'Yönetici girişi gerekli');
+  }
   if (M === 'POST' && P === '/api/krd-extras') {
     const b = await body(req);
     await pool.query(`DELETE FROM ${SETTINGS} WHERE k=$1`, ['krd_extras_v2']);
