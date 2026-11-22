@@ -3464,7 +3464,6 @@ events.onmessage = async () => {
         await reg.showNotification(title, {
           body,
           icon: '/icon-192.png',
-          badge: '/icon-192.png',
           tag: 'krd-live-' + Date.now(),
           renotify: true,
           vibrate: [200, 100, 200]
@@ -3524,9 +3523,7 @@ events.onmessage = async () => {
       '⚽ KRD Ligi Bildirim Testi',
       fcmOk ? 'Sunucu arka plan bildirimi aktif!' : ('Canlı mod aktif (' + (fcmErr || 'FCM kısıtlı') + ')')
     );
-    if (!fcmOk && fcmErr) {
-      alert('Sunucu arka plan push kaydı engellendi: ' + fcmErr + '\n\nNot: Telefonda Google Play Hizmetleri arka plan verisi kapalıysa veya sayfa uygulama içi pencerede açıldıysa bu hata oluşur.');
-    }
+    // Hata penceresi acmadan sessizce canli bildirim modunda devam et
   };
 
   function bindBtns() {
