@@ -487,39 +487,136 @@
   
 
   
+  
+
+  
+  setInterval(pullAll, 5000);
+  
+
   // === KRD_SECTIONS_START ===
   window._krdActiveTab = window._krdActiveTab || 'all';
+  let _lastRenderedKey = '';
 
   function injectTabStyles() {
     if (document.getElementById('krdTabsCss')) return;
     const st = document.createElement('style');
     st.id = 'krdTabsCss';
     st.textContent = `
+      html { scroll-behavior: smooth; overflow-anchor: none; }
       #krdNavTabs {
-        position: sticky; top: 6px; z-index: 900;
+        position: sticky; top: 6px; z-index: 950;
         display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
         padding: 7px; margin: 8px 0 12px; border-radius: 14px;
-        background: rgba(9, 13, 24, 0.92); backdrop-filter: blur(10px);
-        border: 1px solid rgba(56, 189, 248, 0.32);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.38);
+        background: rgba(9, 13, 24, 0.95); backdrop-filter: blur(10px);
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
       }
       #krdNavTabs::-webkit-scrollbar { display: none; }
       .krd-tab-btn {
-        flex: 0 0 auto; padding: 7px 12px; border-radius: 10px;
+        flex: 0 0 auto; padding: 8px 13px; border-radius: 10px;
         font-size: 12px; font-weight: 800; cursor: pointer;
-        border: 1px solid rgba(148, 163, 184, 0.24);
-        background: rgba(15, 23, 42, 0.8); color: #cbd5e1;
-        transition: all 0.18s ease; white-space: nowrap;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: rgba(15, 23, 42, 0.85); color: #cbd5e1;
+        white-space: nowrap; user-select: none;
       }
       .krd-tab-btn.active {
         background: linear-gradient(135deg, #0284c7, #2563eb);
         color: #fff; border-color: #38bdf8;
-        box-shadow: 0 3px 12px rgba(37, 99, 235, 0.4);
+      }
+      #krdDedicatedView {
+        margin: 10px 0 18px;
+        display: grid;
+        gap: 12px;
+      }
+      .krd-clean-card {
+        background: rgba(15, 23, 42, 0.92);
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 14px;
+        padding: 13px 15px;
+        display: grid;
+        gap: 9px;
       }
       .krd-tab-hidden { display: none !important; }
-      .krd-force-show { display: block !important; visibility: visible !important; opacity: 1 !important; }
     `;
     document.head.appendChild(st);
+  }
+
+  function buildDedicatedPanels() {
+    const app = document.getElementById('app');
+    if (!app || isAdm()) return;
+    const tab = window._krdActiveTab || 'all';
+    let host = document.getElementById('krdDedicatedView');
+
+    if (tab !== 'predict' && tab !== 'rules') {
+      if (host) host.remove();
+      return;
+    }
+
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'krdDedicatedView';
+      const nav = document.getElementById('krdNavTabs');
+      if (nav && nav.nextSibling) app.insertBefore(host, nav.nextSibling);
+      else app.appendChild(host);
+    }
+
+    const st = getS() || {};
+    const teams = st.teams || [];
+    const matches = st.matches || [];
+    const tMap = Object.fromEntries(teams.map(t => [t.id, t.name]));
+    const ex = (window._krdData && window._krdData.extras) || {};
+
+    if (tab === 'predict') {
+      const up = matches.filter(m => !m.played).slice(0, 8);
+      const nick = localStorage.getItem('krd_pred_nick') || '';
+      const myP = ((window._krdData && window._krdData.predictions) || {})[nick] || {};
+      const { table } = calcStats();
+      const cD = (window._krdData && window._krdData.cup) || {};
+
+      let cupHtml = '<div class="mut" style="font-size:12px;">Süper Kupa eşleşmeleri için en az 4 kulüp gereklidir.</div>';
+      if (table.length >= 4) {
+        const [c1, c2, c3, c4] = table;
+        const sf1Ok = cD.sf1_h !== '' && cD.sf1_h !== undefined && cD.sf1_a !== '' && cD.sf1_a !== undefined;
+        const sf2Ok = cD.sf2_h !== '' && cD.sf2_h !== undefined && cD.sf2_a !== '' && cD.sf2_a !== undefined;
+        const f1 = sf1Ok ? (Number(cD.sf1_h) >= Number(cD.sf1_a) ? c1 : c4) : { name: '1. Yarı Final Galibi' };
+        const f2 = sf2Ok ? (Number(cD.sf2_h) >= Number(cD.sf2_a) ? c2 : c3) : { name: '2. Yarı Final Galibi' };
+        cupHtml = `
+          <div class="krd-cup-grid">
+            <div class="krd-cup-box"><b style="color:#facc15;">YARI FİNAL 1 (1. vs 4.)</b><div>${esc(c1.name)} <b>${sf1Ok ? cD.sf1_h : '-'}</b></div><div>${esc(c4.name)} <b>${sf1Ok ? cD.sf1_a : '-'}</b></div></div>
+            <div class="krd-cup-box"><b style="color:#facc15;">YARI FİNAL 2 (2. vs 3.)</b><div>${esc(c2.name)} <b>${sf2Ok ? cD.sf2_h : '-'}</b></div><div>${esc(c3.name)} <b>${sf2Ok ? cD.sf2_a : '-'}</b></div></div>
+          </div>
+          <div class="krd-cup-box" style="margin-top:6px;border-color:rgba(250,204,21,.45);"><b style="color:#4ade80;">👑 SÜPER KUPA FİNALİ</b><div>${esc(f1.name)} <b>${cD.f_h !== undefined && cD.f_h !== '' ? cD.f_h : '-'}</b> vs <b>${cD.f_a !== undefined && cD.f_a !== '' ? cD.f_a : '-'}</b> ${esc(f2.name)}</div></div>`;
+      }
+
+      host.innerHTML = `
+        <div class="krd-clean-card">
+          <b style="color:#c084fc;font-size:14px;">🎯 Haftalık Skor Tahmini</b>
+          <input type="text" id="krdPredNick" value="${esc(nick)}" placeholder="Adınız / Lakabınız" style="padding:8px 10px;border-radius:9px;border:1px solid rgba(192,132,252,.45);background:#020617;color:#fff;font-size:12.5px;">
+          ${up.length ? up.map(m => {
+            const o = myP[String(m.id)];
+            return `<div class="krd-pred-line"><span style="text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(tMap[m.home_id] || 'Ev')}</span><input type="number" id="phs_${m.id}" value="${o ? o.hs : ''}" placeholder="0"><span>-</span><input type="number" id="paws_${m.id}" value="${o ? o.aws : ''}" placeholder="0"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(tMap[m.away_id] || 'Dep')}</span><button type="button" onclick="window.krdSendPredict(${m.id})" style="padding:5px 9px;font-size:11.5px;">${o ? '✓' : 'Kaydet'}</button></div>`;
+          }).join('') : '<div class="mut" style="font-size:12px;">Şu an tahmin yapılacak oynanmamış maç bulunmuyor.</div>'}
+        </div>
+        <div class="krd-clean-card">
+          <b style="color:#38bdf8;font-size:14px;">🏆 İlk 4 KRD Süper Kupa Eleme Ağacı</b>
+          ${cupHtml}
+        </div>`;
+    } else if (tab === 'rules') {
+      const txt = (ex.rules && ex.rules.trim()) ? ex.rules : DEFAULT_RULES;
+      host.innerHTML = `
+        <div class="krd-clean-card">
+          <b style="color:#fb923c;font-size:14px;">📜 Resmi Lig Kuralları & Ceza Talimatnamesi</b>
+          <div style="display:grid;gap:7px;font-size:12.5px;line-height:1.5;">
+            ${txt.split('\n').filter(Boolean).map(l => `<div style="padding:8px 10px;border-radius:9px;background:rgba(2,6,23,.65);border:1px solid rgba(251,146,60,.28);">${esc(l)}</div>`).join('')}
+          </div>
+        </div>
+        <div class="krd-clean-card">
+          <b style="color:#f87171;font-size:14px;">🐞 Hata / Sorun Bildir (Doğrudan Yöneticiye İlet)</b>
+          <input type="text" id="krdRepSender" placeholder="Adınız / Kulübünüz" style="padding:8px 10px;border-radius:9px;border:1px solid rgba(248,113,113,.38);background:#020617;color:#fff;font-size:12.5px;">
+          <textarea id="krdRepMsg" rows="3" placeholder="Karşılaştığınız hatayı veya itirazınızı yazın..." style="padding:8px 10px;border-radius:9px;border:1px solid rgba(248,113,113,.38);background:#020617;color:#fff;font-size:12.5px;"></textarea>
+          <button type="button" class="pri" onclick="window.krdSendReport()" style="background:#ef4444;color:#fff;font-weight:800;">📩 Yöneticiye Gönder</button>
+        </div>`;
+    }
   }
 
   window.krdSwitchTab = function (tab) {
@@ -527,69 +624,23 @@
     document.querySelectorAll('.krd-tab-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.tab === tab);
     });
-    renderAll(true);
-    applyTabFilter();
+    applyTabFilter(true);
   };
 
-  function ensureFallbackBoxes(app) {
-    // Eger veri henuz gelmediyse bile Kurallar, Bildir, Tahmin ve Kupa kutularini mutlaka olustur
-    const ex = (window._krdData && window._krdData.extras) || {};
-    const txt = (ex.rules && ex.rules.trim()) ? ex.rules : DEFAULT_RULES;
-
-    if (!document.getElementById('krdRulesBox')) {
-      const rBox = document.createElement('details');
-      rBox.id = 'krdRulesBox';
-      rBox.className = 'card krd-box-acc';
-      rBox.innerHTML = `<summary style="color:#fb923c;"><span>📜 Resmi Lig Kuralları & Cezalar</span><span style="font-size:11px;opacity:.85;">Kuralları Oku ▾</span></summary>
-        <div style="margin-top:8px;display:grid;gap:6px;font-size:12px;">${txt.split('\n').filter(Boolean).map(l => `<div style="padding:6px 9px;border-radius:8px;background:rgba(2,6,23,.55);border:1px solid rgba(251,146,60,.22);">${esc(l)}</div>`).join('')}</div>`;
-      app.appendChild(rBox);
-    }
-
-    if (!document.getElementById('krdReportBox')) {
-      const rep = document.createElement('details');
-      rep.id = 'krdReportBox';
-      rep.className = 'card krd-box-acc';
-      rep.innerHTML = `<summary style="color:#f87171;"><span>🐞 Hata / Sorun Bildir (Yöneticiye İlet)</span><span style="font-size:11px;opacity:.85;">Bildir ▾</span></summary>
-        <div style="margin-top:8px;display:grid;gap:7px;">
-          <input type="text" id="krdRepSender" placeholder="Adınız / Kulübünüz" style="padding:7px 10px;border-radius:8px;border:1px solid rgba(248,113,113,.35);background:#020617;color:#fff;font-size:12px;">
-          <textarea id="krdRepMsg" rows="2" placeholder="Karşılaştığınız hatayı veya itirazınızı yazın..." style="padding:7px 10px;border-radius:8px;border:1px solid rgba(248,113,113,.35);background:#020617;color:#fff;font-size:12px;"></textarea>
-          <button type="button" class="pri" onclick="window.krdSendReport()" style="background:#ef4444;color:#fff;">📩 Yöneticiye Gönder</button>
-        </div>`;
-      app.appendChild(rep);
-    }
-
-    if (!document.getElementById('krdPredictBox')) {
-      const pBox = document.createElement('details');
-      pBox.id = 'krdPredictBox';
-      pBox.className = 'card krd-box-acc';
-      pBox.innerHTML = `<summary style="color:#c084fc;"><span>🎯 Haftalık Skor Tahmini</span><span style="font-size:11px;opacity:.85;">Tahmin Yap ▾</span></summary>
-        <div class="mut" style="margin-top:8px;font-size:12px;">Maç listesi yükleniyor veya açık fikstür bulunmuyor.</div>`;
-      app.appendChild(pBox);
-    }
-
-    if (!document.getElementById('krdSuperCupBox')) {
-      const cupBox = document.createElement('details');
-      cupBox.id = 'krdSuperCupBox';
-      cupBox.className = 'card krd-box-acc';
-      cupBox.innerHTML = `<summary style="color:#38bdf8;"><span>🏆 İlk 4 KRD Süper Kupa Eleme Ağacı</span><span style="font-size:11px;opacity:.85;">Play-Off ▾</span></summary>
-        <div class="mut" style="margin-top:8px;font-size:12px;">Lig sıralaması tamamlandığında ilk 4 kulüp burada eşleşir.</div>`;
-      app.appendChild(cupBox);
-    }
-  }
-
-  function applyTabFilter() {
+  function applyTabFilter(forceRebuild) {
     const app = document.getElementById('app');
     if (!app) return;
     const nav = document.getElementById('krdNavTabs');
+
     if (isAdm()) {
       if (nav) nav.remove();
+      const host = document.getElementById('krdDedicatedView');
+      if (host) host.remove();
       app.querySelectorAll('.krd-tab-hidden').forEach(el => el.classList.remove('krd-tab-hidden'));
       return;
     }
 
     injectTabStyles();
-    ensureFallbackBoxes(app);
-
     if (!nav) {
       const bar = document.createElement('div');
       bar.id = 'krdNavTabs';
@@ -610,26 +661,28 @@
 
     const tab = window._krdActiveTab || 'all';
     const blocks = Array.from(app.children).filter(el =>
-      el.id !== 'krdNavTabs' && el.id !== 'krdPinnedAnn'
+      el.id !== 'krdNavTabs' && el.id !== 'krdPinnedAnn' && el.id !== 'krdDedicatedView'
     );
 
     blocks.forEach(el => {
-      el.classList.remove('krd-force-show');
+      const id = el.id || '';
+      // Eski kucuk akordeon kutulari kalabalik yapmasin, sadece 'all' modunda gorunsun
       if (tab === 'all') {
         el.classList.remove('krd-tab-hidden');
         return;
       }
+      if (tab === 'predict' || tab === 'rules') {
+        el.classList.add('krd-tab-hidden');
+        return;
+      }
 
-      const id = el.id || '';
       const txt = (el.textContent || '').toLowerCase();
       const hasTable = Boolean(el.querySelector('table')) || el.tagName === 'TABLE';
       const hasGrid = el.classList.contains('grid') || Boolean(el.querySelector('.grid'));
 
       let group = 'table';
-      if (id === 'krdRulesBox' || id === 'krdReportBox') {
-        group = 'rules';
-      } else if (id === 'krdPredictBox' || id === 'krdSuperCupBox' || id === 'krdHallOfFame') {
-        group = 'predict';
+      if (id === 'krdRulesBox' || id === 'krdReportBox' || id === 'krdPredictBox' || id === 'krdSuperCupBox') {
+        group = 'other';
       } else if (
         hasGrid ||
         id === 'krdRemainingMatchesBox' ||
@@ -647,17 +700,30 @@
         group = 'table';
       }
 
-      const show = (group === tab);
-      el.classList.toggle('krd-tab-hidden', !show);
-      if (show && (group === 'predict' || group === 'rules')) {
-        el.classList.add('krd-force-show');
-        if (el.tagName === 'DETAILS') el.open = true;
-      }
+      el.classList.toggle('krd-tab-hidden', group !== tab);
     });
+
+    const key = tab + ':' + ((getS()?.matches || []).length);
+    if (forceRebuild || key !== _lastRenderedKey) {
+      _lastRenderedKey = key;
+      buildDedicatedPanels();
+    }
   }
+
+  // Titreme yapmadan yalnizca veri/hash degistiginde calis
+  function runOnceSafe() {
+    renderAll(false);
+    applyTabFilter(false);
+    renderAdminPanel();
+  }
+
+  pullAll().then(() => {
+    runOnceSafe();
+    applyTabFilter(true);
+  });
+  window.addEventListener('hashchange', () => setTimeout(() => { runOnceSafe(); applyTabFilter(true); }, 120));
+  setTimeout(runOnceSafe, 600);
+  setTimeout(runOnceSafe, 1800);
   // === KRD_SECTIONS_END ===
 
-  pullAll().then(() => { renderAll(false); applyTabFilter(); });
-  setInterval(pullAll, 5000);
-  setInterval(() => { renderAll(false); applyTabFilter(); renderAdminPanel(); }, 900);
 })();
