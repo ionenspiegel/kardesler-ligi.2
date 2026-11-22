@@ -25,7 +25,8 @@
   const isAdm = () => {
     const st = getS();
     const sl = (st && st.settings && st.settings.admin_slug) || 'krd-kontrol';
-    return location.hash.startsWith('#/yonetici') || location.hash.startsWith('#/' + sl);
+    const h = (location.hash || '').toLowerCase();
+    return h.startsWith('#/yonetici') || h.startsWith('#/' + sl.toLowerCase());
   };
 
   window._krdData = { extras: {}, predictions: {}, archive: [], badges: {}, cup: {} };
@@ -678,15 +679,19 @@
   };
 
   async function renderAdminPanel() {
-    const existingAdmBox = document.getElementById('krdMasterAdmBox');
     if (!isAdm()) {
-      if (existingAdmBox) existingAdmBox.remove();
+      document.querySelectorAll('#krdMasterAdmBox, .krd-adm-box').forEach(el => el.remove());
       return;
     }
+    const existingAdmBox = document.getElementById('krdMasterAdmBox');
     const app = document.getElementById('app');
     if (!app) return;
-    const ok = app.querySelector('button') && (app.textContent || '').includes('Çıkış');
-    if (!ok || existingAdmBox) return;
+    const hasLogout = Array.from(app.querySelectorAll('button')).some(b => (b.textContent || '').trim() === 'Çıkış');
+    if (!hasLogout) {
+      document.querySelectorAll('#krdMasterAdmBox, .krd-adm-box').forEach(el => el.remove());
+      return;
+    }
+    if (existingAdmBox) return;
 
     const st = getS() || {};
     const ex = (window._krdData && window._krdData.extras) || {};
@@ -747,6 +752,7 @@
       if (isAdm()) {
         renderAdminPanel();
       } else {
+        document.querySelectorAll('#krdMasterAdmBox, .krd-adm-box').forEach(el => el.remove());
         enhanceTableAndFixtures();
         filterAppChildren();
         if (rebuildDedicated) buildDedicatedPanels();
