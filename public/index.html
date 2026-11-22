@@ -3397,28 +3397,120 @@ events.onmessage = async () => {
 
 <script>
 (function(){
-  async function krdSyncPushState() {
+  function urlB64ToUint8(b64) {
+    const pad = '='.repeat((4 - b64.length % 4) % 4);
+    const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+    const out = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+  }
+
+  function updatePushButtons(active) {
+    document.querySelectorAll('button').forEach(b => {
+      const t = (b.textContent || '').trim();
+      if (t.includes('Bildirim') && (t.includes('Aç') || t.includes('Açık'))) {
+        b.textContent = active ? '🔔 Bildirimler Açık' : '🔔 Bildirimleri Aç';
+      }
+    });
+  }
+
+  window.krdResetAndSubscribePush = async function(ev) {
+    if (ev && ev.preventDefault) ev.preventDefault();
+    if (ev && ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+
+    const ua = navigator.userAgent || '';
+    if (/TikTok|Bytedance|Musical_ly|Instagram|FBAN|FBAV|; wv\)/i.test(ua)) {
+      alert("Uygulama içi tarayıcı bildirimleri desteklemiyor. Sağ üstteki üç noktaya (⋮) dokunup 'Chrome uygulamasında aç' seçeneğini kullanın.");
+      return;
+    }
+
+    if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+      alert('Bu tarayıcı anlık bildirimleri desteklemiyor.');
+      return;
+    }
+
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') {
+        alert('Bildirim izni verilmedi. Chrome adres çubuğundaki kilit/ayar simgesinden Bildirimler iznini açın.');
+        return;
+      }
+
+      let reg = await navigator.serviceWorker.register('/sw.js');
+      try { await reg.update(); } catch {}
+      reg = await navigator.serviceWorker.ready;
+
+      // Eski veya bozuk aboneligi otomatik sifirla
+      const oldSub = await reg.pushManager.getSubscription();
+      if (oldSub) {
+        try { await oldSub.unsubscribe(); } catch {}
+      }
+
+      const keyRes = await fetch('/api/push/key?t=' + Date.now(), { cache: 'no-store' });
+      const keyData = await keyRes.json();
+      if (!keyData || !keyData.publicKey) throw new Error('Sunucu VAPID anahtarı alınamadı');
+
+      const appKey = urlB64ToUint8(keyData.publicKey);
+      let sub = null;
+      try {
+        sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: appKey });
+      } catch (firstErr) {
+        // Ilk deneme takilirsa kisa bekleme sonrasi tekrar dene
+        await new Promise(r => setTimeout(r, 350));
+        const retryOld = await reg.pushManager.getSubscription();
+        if (retryOld) { try { await retryOld.unsubscribe(); } catch {} }
+        sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: appKey });
+      }
+
+      const saveRes = await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-kl': '1' },
+        body: JSON.stringify({ subscription: sub.toJSON ? sub.toJSON() : sub })
+      });
+      if (!saveRes.ok) throw new Error('Sunucu abonelik kaydı başarısız');
+
+      localStorage.setItem('krd_push_on', '1');
+      updatePushButtons(true);
+      alert('Bildirimler sıfırlandı ve başarıyla etkinleştirildi!');
+    } catch (err) {
+      alert('Bildirim etkinleştirilemedi (' + (err && err.name ? err.name : 'Hata') + '). Sayfayı Chrome uygulamasında açıp tekrar deneyin.');
+    }
+  };
+
+  function bindPushButtons() {
+    document.querySelectorAll('button').forEach(b => {
+      const t = (b.textContent || '').trim();
+      if (!b.dataset.krdPushBound && (t.includes('Bildirimleri Aç') || t.includes('Bildirim Aç') || t.includes('Bildirimler Açık'))) {
+        b.dataset.krdPushBound = '1';
+        b.addEventListener('click', window.krdResetAndSubscribePush, true);
+      }
+    });
+  }
+
+  async function syncPushOnLoad() {
+    bindPushButtons();
     try {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
       if (sub && Notification.permission === 'granted') {
         localStorage.setItem('krd_push_on', '1');
+        updatePushButtons(true);
         fetch('/api/push/subscribe', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-kl': '1' },
           body: JSON.stringify({ subscription: sub.toJSON ? sub.toJSON() : sub })
-        }).catch(()=>{});
-        document.querySelectorAll('button').forEach(b => {
-          const t = (b.textContent || '').trim();
-          if (t.includes('Bildirim Aç') || t.includes('Bildirimleri Aç')) {
-            b.textContent = '🔔 Bildirimler Açık';
-          }
-        });
+        }).catch(() => {});
       }
     } catch {}
   }
-  window.addEventListener('load', () => setTimeout(krdSyncPushState, 900));
+
+  const obs = new MutationObserver(bindPushButtons);
+  window.addEventListener('DOMContentLoaded', () => {
+    bindPushButtons();
+    if (document.body) obs.observe(document.body, { childList: true, subtree: true });
+  });
+  window.addEventListener('load', () => setTimeout(syncPushOnLoad, 700));
 })();
 </script>
 </body></html>
