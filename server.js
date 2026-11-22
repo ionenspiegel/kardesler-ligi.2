@@ -470,7 +470,7 @@ async function sendPushAll(payload) {
     const alive = [];
     await Promise.all(subs.map(async sub => {
       try {
-        await webpush.sendNotification(sub, msg);
+        await webpush.sendNotification(sub, msg, { TTL: 60, headers: { Urgency: 'high' } });
         alive.push(sub);
       } catch (err) {
         if (err && (err.statusCode === 404 || err.statusCode === 410)) return;
@@ -850,7 +850,7 @@ const u = new URL(req.url, 'http://x');
         await t.run(`DELETE FROM ${SETTINGS} WHERE k='push_subs'`);
         await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES('push_subs',$1)`, JSON.stringify(subs));
       });
-      return send(res, 200, { ok: 1 });
+      return send(res, 200, { ok: 1, count: subs.length });
     }
 
     

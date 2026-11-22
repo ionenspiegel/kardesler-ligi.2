@@ -3394,6 +3394,33 @@ events.onmessage = async () => {
 
 
 <script src="/krd-master.js?v=20261122_sec"></script>
+
+<script>
+(function(){
+  async function krdSyncPushState() {
+    try {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub && Notification.permission === 'granted') {
+        localStorage.setItem('krd_push_on', '1');
+        fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-kl': '1' },
+          body: JSON.stringify({ subscription: sub.toJSON ? sub.toJSON() : sub })
+        }).catch(()=>{});
+        document.querySelectorAll('button').forEach(b => {
+          const t = (b.textContent || '').trim();
+          if (t.includes('Bildirim Aç') || t.includes('Bildirimleri Aç')) {
+            b.textContent = '🔔 Bildirimler Açık';
+          }
+        });
+      }
+    } catch {}
+  }
+  window.addEventListener('load', () => setTimeout(krdSyncPushState, 900));
+})();
+</script>
 </body></html>
 
 
