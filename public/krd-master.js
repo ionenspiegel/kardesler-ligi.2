@@ -77,7 +77,9 @@
       #krdPosterPop.open{display:flex}
       .krd-poster-in{width:100%;max-width:440px;background:#0f172a;border:1px solid rgba(250,204,21,.4);border-radius:16px;padding:14px;display:grid;gap:10px;text-align:center}
       .krd-poster-in img{width:100%;border-radius:10px}
-      .krd-adm-box{margin-top:14px;background:rgba(15,23,42,.95);border:1.5px solid rgba(250,204,21,.38);border-radius:14px;padding:13px 15px;display:grid;gap:10px}
+      .krd-adm-box{box-sizing:border-box;width:100%;max-width:980px;margin:16px auto;background:rgba(15,23,42,.96);border:1.5px solid rgba(250,204,21,.4);border-radius:14px;padding:15px 16px;display:grid;gap:11px;text-align:left;overflow-x:hidden}
+      #krdMasterAdmBox *,#krdDedicatedView *,#krdNavTabs *{box-sizing:border-box;min-width:0}
+      #krdMasterAdmBox input[type="text"],#krdMasterAdmBox textarea{width:100%}
     `;
     document.head.appendChild(st);
   }
@@ -441,7 +443,7 @@
     const box = document.createElement('div'); box.id = 'krdMasterAdmBox'; box.className = 'krd-adm-box';
     box.innerHTML = `
       <b style="color:#facc15;font-size:14px;">⚙️ Duyuru Sabitleme, Bakım Modu, Kurallar & Gelen Sorunlar</b>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;font-size:12px;">
         <input type="text" id="admAnn" value="${esc(ex.announcement || '')}" placeholder="📌 Üste Sabitlenecek Duyuru" style="padding:7px;border-radius:8px;border:1px solid #334155;background:#020617;color:#fff;">
         <input type="text" id="admMvp" value="${esc(ex.mvp || '')}" placeholder="⭐ Haftanın MVP Kulübü" style="padding:7px;border-radius:8px;border:1px solid #334155;background:#020617;color:#fff;">
       </div>
@@ -460,7 +462,7 @@
         }).join('')}
       </div>
       <b style="color:#4ade80;font-size:12px;">🏆 Süper Kupa Play-Off Skorları:</b>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:12px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;font-size:12px;background:rgba(2,6,23,.55);padding:8px 10px;border-radius:9px;">
         <div>YF1: <input type="number" id="cup_sf1_h" value="${esc(c.sf1_h ?? '')}" style="width:40px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;">-<input type="number" id="cup_sf1_a" value="${esc(c.sf1_a ?? '')}" style="width:40px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;"></div>
         <div>YF2: <input type="number" id="cup_sf2_h" value="${esc(c.sf2_h ?? '')}" style="width:40px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;">-<input type="number" id="cup_sf2_a" value="${esc(c.sf2_a ?? '')}" style="width:40px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;"></div>
         <div>FİNAL: <input type="number" id="cup_f_h" value="${esc(c.f_h ?? '')}" style="width:40px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;">-<input type="number" id="cup_f_a" value="${esc(c.f_a ?? '')}" style="width:40px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;"></div>
