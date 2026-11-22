@@ -3609,7 +3609,26 @@ events.onmessage = async () => {
         else if (m.hs < m.aws) { a.g++; a.p += 3; h.m++; }
         else { h.b++; a.b++; h.p++; a.p++; }
       });
-      const list = Object.values(stats).sort((x, y) => (y.p - x.p) || ((y.ag - y.yg) - (x.ag - x.yg)) || (y.ag - x.ag));
+      const playedList = allMatches.filter(m => m.played);
+      const list = Object.values(stats).sort((x, y) => {
+        if (y.p !== x.p) return y.p - x.p;
+        const h2h = playedList.filter(m => (m.home_id === x.id && m.away_id === y.id) || (m.home_id === y.id && m.away_id === x.id));
+        if (h2h.length) {
+          let xp = 0, yp = 0, xgd = 0, ygd = 0;
+          h2h.forEach(m => {
+            if (m.home_id === x.id) {
+              xgd += (m.hs - m.aws); ygd += (m.aws - m.hs);
+              if (m.hs > m.aws) xp += 3; else if (m.hs < m.aws) yp += 3; else { xp++; yp++; }
+            } else {
+              ygd += (m.hs - m.aws); xgd += (m.aws - m.hs);
+              if (m.hs > m.aws) yp += 3; else if (m.hs < m.aws) xp += 3; else { xp++; yp++; }
+            }
+          });
+          if (yp !== xp) return yp - xp;
+          if (ygd !== xgd) return ygd - xgd;
+        }
+        return ((y.ag - y.yg) - (x.ag - x.yg)) || (y.ag - x.ag);
+      });
       document.getElementById('krdSimTable').innerHTML = `
         <table style="width:100%;border-collapse:collapse;font-size:12px;">
           <thead><tr style="opacity:.75;border-bottom:1px solid rgba(148,163,184,0.2);">
@@ -3639,6 +3658,172 @@ events.onmessage = async () => {
     calcSim();
   }
   setInterval(mountSimulator, 1200);
+})();
+</script>
+<script id="krdH2hAndPngSuite">
+(function(){
+  function getFullTable() {
+    const stats = {};
+    (S.teams || []).forEach(t => { stats[t.id] = { id: t.id, name: t.name, o: 0, g: 0, b: 0, m: 0, ag: 0, yg: 0, p: 0 }; });
+    const played = (S.matches || []).filter(m => m.played);
+    played.forEach(m => {
+      const h = stats[m.home_id], a = stats[m.away_id];
+      if (!h || !a) return;
+      h.o++; a.o++; h.ag += m.hs; h.yg += m.aws; a.ag += m.aws; a.yg += m.hs;
+      if (m.hs > m.aws) { h.g++; h.p += 3; a.m++; }
+      else if (m.hs < m.aws) { a.g++; a.p += 3; h.m++; }
+      else { h.b++; a.b++; h.p++; a.p++; }
+    });
+    return Object.values(stats).sort((x, y) => {
+      if (y.p !== x.p) return y.p - x.p;
+      const h2h = played.filter(m => (m.home_id === x.id && m.away_id === y.id) || (m.home_id === y.id && m.away_id === x.id));
+      if (h2h.length) {
+        let xp = 0, yp = 0, xgd = 0, ygd = 0;
+        h2h.forEach(m => {
+          if (m.home_id === x.id) {
+            xgd += (m.hs - m.aws); ygd += (m.aws - m.hs);
+            if (m.hs > m.aws) xp += 3; else if (m.hs < m.aws) yp += 3; else { xp++; yp++; }
+          } else {
+            ygd += (m.hs - m.aws); xgd += (m.aws - m.hs);
+            if (m.hs > m.aws) yp += 3; else if (m.hs < m.aws) xp += 3; else { xp++; yp++; }
+          }
+        });
+        if (yp !== xp) return yp - xp;
+        if (ygd !== xgd) return ygd - xgd;
+      }
+      return ((y.ag - y.yg) - (x.ag - x.yg)) || (y.ag - x.ag);
+    });
+  }
+
+  window.downloadKrdStandingsPng = function() {
+    if (typeof S === 'undefined' || !Array.isArray(S.teams)) return;
+    const rows = getFullTable();
+    const w = 960, rowH = 56, headH = 175, footH = 68;
+    const h = headH + (rows.length * rowH) + footH;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+
+    const bg = ctx.createLinearGradient(0, 0, w, h);
+    bg.addColorStop(0, '#090d16'); bg.addColorStop(1, '#111827');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+
+    ctx.fillStyle = '#22c55e';
+    ctx.font = 'bold 18px sans-serif';
+    ctx.fillText('🏆 İONELSPIEGEL SUNAR • RESMİ PUAN DURUMU', 44, 52);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '900 34px sans-serif';
+    ctx.fillText((S.settings && S.settings.title) ? S.settings.title : 'KRD PES LİGİ', 44, 96);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '600 16px sans-serif';
+    ctx.fillText(new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' }), 44, 126);
+
+    ctx.fillStyle = 'rgba(30,41,59,0.9)';
+    ctx.fillRect(36, 142, w - 72, 34);
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = 'bold 15px sans-serif';
+    ctx.fillText('#', 54, 164); ctx.fillText('OYUNCU / TAKIM', 100, 164);
+    ctx.fillText('O', 520, 164); ctx.fillText('G', 580, 164); ctx.fillText('B', 640, 164);
+    ctx.fillText('M', 700, 164); ctx.fillText('AV', 765, 164); ctx.fillText('PUAN', 845, 164);
+
+    rows.forEach((t, i) => {
+      const y = headH + (i * rowH);
+      ctx.fillStyle = i === 0 ? 'rgba(22,163,74,0.22)' : (i % 2 === 0 ? 'rgba(15,23,42,0.75)' : 'rgba(30,41,59,0.45)');
+      ctx.fillRect(36, y, w - 72, rowH - 4);
+      ctx.fillStyle = i === 0 ? '#4ade80' : '#f8fafc';
+      ctx.font = i === 0 ? '900 20px sans-serif' : '700 19px sans-serif';
+      ctx.fillText(i === 0 ? '👑' : String(i + 1), 52, y + 34);
+      ctx.fillText(String(t.name).slice(0, 24), 100, y + 34);
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = '600 18px sans-serif';
+      ctx.fillText(String(t.o), 520, y + 34);
+      ctx.fillText(String(t.g), 580, y + 34);
+      ctx.fillText(String(t.b), 640, y + 34);
+      ctx.fillText(String(t.m), 700, y + 34);
+      const av = t.ag - t.yg;
+      ctx.fillText(av > 0 ? '+' + av : String(av), 765, y + 34);
+      ctx.fillStyle = i === 0 ? '#4ade80' : '#ffffff';
+      ctx.font = '900 21px sans-serif';
+      ctx.fillText(String(t.p), 858, y + 34);
+    });
+
+    ctx.fillStyle = '#64748b';
+    ctx.font = '600 14px sans-serif';
+    ctx.fillText('kardesler-ligi-2.onrender.com • İkili Averaj Kuralı Aktif', 44, h - 24);
+
+    const a = document.createElement('a');
+    a.download = 'krd-ligi-puan-durumu.png';
+    a.href = c.toDataURL('image/png');
+    a.click();
+  };
+
+  function mountTools() {
+    if (typeof S === 'undefined' || !Array.isArray(S.teams) || S.teams.length < 2) return;
+    const slug = (S.settings && S.settings.admin_slug) ? S.settings.admin_slug : 'krd-kontrol';
+    if (location.hash.startsWith('#/yonetici') || location.hash.startsWith('#/' + slug)) return;
+    const app = document.getElementById('app');
+    if (!app || document.getElementById('krdH2hBox')) return;
+
+    const opts = S.teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+    const box = document.createElement('details');
+    box.id = 'krdH2hBox';
+    box.className = 'card';
+    box.style.marginTop = '12px';
+    box.innerHTML = `
+      <summary style="cursor:pointer;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+        <span>⚔️ Kafa Kafaya (H2H) Rekabet & PNG Tablo İndir</span>
+        <button type="button" class="sm pri" onclick="event.preventDefault();downloadKrdStandingsPng()">📸 Puan Tablosunu PNG İndir</button>
+      </summary>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <select id="krdH2hA" style="flex:1;min-width:120px;padding:7px;border-radius:8px;">${opts}</select>
+        <span style="font-weight:900;opacity:.7;">VS</span>
+        <select id="krdH2hB" style="flex:1;min-width:120px;padding:7px;border-radius:8px;">${opts}</select>
+      </div>
+      <div id="krdH2hResult" style="margin-top:10px;"></div>
+    `;
+    app.appendChild(box);
+
+    const selA = document.getElementById('krdH2hA');
+    const selB = document.getElementById('krdH2hB');
+    if (S.teams.length > 1) selB.selectedIndex = 1;
+
+    function renderH2h() {
+      const idA = Number(selA.value), idB = Number(selB.value);
+      const out = document.getElementById('krdH2hResult');
+      if (idA === idB) { out.innerHTML = '<div style="font-size:12px;opacity:.75;">Karşılaştırma için iki farklı takım seç.</div>'; return; }
+      const nameA = S.teams.find(t => t.id === idA)?.name || 'Takım 1';
+      const nameB = S.teams.find(t => t.id === idB)?.name || 'Takım 2';
+      const duels = (S.matches || []).filter(m => m.played && ((m.home_id === idA && m.away_id === idB) || (m.home_id === idB && m.away_id === idA)));
+      let wA = 0, wB = 0, dr = 0, gA = 0, gB = 0;
+      duels.forEach(m => {
+        const sA = m.home_id === idA ? m.hs : m.aws;
+        const sB = m.home_id === idA ? m.aws : m.hs;
+        gA += sA; gB += sB;
+        if (sA > sB) wA++; else if (sB > sA) wB++; else dr++;
+      });
+      out.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;background:rgba(15,23,42,0.6);padding:10px;border-radius:10px;">
+          <div><div style="font-size:11px;opacity:.75;">${nameA}</div><div style="font-size:20px;font-weight:900;color:#4ade80;">${wA} G</div><div style="font-size:11px;opacity:.7;">${gA} Gol</div></div>
+          <div><div style="font-size:11px;opacity:.75;">Beraberlik</div><div style="font-size:20px;font-weight:900;">${dr}</div><div style="font-size:11px;opacity:.7;">${duels.length} Maç</div></div>
+          <div><div style="font-size:11px;opacity:.75;">${nameB}</div><div style="font-size:20px;font-weight:900;color:#60a5fa;">${wB} G</div><div style="font-size:11px;opacity:.7;">${gB} Gol</div></div>
+        </div>
+        <div style="display:grid;gap:5px;margin-top:8px;">
+          ${duels.length ? duels.map(m => {
+            const hName = m.home_id === idA ? nameA : nameB;
+            const aName = m.away_id === idA ? nameA : nameB;
+            return `<div style="display:flex;justify-content:space-between;padding:5px 8px;background:rgba(30,41,59,0.5);border-radius:6px;font-size:12px;"><span>H${m.week} • ${hName} - ${aName}</span><b>${m.hs} - ${m.aws}</b></div>`;
+          }).join('') : '<div style="font-size:12px;opacity:.7;text-align:center;padding:6px;">Bu iki rakip arasında henüz oynanmış maç yok.</div>'}
+        </div>
+      `;
+    }
+
+    selA.addEventListener('change', renderH2h);
+    selB.addEventListener('change', renderH2h);
+    renderH2h();
+  }
+  setInterval(mountTools, 1200);
 })();
 </script>
 </body></html>
