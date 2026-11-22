@@ -570,6 +570,25 @@ function notifyClients() {
   }
 }
 const server = http.createServer(async (req, res) => {
+
+  // === KRD_HARD_AUTH_GUARD ===
+  try {
+    const _rawPath = String(req.url || '').split('?')[0].replace(/\/+$/, '') || '/';
+    const _rawMethod = String(req.method || 'GET').toUpperCase();
+    const _openLoginPaths = ["/api/login","/api/admin/login","/api/auth","/api/admin/auth"];
+    if (!_openLoginPaths.includes(_rawPath)) {
+      if ((_rawPath === '/api/krd-extras' && _rawMethod !== 'GET') || _rawPath.startsWith('/api/admin/')) {
+        if (!isAdmin(req)) {
+          res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+          return res.end(JSON.stringify({ error: 'Yönetici girişi gerekli' }));
+        }
+      }
+    }
+  } catch (_e) {
+    res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+    return res.end(JSON.stringify({ error: 'Yetkisiz erişim' }));
+  }
+
   res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('X-Frame-Options', 'DENY'); res.setHeader('Referrer-Policy', 'same-origin');
   if (req.url.startsWith('/sw.js')) res.setHeader('Service-Worker-Allowed', '/');
   try {
