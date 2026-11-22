@@ -620,8 +620,8 @@ const u = new URL(req.url, 'http://x');
       const extras = (r.rows && r.rows[0] && r.rows[0].v) ? JSON.parse(r.rows[0].v) : {};
       let lastBroadcast = null;
       try {
-        const bRow = await one(`SELECT v FROM ${SETTINGS} WHERE k='krd_last_broadcast'`);
-        if (bRow && bRow.v) lastBroadcast = JSON.parse(bRow.v);
+        const bRow = await pool.query(`SELECT v FROM ${SETTINGS} WHERE k=$1`, ['krd_last_broadcast']);
+        if (bRow.rows && bRow.rows[0] && bRow.rows[0].v) lastBroadcast = JSON.parse(bRow.rows[0].v);
       } catch {}
       return send(res, 200, { ok: 1, extras, lastBroadcast });
     } catch (e) {
@@ -840,10 +840,7 @@ const u = new URL(req.url, 'http://x');
       const row = await one(`SELECT v FROM ${SETTINGS} WHERE k='push_subs'`);
       let subs = [];
       try { subs = JSON.parse((row && row.v) || '[]'); } catch { subs = []; }
-      await tx(async t => {
-        await t.run(`DELETE FROM ${SETTINGS} WHERE k='krd_last_broadcast'`);
-        await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES('krd_last_broadcast',$1)`, JSON.stringify({ id: Date.now(), title, body }));
-      });
+      await run(`INSERT INTO ${SETTINGS}(k,v) VALUES('krd_last_broadcast',$1) ON CONFLICT(k) DO UPDATE SET v=EXCLUDED.v`, JSON.stringify({ id: Date.now(), title, body }));
       await sendPushAll({ title, body }); if (typeof notifyClients === "function") notifyClients();
       return send(res, 200, { ok: 1, count: subs.length });
     }
