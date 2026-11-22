@@ -3521,7 +3521,7 @@ events.onmessage = async () => {
     setBtnState(fcmOk ? '🔔 Bildirimler Açık' : '🔔 Canlı Bildirim Açık');
     await window.krdShowLocalNotice(
       '⚽ KRD Ligi Bildirim Testi',
-      fcmOk ? 'Sunucu arka plan bildirimi aktif!' : ('Canlı mod aktif (' + (fcmErr || 'FCM kısıtlı') + ')')
+      fcmOk ? 'Arka plan ve canlı bildirimler aktif!' : 'Canlı bildirim modu aktif! Maç skorları ve duyurular telefonuna düşecek.'
     );
     // Hata penceresi acmadan sessizce canli bildirim modunda devam et
   };
@@ -3578,7 +3578,7 @@ events.onmessage = async () => {
     if (document.body) new MutationObserver(bindBtns).observe(document.body, { childList: true, subtree: true });
   });
 
-  setInterval(() => checkUpdates(false), 12000);
+  setInterval(() => checkUpdates(false), 5000);
 })();
 </script>
 </body></html>
