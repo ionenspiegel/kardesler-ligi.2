@@ -2088,7 +2088,38 @@ events.onmessage = async () => {
   }
 
   async function subscribePush() {
-    if (window.krdResetAndSubscribePush) return window.krdResetAndSubscribePush();
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') {
+        alert('Bildirim izni verilmedi. Tarayıcı veya telefon ayarlarından KRD Ligi bildirimlerine izin verebilirsin.');
+        return;
+      }
+      if ('serviceWorker' in navigator) {
+        await navigator.serviceWorker.register('/sw.js');
+      }
+      const reg = await navigator.serviceWorker.ready;
+      const keyRes = await fetch('/api/push/key');
+      const { publicKey } = await keyRes.json();
+      if (!publicKey) return;
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey)
+        });
+      }
+      const saveRes = await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-kl': '1' },
+        body: JSON.stringify({ subscription: sub })
+      });
+      if (!saveRes.ok) throw new Error('Sunucu abonelik kaydı başarısız (' + saveRes.status + ')');
+      updatePushBtnState();
+      alert('Harika! Artık maç skoru girildiğinde veya yeni manşet yayınlandığında telefonuna anında bildirim düşecek.');
+    } catch (err) {
+      console.error('Push abonelik hatasi:', err);
+      alert('Bildirim hatası: ' + (err && err.message ? err.message : err));
+    }
   }
 
   
@@ -3436,111 +3467,12 @@ events.onmessage = async () => {
 
 <script src="/krd-master.js?v=20261122_sec"></script>
 
-<script>
+<script id="krdSilentLiveSync">
 (function(){
-  function urlB64ToUint8(b64) {
-    const clean = String(b64 || '').trim();
-    const pad = '='.repeat((4 - clean.length % 4) % 4);
-    const raw = atob((clean + pad).replace(/-/g, '+').replace(/_/g, '/'));
-    const out = new Uint8Array(raw.length);
-    for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
-    return out;
-  }
-
-  function setBtnState(label) {
-    document.querySelectorAll('button').forEach(b => {
-      const t = (b.textContent || '').trim();
-      if (t.includes('Bildirim') && (t.includes('Aç') || t.includes('Açık') || t.includes('Canlı'))) {
-        b.textContent = label;
-      }
-    });
-  }
-
-  window.krdShowLocalNotice = async function(title, body) {
-    try {
-      if (Notification.permission !== 'granted') return;
-      const reg = await navigator.serviceWorker.ready;
-      if (reg && reg.showNotification) {
-        await reg.showNotification(title, {
-          body,
-          icon: '/icon-192.png',
-          tag: 'krd-live-' + Date.now(),
-          renotify: true,
-          vibrate: [200, 100, 200]
-        });
-      } else {
-        new Notification(title, { body });
-      }
-    } catch {}
-  };
-
-  window.krdResetAndSubscribePush = async function(ev) {
-    if (ev && ev.preventDefault) ev.preventDefault();
-    if (ev && ev.stopImmediatePropagation) ev.stopImmediatePropagation();
-
-    if (!('Notification' in window)) return;
-    const perm = await Notification.requestPermission();
-    if (perm !== 'granted') {
-      alert('Telefon ayarlarından Chrome bildirim iznini açmalısın.');
-      return;
-    }
-
-    let fcmOk = false;
-    let fcmErr = '';
-    try {
-      if ('serviceWorker' in navigator && 'PushManager' in window) {
-        const reg = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
-        await reg.update();
-        await navigator.serviceWorker.ready;
-
-        const oldSub = await reg.pushManager.getSubscription();
-        if (oldSub) { try { await oldSub.unsubscribe(); } catch {} }
-
-        const keyRes = await fetch('/api/push/key?t=' + Date.now(), { cache: 'no-store' });
-        const keyData = await keyRes.json();
-        if (keyData && keyData.publicKey) {
-          const sub = await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlB64ToUint8(keyData.publicKey)
-          });
-          const saveRes = await fetch('/api/push/subscribe', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-kl': '1' },
-            body: JSON.stringify({ subscription: sub.toJSON ? sub.toJSON() : sub })
-          });
-          const saveData = await saveRes.json().catch(() => ({}));
-          if (saveRes.ok && saveData.ok) fcmOk = true;
-          else fcmErr = saveData.error || ('HTTP ' + saveRes.status);
-        }
-      }
-    } catch (e) {
-      fcmErr = (e && e.name ? e.name + ': ' : '') + (e && e.message ? e.message : String(e));
-    }
-
-    localStorage.setItem('krd_push_on', '1');
-    setBtnState(fcmOk ? '🔔 Bildirimler Açık' : '🔔 Canlı Bildirim Açık');
-    await window.krdShowLocalNotice(
-      '⚽ KRD Ligi Bildirim Testi',
-      fcmOk ? 'Arka plan ve canlı bildirimler aktif!' : 'Canlı bildirim modu aktif! Maç skorları ve duyurular telefonuna düşecek.'
-    );
-    // Hata penceresi acmadan sessizce canli bildirim modunda devam et
-  };
-
-  function bindBtns() {
-    document.querySelectorAll('button').forEach(b => {
-      const t = (b.textContent || '').trim();
-      if (!b.dataset.krdPushBound && (t.includes('Bildirimleri Aç') || t.includes('Bildirim Aç') || t.includes('Bildirimler Açık') || t.includes('Canlı Bildirim'))) {
-        b.dataset.krdPushBound = '1';
-        b.addEventListener('click', window.krdResetAndSubscribePush, true);
-      }
-    });
-  }
-
-  // Hem mac skorlarini hem de /api/krd-extras duyurularini takip et
   let lastSnap = '';
-  async function checkUpdates(silentInit) {
+  async function syncCheck(init) {
     try {
-      if (localStorage.getItem('krd_push_on') !== '1' || Notification.permission !== 'granted') return;
+      if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
       const [r1, r2] = await Promise.all([
         fetch('/api/league?t=' + Date.now(), { cache: 'no-store' }),
         fetch('/api/krd-extras?t=' + Date.now(), { cache: 'no-store' }).catch(() => null)
@@ -3550,39 +3482,34 @@ events.onmessage = async () => {
       const lb = ex && ex.lastBroadcast;
       if (lb && lb.id && String(lb.id) !== localStorage.getItem('krd_last_bc_id')) {
         localStorage.setItem('krd_last_bc_id', String(lb.id));
-        if (!silentInit) {
-          await window.krdShowLocalNotice(lb.title || '📢 KRD Ligi Duyuru', lb.body || '');
+        if (!init) {
+          const reg = await navigator.serviceWorker.ready;
+          if (reg && reg.showNotification) {
+            await reg.showNotification(lb.title || '📢 KRD Ligi Duyuru', {
+              body: lb.body || '',
+              icon: '/icon-192.png',
+              tag: 'krd-bc-' + lb.id
+            });
+          }
         }
       }
-      const ann = (ex && ex.extras && (ex.extras.announcement || ex.extras.duyuru || ex.extras.ticker)) || '';
-      const news = (d && d.settings && d.settings.custom_news) || '';
       const played = Array.isArray(d && d.matches) ? d.matches.filter(m => m.played).map(m => m.id + ':' + m.hs + '-' + m.aws).join(',') : '';
-      const snap = ann + '|' + news + '|' + played;
-      if (!silentInit && lastSnap && snap !== lastSnap) {
-        const msg = ann ? ('Duyuru: ' + ann) : 'Yeni maç skoru veya lig güncellemesi yayınlandı!';
-        await window.krdShowLocalNotice('⚽ KRD Ligi Güncellemesi', msg);
+      if (!init && lastSnap && played !== lastSnap) {
+        const reg = await navigator.serviceWorker.ready;
+        if (reg && reg.showNotification) {
+          await reg.showNotification('⚽ KRD Ligi Güncellemesi', {
+            body: 'Yeni maç skoru işlendi, puan durumunu kontrol et!',
+            icon: '/icon-192.png',
+            tag: 'krd-score-update'
+          });
+        }
       }
-      lastSnap = snap;
+      lastSnap = played;
     } catch {}
   }
-
-  window.addEventListener('DOMContentLoaded', async () => {
-    bindBtns();
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistration().then(r => { if (r) r.update(); }).catch(() => {});
-    }
-    if (localStorage.getItem('krd_push_on') === '1' && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      setBtnState('🔔 Bildirimler Açık');
-      checkUpdates(true);
-    }
-    if (document.body) new MutationObserver(bindBtns).observe(document.body, { childList: true, subtree: true });
-  });
-
-  setInterval(() => checkUpdates(false), 5000);
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') checkUpdates(false);
-  });
-  window.addEventListener('focus', () => checkUpdates(false));
+  window.addEventListener('load', () => syncCheck(true));
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncCheck(false); });
+  setInterval(() => syncCheck(false), 10000);
 })();
 </script>
 </body></html>
