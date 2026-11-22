@@ -202,7 +202,11 @@
     if (r.ok) {
       document.getElementById('krdRepMsg').value = '';
       if (typeof toast === 'function') toast('📩 Sorun bildiriminiz yöneticiye iletildi!');
-    } else alert('Gönderilemedi.');
+    } else {
+      let errTxt = 'Gönderilemedi.';
+      try { const ed = await r.json(); if (ed && ed.error) errTxt = ed.error; } catch {}
+      alert(errTxt);
+    }
   };
 
   function getAnchor(app) {
@@ -422,7 +426,11 @@
   };
 
   async function renderAdminPanel() {
-    if (!isAdm()) return;
+    const existingAdmBox = document.getElementById('krdMasterAdmBox');
+    if (!isAdm()) {
+      if (existingAdmBox) existingAdmBox.remove();
+      return;
+    }
     const app = document.getElementById('app');
     if (!app) return;
     const ok = app.querySelector('button') && (app.textContent || '').includes('Çıkış');
@@ -460,6 +468,7 @@
       <button type="button" class="pri" onclick="window.krdSaveAdminMaster()">💾 Tüm Ayarları Kaydet</button>
       <div id="krdInboxReports" style="border-top:1px solid rgba(148,163,184,.2);padding-top:8px;font-size:12px;">📩 Gelen sorun bildirimleri yükleniyor...</div>
     `;
+    document.querySelectorAll('#krdMasterAdmBox').forEach(el => el.remove());
     app.appendChild(box);
 
     try {

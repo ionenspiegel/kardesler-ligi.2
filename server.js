@@ -234,22 +234,20 @@ async function api(req, res, u) {
   if (M === 'POST' && P === '/api/admin/logout') return send(res, 200, { ok: 1 }, { 'Set-Cookie': cookie('', 0) });
   if (M === 'POST' && P === '/api/krd-extras') {
     const b = await body(req);
-    await tx(async t => {
-      await t.run(`DELETE FROM ${SETTINGS} WHERE k=$1`, 'krd_extras_v2');
-      await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES($1,$2)`, 'krd_extras_v2', JSON.stringify(b || {}));
-    });
+    await pool.query(`DELETE FROM ${SETTINGS} WHERE k=$1`, ['krd_extras_v2']);
+    await pool.query(`INSERT INTO ${SETTINGS}(k,v) VALUES($1,$2)`, ['krd_extras_v2', JSON.stringify(b || {})]);
     if (typeof pushAudit === 'function') pushAudit('Ayarlar Güncellendi', 'Duyuru/Bakım/Kurallar kaydedildi.');
     if (typeof notifyClients === 'function') notifyClients();
     return send(res, 200, { ok: 1 });
   }
   if (M === 'GET' && P === '/api/admin/krd-reports') {
-    const r = await get(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_reports_v1');
+    const r = await pool.query(`SELECT v FROM ${SETTINGS} WHERE k=$1`, ['krd_reports_v1']);
     let reports = [];
-    try { if (r && r.v) reports = JSON.parse(r.v); } catch {}
+    try { if (r.rows && r.rows[0] && r.rows[0].v) reports = JSON.parse(r.rows[0].v); } catch {}
     return send(res, 200, { ok: 1, reports });
   }
   if (M === 'POST' && P === '/api/admin/krd-reports-clear') {
-    await tx(async t => { await t.run(`DELETE FROM ${SETTINGS} WHERE k=$1`, 'krd_reports_v1'); });
+    await pool.query(`DELETE FROM ${SETTINGS} WHERE k=$1`, ['krd_reports_v1']);
     return send(res, 200, { ok: 1 });
   }
   if (M === 'POST' && P === '/api/admin/krd-pro5-save') {
@@ -561,20 +559,23 @@ async function krdDbGet(sql, ...params) {
 const u = new URL(req.url, 'http://x');
   // === KRD_EXTRAS_START ===
   if (req.method === 'GET' && u.pathname === '/api/krd-extras') {
-    const r = await krdDbGet(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_extras_v2');
-    let extras = {};
-    try { if (r && r.v) extras = JSON.parse(r.v); } catch {}
-    return send(res, 200, { ok: 1, extras });
+    try {
+      const r = await pool.query(`SELECT v FROM ${SETTINGS} WHERE k=$1`, ['krd_extras_v2']);
+      const extras = (r.rows && r.rows[0] && r.rows[0].v) ? JSON.parse(r.rows[0].v) : {};
+      return send(res, 200, { ok: 1, extras });
+    } catch (e) {
+      return send(res, 200, { ok: 1, extras: {} });
+    }
   }
   if (req.method === 'POST' && u.pathname === '/api/krd-report') {
-    const b = await body(req);
-    const sender = String(b.sender || 'Ziyaretçi').trim().slice(0, 30);
-    const msg = String(b.msg || '').trim().slice(0, 400);
-    if (!msg) return send(res, 400, { error: 'Lütfen sorununuzu yazın.' });
-    await tx(async t => {
-      const r = await t.krdDbGet(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_reports_v1');
+    try {
+      const b = await body(req);
+      const sender = String(b.sender || 'Ziyaretçi').trim().slice(0, 30);
+      const msg = String(b.msg || '').trim().slice(0, 400);
+      if (!msg) return send(res, 400, { error: 'Lütfen sorununuzu yazın.' });
+      const r = await pool.query(`SELECT v FROM ${SETTINGS} WHERE k=$1`, ['krd_reports_v1']);
       let list = [];
-      try { if (r && r.v) list = JSON.parse(r.v); } catch {}
+      try { if (r.rows && r.rows[0] && r.rows[0].v) list = JSON.parse(r.rows[0].v); } catch {}
       list.unshift({
         id: Date.now(),
         ts: new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' }),
@@ -582,13 +583,16 @@ const u = new URL(req.url, 'http://x');
         msg
       });
       if (list.length > 50) list.length = 50;
-      await t.run(`DELETE FROM ${SETTINGS} WHERE k=$1`, 'krd_reports_v1');
-      await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES($1,$2)`, 'krd_reports_v1', JSON.stringify(list));
-    });
-    if (typeof pushAudit === 'function') pushAudit('Sorun Bildirildi', sender + ': ' + msg.slice(0, 60));
-    return send(res, 200, { ok: 1 });
+      await pool.query(`DELETE FROM ${SETTINGS} WHERE k=$1`, ['krd_reports_v1']);
+      await pool.query(`INSERT INTO ${SETTINGS}(k,v) VALUES($1,$2)`, ['krd_reports_v1', JSON.stringify(list)]);
+      if (typeof pushAudit === 'function') pushAudit('Sorun Bildirildi', sender + ': ' + msg.slice(0, 60));
+      return send(res, 200, { ok: 1 });
+    } catch (err) {
+      return send(res, 500, { error: 'Kayıt hatası: ' + (err.message || 'Bilinmiyor') });
+    }
   }
   // === KRD_EXTRAS_END ===
+  
   // === KRD_PRO5_START ===
   if (req.method === 'GET' && u.pathname === '/api/krd-pro5-data') {
     const bRow = await krdDbGet(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_club_badges');
