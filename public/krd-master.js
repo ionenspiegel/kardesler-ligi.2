@@ -1,85 +1,11 @@
 ﻿(function () {
-
-  // === KRD_UNIFIED_STYLE_START ===
-  function injectUnifiedLayoutCss() {
-    let st = document.getElementById('krdUnifiedLayoutCss');
-    if (!st) {
-      st = document.createElement('style');
-      st.id = 'krdUnifiedLayoutCss';
-      document.head.appendChild(st);
-    }
-    st.textContent = `
-      html { overflow-anchor: none; }
-      #krdPinnedAnn {
-        box-sizing: border-box !important;
-        width: calc(100% - 24px) !important; max-width: 960px !important;
-        margin: 8px auto 6px !important; padding: 10px 14px !important; border-radius: 12px !important;
-        background: linear-gradient(90deg, rgba(234,88,12,.28), rgba(250,204,21,.2)) !important;
-        border: 1.5px solid rgba(250,204,21,.55) !important; color: #fef08a !important;
-        font-size: 13px !important; font-weight: 700 !important; text-align: left !important;
-      }
-      #krdNavTabs {
-        box-sizing: border-box !important;
-        position: sticky !important; top: 8px !important; z-index: 950 !important;
-        width: calc(100% - 24px) !important; max-width: 960px !important;
-        margin: 8px auto 12px !important;
-        display: flex !important; align-items: center !important; gap: 6px !important;
-        overflow-x: auto !important; scrollbar-width: none !important;
-        padding: 7px 8px !important; border-radius: 14px !important;
-        background: #0b1120 !important;
-        border: 1px solid rgba(56, 189, 248, 0.42) !important;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
-      }
-      #krdNavTabs::-webkit-scrollbar { display: none; }
-      #krdNavTabs * { box-sizing: border-box !important; min-width: 0 !important; }
-      .krd-tab-btn {
-        flex: 0 0 auto !important; padding: 8px 13px !important; border-radius: 10px !important;
-        font-size: 12px !important; font-weight: 800 !important; cursor: pointer !important;
-        border: 1px solid rgba(148, 163, 184, 0.25) !important;
-        background: #131c31 !important; color: #cbd5e1 !important;
-        white-space: nowrap !important; user-select: none !important; margin: 0 !important;
-      }
-      .krd-tab-btn.active {
-        background: linear-gradient(135deg, #0284c7, #2563eb) !important;
-        color: #fff !important; border-color: #38bdf8 !important;
-      }
-      #krdDedicatedView {
-        box-sizing: border-box !important;
-        width: calc(100% - 24px) !important; max-width: 960px !important;
-        margin: 10px auto 18px !important;
-        display: grid !important; gap: 12px !important;
-      }
-      #krdDedicatedView * { box-sizing: border-box !important; min-width: 0 !important; }
-      .krd-clean-card {
-        background: rgba(15, 23, 42, 0.94) !important;
-        border: 1px solid rgba(148, 163, 184, 0.24) !important;
-        border-radius: 14px !important; padding: 14px 16px !important;
-        display: grid !important; gap: 10px !important; text-align: left !important;
-      }
-      .krd-adm-box, #krdMasterAdmBox {
-        box-sizing: border-box !important;
-        width: 100% !important; max-width: 960px !important;
-        margin: 16px auto !important;
-        background: rgba(15, 23, 42, 0.96) !important;
-        border: 1.5px solid rgba(250, 204, 21, 0.42) !important;
-        border-radius: 14px !important; padding: 15px 16px !important;
-        display: grid !important; gap: 11px !important;
-        text-align: left !important; overflow-x: hidden !important;
-      }
-      #krdMasterAdmBox * { box-sizing: border-box !important; min-width: 0 !important; }
-      #krdMasterAdmBox input[type="text"], #krdMasterAdmBox textarea {
-        width: 100% !important;
-      }
-    `;
-  }
-  injectUnifiedLayoutCss();
-  // === KRD_UNIFIED_STYLE_END ===
+  if (window._krdMasterLoaded) return;
+  window._krdMasterLoaded = true;
 
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[c]));
 
-  // Bildirim ve push rotalarina dokunmadan sadece lig verisini yakala
   window._krdLiveS = window._krdLiveS || null;
   const origFetch = window.fetch;
   window.fetch = async function (input, init) {
@@ -103,6 +29,8 @@
   };
 
   window._krdData = { extras: {}, predictions: {}, archive: [], badges: {}, cup: {} };
+  window._krdActiveTab = window._krdActiveTab || 'all';
+  let _isApplying = false;
 
   const DEFAULT_RULES = [
     '📅 Yürürlük Tarihi: Bu kurallar 22 Kasım 2026 tarihinden itibaren oynanacak maçlarda geçerlidir.',
@@ -125,35 +53,36 @@
   }
 
   function injectStyles() {
-    if (document.getElementById('krdMasterCss')) return;
+    if (document.getElementById('krdMasterCleanCss')) return;
     const st = document.createElement('style');
-    st.id = 'krdMasterCss';
+    st.id = 'krdMasterCleanCss';
     st.textContent = `
-      #krdMaintScreen{position:fixed;inset:0;z-index:99999;background:radial-gradient(circle at top,#1e293b,#020617);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px}
+      html { overflow-anchor: none; }
+      #krdMaintScreen {
+        position: fixed; inset: 0; z-index: 99999;
+        background: radial-gradient(circle at top, #1e293b, #020617);
+        color: #fff; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; text-align: center; padding: 24px;
+      }
       #krdPinnedAnn {
-        box-sizing: border-box;
-        width: calc(100% - 24px); max-width: 960px;
+        box-sizing: border-box; width: calc(100% - 24px); max-width: 960px;
         margin: 8px auto 6px; padding: 10px 14px; border-radius: 12px;
         background: linear-gradient(90deg, rgba(234,88,12,.28), rgba(250,204,21,.2));
         border: 1.5px solid rgba(250,204,21,.55); color: #fef08a;
         font-size: 13px; font-weight: 700; text-align: left;
       }
       #krdNavTabs {
-        box-sizing: border-box;
-        position: sticky; top: 8px; z-index: 950;
-        width: calc(100% - 24px); max-width: 960px;
-        margin: 8px auto 12px;
+        box-sizing: border-box; position: sticky; top: 8px; z-index: 950;
+        width: calc(100% - 24px); max-width: 960px; margin: 8px auto 12px;
         display: flex; align-items: center; gap: 6px;
         overflow-x: auto; scrollbar-width: none;
         padding: 7px 8px; border-radius: 14px;
-        background: #0b1120;
-        border: 1px solid rgba(56, 189, 248, 0.42);
+        background: #0b1120; border: 1px solid rgba(56, 189, 248, 0.42);
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
       }
       #krdNavTabs::-webkit-scrollbar { display: none; }
       .krd-tab-btn {
-        box-sizing: border-box;
-        flex: 0 0 auto; padding: 8px 13px; border-radius: 10px;
+        box-sizing: border-box; flex: 0 0 auto; padding: 8px 13px; border-radius: 10px;
         font-size: 12px; font-weight: 800; cursor: pointer;
         border: 1px solid rgba(148, 163, 184, 0.25);
         background: #131c31; color: #cbd5e1;
@@ -164,16 +93,28 @@
         color: #fff; border-color: #38bdf8;
       }
       #krdDedicatedView {
-        box-sizing: border-box;
-        width: calc(100% - 24px); max-width: 960px;
-        margin: 10px auto 18px;
-        display: grid; gap: 12px;
+        box-sizing: border-box; width: calc(100% - 24px); max-width: 960px;
+        margin: 10px auto 18px; display: grid; gap: 12px;
       }
+      #krdDedicatedView * { box-sizing: border-box; min-width: 0; }
       .krd-clean-card {
         background: rgba(15, 23, 42, 0.94);
         border: 1px solid rgba(148, 163, 184, 0.24);
         border-radius: 14px; padding: 14px 16px;
-        display: grid; gap: 10px;
+        display: grid; gap: 10px; text-align: left;
+      }
+      .krd-crest {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 22px; height: 22px; border-radius: 6px; font-size: 9.5px;
+        font-weight: 900; margin-right: 6px; color: #fff;
+        border: 1px solid rgba(255,255,255,.3);
+      }
+      .krd-delta-up { color: #4ade80; font-size: 10px; font-weight: 900; margin-left: 4px; }
+      .krd-delta-dn { color: #f87171; font-size: 10px; font-weight: 900; margin-left: 4px; }
+      .krd-streak {
+        display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px;
+        font-size: 9.5px; font-weight: 800; background: rgba(250,204,21,.16);
+        color: #fde047; border: 1px solid rgba(250,204,21,.32);
       }
       .krd-form-dots { display: inline-flex; gap: 3px; margin-left: 6px; vertical-align: middle; }
       .krd-dot {
@@ -183,96 +124,194 @@
       .krd-dot-G { background: #16a34a; }
       .krd-dot-B { background: #ca8a04; }
       .krd-dot-M { background: #dc2626; }
+      #krdPodium { margin: 10px 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      @media(max-width: 560px) { #krdPodium { grid-template-columns: 1fr; } }
+      .krd-pod-item {
+        background: rgba(15, 23, 42, .92); border: 1px solid rgba(250, 204, 21, .28);
+        border-radius: 12px; padding: 9px 11px; display: grid; gap: 2px;
+      }
+      .krd-pred-line {
+        display: grid; grid-template-columns: 1fr 44px 12px 44px 1fr auto;
+        align-items: center; gap: 5px; padding: 6px 8px; border-radius: 9px;
+        background: rgba(15, 23, 42, .75); border: 1px solid rgba(148, 163, 184, .18); font-size: 11.5px;
+      }
+      .krd-pred-line input {
+        width: 100%; text-align: center; padding: 3px; border-radius: 6px;
+        border: 1px solid #334155; background: #020617; color: #fff; font-weight: 800;
+      }
+      .krd-cup-grid { margin-top: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      @media(max-width: 540px) { .krd-cup-grid { grid-template-columns: 1fr; } }
+      .krd-cup-box {
+        background: rgba(2, 6, 23, .65); border: 1px solid rgba(56, 189, 248, .25);
+        border-radius: 10px; padding: 8px 10px; font-size: 12px; display: grid; gap: 4px;
+      }
       .krd-h2h-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; }
       .krd-h2h-grid select {
         padding: 8px; border-radius: 9px; border: 1px solid #334155;
         background: #020617; color: #fff; font-size: 12.5px; font-weight: 700;
       }
+      .krd-derby { border: 1.5px solid rgba(250,204,21,.7) !important; box-shadow: 0 0 18px rgba(250,204,21,.18); }
+      .krd-derby-badge {
+        display: inline-block; margin-bottom: 5px; padding: 2px 8px; border-radius: 999px;
+        font-size: 10px; font-weight: 900; background: linear-gradient(90deg,#facc15,#f97316); color: #090d16;
+      }
+      .krd-png-btn {
+        margin-top: 6px; width: 100%; padding: 5px 8px !important; font-size: 11px !important;
+        font-weight: 700 !important; border-radius: 8px !important;
+        background: rgba(250,204,21,.15) !important; border: 1px solid rgba(250,204,21,.35) !important;
+        color: #fde047 !important; cursor: pointer;
+      }
+      #krdPosterPop {
+        position: fixed; inset: 0; z-index: 10000; background: rgba(2,6,23,.85);
+        display: none; align-items: center; justify-content: center; padding: 16px;
+      }
+      #krdPosterPop.open { display: flex; }
+      .krd-poster-in {
+        width: 100%; max-width: 440px; background: #0f172a;
+        border: 1px solid rgba(250,204,21,.4); border-radius: 16px;
+        padding: 14px; display: grid; gap: 10px; text-align: center;
+      }
+      .krd-poster-in img { width: 100%; border-radius: 10px; }
+      #krdMasterAdmBox {
+        box-sizing: border-box; width: 100%; max-width: 960px; margin: 16px auto;
+        background: rgba(15, 23, 42, .96); border: 1.5px solid rgba(250, 204, 21, .42);
+        border-radius: 14px; padding: 15px 16px; display: grid; gap: 11px;
+        text-align: left; overflow-x: hidden;
+      }
+      #krdMasterAdmBox * { box-sizing: border-box; min-width: 0; }
+      #krdMasterAdmBox input[type="text"], #krdMasterAdmBox textarea { width: 100%; }
       .krd-tab-hidden { display: none !important; }
     `;
     document.head.appendChild(st);
   }
 
-  // #app disinda sabit duran Ust Menu ve Duyuru Bandini olustur (asla silinmez)
-  function ensurePersistentChrome() {
-    const app = document.getElementById('app');
-    if (!app || !app.parentNode) return;
-
-    if (isAdm()) {
-      document.getElementById('krdNavTabs')?.remove();
-      document.getElementById('krdDedicatedView')?.remove();
-      document.getElementById('krdPinnedAnn')?.remove();
-      return;
-    }
-
-    injectTabStyles();
-    const ex = (window._krdData && window._krdData.extras) || {};
-
-    // Duyuru Bandi (#app hemen ustunde)
-    let ann = document.getElementById('krdPinnedAnn');
-    if (ex.announcement || ex.mvp) {
-      if (!ann) {
-        ann = document.createElement('div');
-        ann.id = 'krdPinnedAnn';
-        app.parentNode.insertBefore(ann, app);
+  function calcStats() {
+    const st = getS() || {}, teams = st.teams || [], matches = st.matches || [];
+    const wP = Number((st.settings && st.settings.win) ?? 3), dP = Number((st.settings && st.settings.draw) ?? 1);
+    const played = matches.filter(m => m.played);
+    const maxW = played.length ? Math.max(...played.map(m => Number(m.week || 1))) : 1;
+    const run = sub => {
+      const m = {};
+      teams.forEach(t => { m[t.id] = { id: t.id, name: t.name, o: 0, g: 0, b: 0, m: 0, ag: 0, yg: 0, av: 0, p: 0 }; });
+      sub.forEach(x => {
+        if (!m[x.home_id] || !m[x.away_id]) return;
+        const hs = +x.hs || 0, aw = +x.aws || 0;
+        m[x.home_id].o++; m[x.away_id].o++;
+        m[x.home_id].ag += hs; m[x.home_id].yg += aw;
+        m[x.away_id].ag += aw; m[x.away_id].yg += hs;
+        m[x.home_id].av += hs - aw; m[x.away_id].av += aw - hs;
+        if (hs > aw) { m[x.home_id].g++; m[x.home_id].p += wP; m[x.away_id].m++; }
+        else if (aw > hs) { m[x.away_id].g++; m[x.away_id].p += wP; m[x.home_id].m++; }
+        else { m[x.home_id].b++; m[x.away_id].b++; m[x.home_id].p += dP; m[x.away_id].p += dP; }
+      });
+      return Object.values(m).sort((a, b) => (b.p - a.p) || (b.av - a.av) || (b.ag - a.ag));
+    };
+    const table = run(played), nowR = {}, prevR = {}, streaks = {};
+    table.forEach((r, i) => { nowR[r.id] = i + 1; });
+    run(played.filter(x => Number(x.week || 1) < maxW)).forEach((r, i) => { prevR[r.id] = i + 1; });
+    teams.forEach(t => {
+      const my = played.filter(x => x.home_id === t.id || x.away_id === t.id).sort((a, b) => (+a.week - +b.week) || (+a.id - +b.id));
+      let unb = 0, win = 0;
+      for (let i = my.length - 1; i >= 0; i--) {
+        const gf = my[i].home_id === t.id ? +my[i].hs : +my[i].aws, ga = my[i].home_id === t.id ? +my[i].aws : +my[i].hs;
+        if (gf >= ga) unb++; else break;
       }
-      const nextHtml = (ex.announcement ? `📌 <b>DUYURU:</b> ${esc(ex.announcement)}` : '') +
-        (ex.announcement && ex.mvp ? ' &nbsp;|&nbsp; ' : '') +
-        (ex.mvp ? `⭐ <b>Haftanın MVP Kulübü:</b> ${esc(ex.mvp)}` : '');
-      if (ann.innerHTML !== nextHtml) ann.innerHTML = nextHtml;
-    } else if (ann) {
-      ann.remove();
-    }
-
-    // Sabit Sekme Cubugu (#app hemen ustunde, bu yuzden #app yenilense bile silinmez)
-    if (!document.getElementById('krdNavTabs')) {
-      const bar = document.createElement('div');
-      bar.id = 'krdNavTabs';
-      const tabs = [
-        { id: 'all', label: '🏠 Tümü' },
-        { id: 'table', label: '📊 Puan & İstatistik' },
-        { id: 'fixtures', label: '📅 Fikstür & H2H' },
-        { id: 'predict', label: '🎯 Tahmin & Kupa' },
-        { id: 'rules', label: '📜 Kurallar & Bildir' }
-      ];
-      bar.innerHTML = tabs.map(t =>
-        `<button type="button" class="krd-tab-btn ${window._krdActiveTab === t.id ? 'active' : ''}" data-tab="${t.id}" onclick="window.krdSwitchTab('${t.id}')">${t.label}</button>`
-      ).join('');
-      app.parentNode.insertBefore(bar, app);
-    }
-  }
-
-  // Son 5 mac form baloncuklarini puan tablosuna ekle
-  function enrichFormBadges() {
-    const tblCheck = document.querySelector('#app table:not(#krdSplitTableWrap table) tbody tr td');
-    if (tblCheck && tblCheck.dataset.krdFormDone) return;
-    const st = getS();
-    const app = document.getElementById('app');
-    if (!st || !app || isAdm()) return;
-    const tbl = app.querySelector('table:not(#krdSplitTableWrap table)');
-    if (!tbl) return;
-    const played = (st.matches || []).filter(m => m.played).sort((a, b) => (+a.week - +b.week) || (+a.id - +b.id));
-
-    tbl.querySelectorAll('tbody tr').forEach(tr => {
-      const cell = tr.children[1] || tr.children[0];
-      if (!cell || cell.dataset.krdFormDone) return;
-      const tm = (st.teams || []).find(t => (tr.textContent || '').toLowerCase().includes((t.name || '').toLowerCase()));
-      if (!tm) return;
-      cell.dataset.krdFormDone = '1';
-
-      const last5 = played.filter(m => m.home_id === tm.id || m.away_id === tm.id).slice(-5);
-      if (!last5.length) return;
-      const dots = last5.map(m => {
-        const gf = m.home_id === tm.id ? +m.hs : +m.aws;
-        const ga = m.home_id === tm.id ? +m.aws : +m.hs;
-        const res = gf > ga ? 'G' : gf < ga ? 'M' : 'B';
-        return `<span class="krd-dot krd-dot-${res}" title="Hafta ${m.week}: ${m.hs}-${m.aws}">${res}</span>`;
-      }).join('');
-      cell.insertAdjacentHTML('beforeend', `<span class="krd-form-dots">${dots}</span>`);
+      for (let i = my.length - 1; i >= 0; i--) {
+        const gf = my[i].home_id === t.id ? +my[i].hs : +my[i].aws, ga = my[i].home_id === t.id ? +my[i].aws : +my[i].hs;
+        if (gf > ga) win++; else break;
+      }
+      streaks[t.id] = {
+        delta: maxW > 1 ? ((prevR[t.id] || nowR[t.id]) - nowR[t.id]) : 0,
+        badge: win >= 3 ? ('🔥 ' + win + 'G Seri') : unb >= 3 ? ('🛡️ ' + unb + 'M Yenilmez') : ''
+      };
     });
+    return { table, streaks };
   }
 
-  // Iki Takim Kafa Kafaya (H2H) Karsilastirma Hesabi
+  function openPoster(title, url, file) {
+    let pop = document.getElementById('krdPosterPop');
+    if (!pop) {
+      pop = document.createElement('div');
+      pop.id = 'krdPosterPop';
+      pop.onclick = e => { if (e.target === pop) pop.classList.remove('open'); };
+      document.body.appendChild(pop);
+    }
+    pop.innerHTML = `<div class="krd-poster-in"><div style="display:flex;justify-content:space-between;align-items:center;"><b style="color:#facc15;">${title}</b><button type="button" id="krdClosePop">✕</button></div><img src="${url}"><a href="${url}" download="${file}" class="btn pri" style="display:block;padding:10px;border-radius:10px;text-decoration:none;font-weight:800;background:#22c55e;color:#052e16;">⬇️ Görseli İndir (PNG)</a></div>`;
+    document.getElementById('krdClosePop').onclick = () => pop.classList.remove('open');
+    pop.classList.add('open');
+  }
+
+  window.krdStandingsPng = function () {
+    const st = getS() || {}, { table } = calcStats();
+    const c = document.createElement('canvas'); c.width = 900; c.height = 300 + table.length * 64;
+    const ctx = c.getContext('2d');
+    const g = ctx.createLinearGradient(0, 0, 900, c.height); g.addColorStop(0, '#090f1e'); g.addColorStop(1, '#111c33');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, 900, c.height);
+    ctx.fillStyle = '#facc15'; ctx.fillRect(0, 0, 900, 10); ctx.font = 'bold 20px sans-serif';
+    ctx.fillText('✦ İONELSPIEGEL SUNAR • RESMİ PUAN DURUMU', 46, 58);
+    ctx.fillStyle = '#fff'; ctx.font = '900 38px sans-serif';
+    ctx.fillText(((st.settings && st.settings.name) || 'KRD LİGİ').toUpperCase(), 46, 106);
+    const sy = 175; ctx.fillStyle = 'rgba(56,189,248,0.16)'; ctx.fillRect(40, sy - 30, 820, 42);
+    ctx.fillStyle = '#38bdf8'; ctx.font = 'bold 18px sans-serif';
+    ctx.fillText('#', 58, sy); ctx.fillText('KULÜP', 110, sy); ctx.fillText('O', 500, sy); ctx.fillText('G', 565, sy); ctx.fillText('B', 625, sy); ctx.fillText('M', 685, sy); ctx.fillText('AV', 745, sy); ctx.fillText('P', 820, sy);
+    table.forEach((r, i) => {
+      const y = sy + 56 + i * 62;
+      ctx.fillStyle = i === 0 ? 'rgba(250,204,21,0.16)' : 'rgba(255,255,255,0.04)'; ctx.fillRect(40, y - 34, 820, 50);
+      ctx.fillStyle = i === 0 ? '#facc15' : '#e2e8f0'; ctx.font = 'bold 21px sans-serif';
+      ctx.fillText(String(i + 1), 58, y); ctx.fillText(r.name, 110, y);
+      ctx.fillStyle = '#cbd5e1'; ctx.font = '600 20px sans-serif';
+      ctx.fillText(String(r.o), 500, y); ctx.fillText(String(r.g), 565, y); ctx.fillText(String(r.b), 625, y); ctx.fillText(String(r.m), 685, y); ctx.fillText(r.av > 0 ? '+' + r.av : String(r.av), 745, y);
+      ctx.fillStyle = i === 0 ? '#facc15' : '#38bdf8'; ctx.font = '900 22px sans-serif'; ctx.fillText(String(r.p), 820, y);
+    });
+    openPoster('📸 Puan Tablosu Afişi', c.toDataURL('image/png'), 'krd-puan-durumu.png');
+  };
+
+  window.krdMatchPng = function (mid) {
+    const st = getS() || {}, m = (st.matches || []).find(x => Number(x.id) === Number(mid));
+    if (!m) return;
+    const tMap = Object.fromEntries((st.teams || []).map(t => [t.id, t.name]));
+    const h = tMap[m.home_id] || 'Ev', a = tMap[m.away_id] || 'Dep';
+    const c = document.createElement('canvas'); c.width = 900; c.height = 460;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#090f1e'; ctx.fillRect(0, 0, 900, 460);
+    ctx.fillStyle = '#facc15'; ctx.fillRect(0, 0, 900, 10); ctx.font = 'bold 20px sans-serif';
+    ctx.fillText('✦ İONELSPIEGEL SUNAR • ' + m.week + '. HAFTA MAÇ SONUCU', 46, 58);
+    ctx.fillStyle = '#fff'; ctx.font = '800 26px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(h, 210, 220); ctx.fillText(a, 690, 220);
+    ctx.fillStyle = '#facc15'; ctx.font = '900 74px sans-serif';
+    ctx.fillText(m.hs + ' - ' + m.aws, 450, 235);
+    openPoster('🃏 Maç Sonucu Afişi', c.toDataURL('image/png'), 'mac-sonucu-h' + m.week + '.png');
+  };
+
+  window.krdSendPredict = async function (mid) {
+    const nick = (document.getElementById('krdPredNick')?.value || localStorage.getItem('krd_pred_nick') || '').trim();
+    if (!nick) return alert('Lütfen adınızı yazın.');
+    localStorage.setItem('krd_pred_nick', nick);
+    const hs = Number(document.getElementById('phs_' + mid)?.value), aws = Number(document.getElementById('paws_' + mid)?.value);
+    if (Number.isNaN(hs) || Number.isNaN(aws)) return alert('Skor girin.');
+    const r = await origFetch('/api/krd-predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nick, matchId: mid, hs, aws }) });
+    const d = await r.json();
+    if (!r.ok) return alert(d.error || 'Hata');
+    window._krdData.predictions = d.predictions || {};
+    if (typeof toast === 'function') toast('🎯 Tahminin kaydedildi!');
+    buildDedicatedPanels();
+  };
+
+  window.krdSendReport = async function () {
+    const sender = (document.getElementById('krdRepSender')?.value || '').trim() || 'Ziyaretçi';
+    const msg = (document.getElementById('krdRepMsg')?.value || '').trim();
+    if (!msg) return alert('Lütfen bildirmek istediğiniz sorunu yazın.');
+    const r = await origFetch('/api/krd-report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sender, msg }) });
+    if (r.ok) {
+      document.getElementById('krdRepMsg').value = '';
+      if (typeof toast === 'function') toast('📩 Sorun bildiriminiz yöneticiye iletildi!');
+    } else {
+      let errTxt = 'Gönderilemedi.';
+      try { const ed = await r.json(); if (ed && ed.error) errTxt = ed.error; } catch {}
+      alert(errTxt);
+    }
+  };
+
   window.krdUpdateH2H = function () {
     const st = getS() || {};
     const t1 = Number(document.getElementById('krdH2H_A')?.value);
@@ -307,6 +346,52 @@
         ${between.map(m => `<div style="padding:5px 8px;border-radius:7px;background:rgba(255,255,255,.04);">Hafta ${m.week}: <b>${esc(tMap[m.home_id])} ${m.hs} - ${m.aws} ${esc(tMap[m.away_id])}</b></div>`).join('')}
       </div>`;
   };
+
+  function ensurePersistentChrome() {
+    const app = document.getElementById('app');
+    if (!app || !app.parentNode) return;
+
+    if (isAdm()) {
+      document.getElementById('krdNavTabs')?.remove();
+      document.getElementById('krdDedicatedView')?.remove();
+      document.getElementById('krdPinnedAnn')?.remove();
+      return;
+    }
+
+    injectStyles();
+    const ex = (window._krdData && window._krdData.extras) || {};
+
+    let ann = document.getElementById('krdPinnedAnn');
+    if (ex.announcement || ex.mvp) {
+      if (!ann) {
+        ann = document.createElement('div');
+        ann.id = 'krdPinnedAnn';
+        app.parentNode.insertBefore(ann, app);
+      }
+      const nextHtml = (ex.announcement ? `📌 <b>DUYURU:</b> ${esc(ex.announcement)}` : '') +
+        (ex.announcement && ex.mvp ? ' &nbsp;|&nbsp; ' : '') +
+        (ex.mvp ? `⭐ <b>Haftanın MVP Kulübü:</b> ${esc(ex.mvp)}` : '');
+      if (ann.innerHTML !== nextHtml) ann.innerHTML = nextHtml;
+    } else if (ann) {
+      ann.remove();
+    }
+
+    if (!document.getElementById('krdNavTabs')) {
+      const bar = document.createElement('div');
+      bar.id = 'krdNavTabs';
+      const tabs = [
+        { id: 'all', label: '🏠 Tümü' },
+        { id: 'table', label: '📊 Puan & İstatistik' },
+        { id: 'fixtures', label: '📅 Fikstür & H2H' },
+        { id: 'predict', label: '🎯 Tahmin & Kupa' },
+        { id: 'rules', label: '📜 Kurallar & Bildir' }
+      ];
+      bar.innerHTML = tabs.map(t =>
+        `<button type="button" class="krd-tab-btn ${window._krdActiveTab === t.id ? 'active' : ''}" data-tab="${t.id}" onclick="window.krdSwitchTab('${t.id}')">${t.label}</button>`
+      ).join('');
+      app.parentNode.insertBefore(bar, app);
+    }
+  }
 
   function buildDedicatedPanels() {
     const app = document.getElementById('app');
@@ -352,7 +437,6 @@
       const preds = (window._krdData && window._krdData.predictions) || {};
       const myP = preds[nick] || {};
 
-      // Canli Tahmin Liderlik Tablosu
       const board = Object.entries(preds).map(([nk, uP]) => {
         let pts = 0, exact = 0;
         for (const [mid, p] of Object.entries(uP || {})) {
@@ -412,22 +496,112 @@
     }
   }
 
-  window.krdSwitchTab = function (tab) {
-    window._krdActiveTab = tab;
-    document.querySelectorAll('.krd-tab-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.tab === tab);
-    });
-    syncView(true);
-  };
+  function enhanceTableAndFixtures() {
+    const app = document.getElementById('app');
+    const st = getS();
+    if (!app || !st || !Array.isArray(st.teams) || !st.teams.length || isAdm()) return;
+
+    const ex = (window._krdData && window._krdData.extras) || {};
+    let maint = document.getElementById('krdMaintScreen');
+    if (ex.maintenance) {
+      if (!maint) {
+        maint = document.createElement('div'); maint.id = 'krdMaintScreen';
+        document.body.appendChild(maint);
+      }
+      maint.innerHTML = `<div style="font-size:44px;margin-bottom:10px;">🛠️</div><h2 style="margin:0 0 8px;color:#facc15;">KRD LİGİ BAKIMDA</h2><p style="max-width:380px;opacity:.85;font-size:14px;">${esc(ex.maintNote || 'Fikstür ve puan durumu güncelleniyor. Kısa süre sonra tekrar açılacaktır.')}</p>`;
+      return;
+    } else if (maint) maint.remove();
+
+    const cw = document.getElementById('krdChatWidget');
+    if (cw) cw.style.display = ex.chatLocked ? 'none' : '';
+
+    const { table, streaks } = calcStats();
+    const top3 = new Set(table.slice(0, 3).map(x => x.id));
+    const tMap = Object.fromEntries(st.teams.map(t => [t.id, t.name]));
+    const played = (st.matches || []).filter(m => m.played).sort((a, b) => (+a.week - +b.week) || (+a.id - +b.id));
+
+    const tbl = app.querySelector('table:not(#krdSplitTableWrap table)');
+    if (tbl) {
+      tbl.querySelectorAll('tbody tr').forEach(tr => {
+        const cell = tr.children[1] || tr.children[0];
+        if (!cell || cell.dataset.krdDone) return;
+        const tm = st.teams.find(t => (tr.textContent || '').toLowerCase().includes((t.name || '').toLowerCase()));
+        if (!tm) return;
+        cell.dataset.krdDone = '1';
+
+        const b = ((window._krdData && window._krdData.badges) || {})[String(tm.id)] || {};
+        const code = b.code || tm.name.replace(/[^A-Za-z0-9ÇĞİÖŞÜçğıöşü]/g, '').slice(0, 3).toUpperCase();
+        cell.insertAdjacentHTML('afterbegin', `<span class="krd-crest" style="background:${esc(b.color || '#1e293b')};">${esc(code)}</span>`);
+
+        const sI = streaks[tm.id];
+        if (sI && sI.delta > 0) cell.insertAdjacentHTML('beforeend', `<span class="krd-delta-up">▲${sI.delta}</span>`);
+        else if (sI && sI.delta < 0) cell.insertAdjacentHTML('beforeend', `<span class="krd-delta-dn">▼${Math.abs(sI.delta)}</span>`);
+        if (sI && sI.badge) cell.insertAdjacentHTML('beforeend', `<span class="krd-streak">${sI.badge}</span>`);
+
+        const last5 = played.filter(m => m.home_id === tm.id || m.away_id === tm.id).slice(-5);
+        if (last5.length) {
+          const dots = last5.map(m => {
+            const gf = m.home_id === tm.id ? +m.hs : +m.aws;
+            const ga = m.home_id === tm.id ? +m.aws : +m.hs;
+            const res = gf > ga ? 'G' : gf < ga ? 'M' : 'B';
+            return `<span class="krd-dot krd-dot-${res}" title="Hafta ${m.week}: ${m.hs}-${m.aws}">${res}</span>`;
+          }).join('');
+          cell.insertAdjacentHTML('beforeend', `<span class="krd-form-dots">${dots}</span>`);
+        }
+      });
+    }
+
+    if (played.length && table.length && !document.getElementById('krdPodium')) {
+      const pod = document.createElement('div'); pod.id = 'krdPodium';
+      const atk = [...table].sort((a, b) => b.ag - a.ag)[0];
+      const def = [...table].filter(x => x.o > 0).sort((a, b) => (a.yg / a.o) - (b.yg / b.o))[0] || table[0];
+      const hm = [...played].sort((a, b) => ((+b.hs + +b.aws) - (+a.hs + +a.aws)))[0];
+      pod.innerHTML = `
+        <div class="krd-pod-item"><span style="font-size:10px;font-weight:800;color:#facc15;">⚽ ALTIN AYAKKABI</span><b>${esc(atk.name)}</b><span style="font-size:11px;opacity:.8;">${atk.ag} Gol</span></div>
+        <div class="krd-pod-item"><span style="font-size:10px;font-weight:800;color:#38bdf8;">🧤 ALTIN ELDİVEN</span><b>${esc(def.name)}</b><span style="font-size:11px;opacity:.8;">${def.yg} Yenen Gol</span></div>
+        <div class="krd-pod-item"><span style="font-size:10px;font-weight:800;color:#fb7185;">⚡ EN GOLLÜ MAÇ</span><b>${esc(tMap[hm.home_id] || 'Ev')} ${hm.hs}-${hm.aws} ${esc(tMap[hm.away_id] || 'Dep')}</b><span style="font-size:11px;opacity:.8;">Hafta ${hm.week}</span></div>`;
+      const anc = document.getElementById('krdLeagueHubDrawer') || tbl;
+      if (anc && anc.parentNode) anc.parentNode.insertBefore(pod, anc.nextSibling);
+    }
+
+    const hubBody = document.querySelector('#krdLeagueHubDrawer .krd-hub-body');
+    if (hubBody && !document.getElementById('krdPngTableBtn')) {
+      const b = document.createElement('button'); b.id = 'krdPngTableBtn'; b.type = 'button'; b.className = 'pri';
+      b.style.cssText = 'width:100%;font-size:12px;font-weight:800;';
+      b.textContent = '📸 Puan Tablosu Afişi İndir (PNG)';
+      b.onclick = window.krdStandingsPng;
+      hubBody.appendChild(b);
+    }
+
+    const grid = app.querySelector('.grid');
+    if (grid) {
+      Array.from(grid.children).forEach(card => {
+        const txt = card.textContent || '';
+        const m = (st.matches || []).find(x => {
+          const h = tMap[x.home_id] || '', a = tMap[x.away_id] || '';
+          return h && a && txt.includes(h) && txt.includes(a);
+        });
+        if (!m) return;
+        if (!m.played && top3.has(m.home_id) && top3.has(m.away_id) && !card.dataset.krdD) {
+          card.dataset.krdD = '1'; card.classList.add('krd-derby');
+          card.insertAdjacentHTML('afterbegin', '<span class="krd-derby-badge">🔥 HAFTANIN DERBİSİ</span>');
+        }
+        if (m.played && !card.querySelector('.krd-png-btn')) {
+          const b = document.createElement('button'); b.type = 'button'; b.className = 'krd-png-btn';
+          b.textContent = '📸 Maç Sonucu Afişi (PNG)';
+          b.onclick = e => { e.stopPropagation(); window.krdMatchPng(m.id); };
+          card.appendChild(b);
+        }
+      });
+    }
+  }
 
   function filterAppChildren() {
     const app = document.getElementById('app');
     if (!app || isAdm()) return;
     const tab = window._krdActiveTab || 'all';
-    const hideExtras = new Set(['krdRulesBox', 'krdReportBox', 'krdPredictBox', 'krdSuperCupBox']);
 
     Array.from(app.children).forEach(el => {
-      const id = el.id || '';
       if (tab === 'predict' || tab === 'rules') {
         el.classList.add('krd-tab-hidden');
         return;
@@ -437,14 +611,13 @@
         return;
       }
 
+      const id = el.id || '';
       const txt = (el.textContent || '').toLowerCase();
       const hasTable = Boolean(el.querySelector('table')) || el.tagName === 'TABLE';
       const hasGrid = el.classList.contains('grid') || Boolean(el.querySelector('.grid'));
 
       let group = 'table';
-      if (hideExtras.has(id)) {
-        group = 'extra';
-      } else if (
+      if (
         hasGrid ||
         id === 'krdRemainingMatchesBox' ||
         id === 'krdUnifiedSearchBar' ||
@@ -465,16 +638,116 @@
     });
   }
 
+  window.krdSwitchTab = function (tab) {
+    window._krdActiveTab = tab;
+    document.querySelectorAll('.krd-tab-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === tab);
+    });
+    syncView(true);
+  };
+
+  window.krdSaveAdminMaster = async function () {
+    const st = getS() || {};
+    const badges = {};
+    (st.teams || []).forEach(t => {
+      badges[String(t.id)] = {
+        code: (document.getElementById('bc_' + t.id)?.value || '').trim().toUpperCase(),
+        color: document.getElementById('bcol_' + t.id)?.value || '#2563eb'
+      };
+    });
+    const cup = {
+      sf1_h: document.getElementById('cup_sf1_h')?.value ?? '',
+      sf1_a: document.getElementById('cup_sf1_a')?.value ?? '',
+      sf2_h: document.getElementById('cup_sf2_h')?.value ?? '',
+      sf2_a: document.getElementById('cup_sf2_a')?.value ?? '',
+      f_h: document.getElementById('cup_f_h')?.value ?? '',
+      f_a: document.getElementById('cup_f_a')?.value ?? ''
+    };
+    const ex = {
+      announcement: document.getElementById('admAnn')?.value.trim() || '',
+      mvp: document.getElementById('admMvp')?.value.trim() || '',
+      maintenance: !!document.getElementById('admMaint')?.checked,
+      maintNote: document.getElementById('admMaintNote')?.value.trim() || '',
+      chatLocked: !!document.getElementById('admChatLock')?.checked,
+      rules: document.getElementById('admRules')?.value.trim() || DEFAULT_RULES
+    };
+    await api('POST', '/api/krd-extras', ex);
+    await api('POST', '/api/admin/krd-pro5-save', { badges, cup });
+    await pullAll();
+    if (typeof toast === 'function') toast('✅ Duyuru, Bakım Modu, Kurallar ve Armalar kaydedildi!');
+  };
+
+  async function renderAdminPanel() {
+    const existingAdmBox = document.getElementById('krdMasterAdmBox');
+    if (!isAdm()) {
+      if (existingAdmBox) existingAdmBox.remove();
+      return;
+    }
+    const app = document.getElementById('app');
+    if (!app) return;
+    const ok = app.querySelector('button') && (app.textContent || '').includes('Çıkış');
+    if (!ok || existingAdmBox) return;
+
+    const st = getS() || {};
+    const ex = (window._krdData && window._krdData.extras) || {};
+    const bMap = (window._krdData && window._krdData.badges) || {};
+    const c = (window._krdData && window._krdData.cup) || {};
+
+    const box = document.createElement('div');
+    box.id = 'krdMasterAdmBox';
+    box.innerHTML = `
+      <b style="color:#facc15;font-size:14px;">⚙️ Duyuru Sabitleme, Bakım Modu, Kurallar & Gelen Sorunlar</b>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;font-size:12px;">
+        <input type="text" id="admAnn" value="${esc(ex.announcement || '')}" placeholder="📌 Üste Sabitlenecek Duyuru" style="padding:7px;border-radius:8px;border:1px solid #334155;background:#020617;color:#fff;">
+        <input type="text" id="admMvp" value="${esc(ex.mvp || '')}" placeholder="⭐ Haftanın MVP Kulübü" style="padding:7px;border-radius:8px;border:1px solid #334155;background:#020617;color:#fff;">
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:12px;background:rgba(2,6,23,.6);padding:8px 10px;border-radius:8px;">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:#f87171;font-weight:800;"><input type="checkbox" id="admMaint" ${ex.maintenance ? 'checked' : ''}><span>🛠️ Ligi Bakıma Al (Ziyaretçilere Kapat)</span></label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="admChatLock" ${ex.chatLocked ? 'checked' : ''}><span>🔒 Canlı Sohbeti Kilitle</span></label>
+      </div>
+      <input type="text" id="admMaintNote" value="${esc(ex.maintNote || '')}" placeholder="Bakım Modu Açıklaması (isteğe bağlı)" style="padding:7px;border-radius:8px;border:1px solid #334155;background:#020617;color:#fff;font-size:12px;">
+      <label style="font-size:12px;font-weight:700;color:#fb923c;">📜 Resmi Lig Kuralları & Cezalar (22 Kasım 2026 Sonrası):</label>
+      <textarea id="admRules" rows="4" style="padding:8px;border-radius:8px;border:1px solid #334155;background:#020617;color:#fff;font-size:12px;">${esc((ex.rules && ex.rules.trim()) ? ex.rules : DEFAULT_RULES)}</textarea>
+      <b style="color:#38bdf8;font-size:12px;">🛡️ Kulüp Arma Kodları & Renkleri:</b>
+      <div style="display:grid;gap:5px;font-size:12px;">
+        ${(st.teams || []).map(t => {
+          const o = bMap[String(t.id)] || {};
+          return `<div style="display:grid;grid-template-columns:1fr 70px 44px;gap:6px;align-items:center;"><span>${esc(t.name)}</span><input type="text" maxlength="4" id="bc_${t.id}" value="${esc(o.code || '')}" placeholder="Kod" style="padding:4px;border-radius:6px;border:1px solid #334155;background:#020617;color:#fff;text-align:center;"><input type="color" id="bcol_${t.id}" value="${esc(o.color || '#2563eb')}" style="width:100%;height:28px;border:none;background:none;"></div>`;
+        }).join('')}
+      </div>
+      <b style="color:#4ade80;font-size:12px;">🏆 Süper Kupa Play-Off Skorları:</b>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;font-size:12px;background:rgba(2,6,23,.55);padding:8px 10px;border-radius:9px;">
+        <div>YF1: <input type="number" id="cup_sf1_h" value="${esc(c.sf1_h ?? '')}" style="width:42px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;">-<input type="number" id="cup_sf1_a" value="${esc(c.sf1_a ?? '')}" style="width:42px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;"></div>
+        <div>YF2: <input type="number" id="cup_sf2_h" value="${esc(c.sf2_h ?? '')}" style="width:42px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;">-<input type="number" id="cup_sf2_a" value="${esc(c.sf2_a ?? '')}" style="width:42px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;"></div>
+        <div>FİNAL: <input type="number" id="cup_f_h" value="${esc(c.f_h ?? '')}" style="width:42px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;">-<input type="number" id="cup_f_a" value="${esc(c.f_a ?? '')}" style="width:42px;background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;text-align:center;"></div>
+      </div>
+      <button type="button" class="pri" onclick="window.krdSaveAdminMaster()">💾 Tüm Ayarları Kaydet</button>
+      <div id="krdInboxReports" style="border-top:1px solid rgba(148,163,184,.2);padding-top:8px;font-size:12px;">📩 Gelen sorun bildirimleri yükleniyor...</div>
+    `;
+    app.appendChild(box);
+
+    try {
+      const repRes = await api('GET', '/api/admin/krd-reports');
+      const inbox = document.getElementById('krdInboxReports');
+      if (inbox && repRes && Array.isArray(repRes.reports)) {
+        inbox.innerHTML = repRes.reports.length
+          ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><b style="color:#f87171;">📩 Gelen Sorun Bildirimleri (${repRes.reports.length}):</b><button type="button" onclick="api('POST','/api/admin/krd-reports-clear').then(()=>toast('Bildirimler temizlendi'))" style="font-size:11px;padding:3px 8px;">Temizle</button></div>` +
+            repRes.reports.map(r => `<div style="padding:6px 8px;margin-bottom:5px;border-radius:8px;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);"><span style="color:#38bdf8;">[${esc(r.ts)}]</span> <b>${esc(r.sender)}:</b> ${esc(r.msg)}</div>`).join('')
+          : '📩 Henüz gelen sorun bildirimi yok.';
+      }
+    } catch {}
+  }
+
   function syncView(rebuildDedicated) {
     if (_isApplying) return;
     _isApplying = true;
     try {
+      injectStyles();
       ensurePersistentChrome();
       if (isAdm()) {
         renderAdminPanel();
       } else {
-        renderAll(false);
-        enrichFormBadges();
+        enhanceTableAndFixtures();
         filterAppChildren();
         if (rebuildDedicated) buildDedicatedPanels();
       }
@@ -483,16 +756,15 @@
     }
   }
 
-  // #app icerigi sunucudan veya skordan dolayi yeniden cizilirse aninda yakala (menuler asla kaybolmaz)
   function attachAppObserver() {
     const app = document.getElementById('app');
     if (!app || app.dataset.krdObs) return;
     app.dataset.krdObs = '1';
-    let _obsTimer = null;
+    let timer = null;
     const obs = new MutationObserver(() => {
       if (_isApplying) return;
-      clearTimeout(_obsTimer);
-      _obsTimer = setTimeout(() => syncView(false), 180);
+      clearTimeout(timer);
+      timer = setTimeout(() => syncView(false), 160);
     });
     obs.observe(app, { childList: true });
   }
@@ -501,7 +773,7 @@
     attachAppObserver();
     syncView(true);
   });
+  setInterval(() => { if (!document.hidden) pullAll(); }, 25000);
   window.addEventListener('hashchange', () => setTimeout(() => { attachAppObserver(); syncView(true); }, 80));
-  setTimeout(() => { attachAppObserver(); syncView(true); }, 500);
-  // === KRD_SECTIONS_END ===
+  setTimeout(() => { attachAppObserver(); syncView(true); }, 450);
 })();
