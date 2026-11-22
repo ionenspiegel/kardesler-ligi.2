@@ -780,6 +780,94 @@ input,select{background:#0b1226;border:1px solid var(--line);border-radius:10px;
 
 
 
+<style id="krdMobilePolishCss">
+/* 1. En ust bar (YAPIMCI + KRD LIGI + Tema Secici) hizalamasi */
+header, .topbar, .nav, [class*="header"], [class*="topbar"] {
+  max-width: 100vw;
+  box-sizing: border-box;
+}
+@media (max-width: 600px) {
+  /* Ust baslik satirinda KRD LIGI ile tema butonunun sikismasini onle */
+  header > div, .topbar > div {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+  }
+  /* Tema secici hap kutusunu kompakt yap */
+  button[id*="theme"], select[id*="theme"], .theme-btn, [class*="theme"] {
+    padding: 5px 10px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+    max-width: 145px !important;
+  }
+
+  /* 2. Sekme cubugu (Tumu / Puan / Fikstur) temiz yatay kaydirma */
+  .tabs, [role="tablist"], nav {
+    display: flex !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 6px !important;
+    padding: 6px !important;
+  }
+  .tabs::-webkit-scrollbar, [role="tablist"]::-webkit-scrollbar {
+    display: none;
+  }
+  .tabs button, [role="tablist"] button {
+    flex: 0 0 auto !important;
+    padding: 7px 12px !important;
+    font-size: 12.5px !important;
+    white-space: nowrap !important;
+  }
+
+  /* 3. Puan tablosundaki cift rozet kalabaligini ve mamutabiKralpop tasmasi duzeltmesi */
+  table td:nth-child(2) {
+    min-width: 165px !important;
+    max-width: 210px !important;
+  }
+  /* Cift rozet varsa ilk kucuk rozeti gizle, tek temiz yuvarlak arma kalsin */
+  table td:nth-child(2) .krd-mini-badge,
+  table td:nth-child(2) span[style*="border-radius:6px"]:first-child,
+  table td:nth-child(2) span[style*="border-radius: 6px"]:first-child {
+    display: none !important;
+  }
+  /* Takim ismi + rozet satirini asagi kirmadan tek satirda tut */
+  table td:nth-child(2) > div:first-child {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    gap: 7px !important;
+  }
+  table td:nth-child(2) strong,
+  table td:nth-child(2) b,
+  table td:nth-child(2) a {
+    font-size: 13.5px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 135px !important;
+    display: inline-block !important;
+  }
+  /* Parlak sari rozetlerde yazinin okunmasi icin golge */
+  table td:nth-child(2) span {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75) !important;
+  }
+
+  /* 4. Sag alt yuzen butonlar (Bildirimler Acik, Sohbet ve Yukari Cik oku) cakisma onleme */
+  #krdPushBtn {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    border-radius: 12px !important;
+  }
+  button[title*="Yukarı"], button[aria-label*="Yukarı"], #backToTop, .back-to-top, [class*="scroll-top"] {
+    bottom: 66px !important;
+    right: 14px !important;
+    z-index: 9985 !important;
+  }
+}
+</style>
 </head><body><div id="goal">GOL!</div><div class="wrap" id="app"></div><div id="toast"></div>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
