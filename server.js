@@ -613,31 +613,46 @@ const u = new URL(req.url, 'http://x');
     }
   }
   if (req.method === 'GET' && u.pathname === '/api/krd-mega-data') {
-    const pRow = await get(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_predictions');
-    const hRow = await get(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_hof_archive');
-    let predictions = {}, archive = [];
-    try { if (pRow && pRow.v) predictions = JSON.parse(pRow.v); } catch {}
-    try { if (hRow && hRow.v) archive = JSON.parse(hRow.v); } catch {}
-    return send(res, 200, { ok: 1, predictions, archive });
+    try {
+      const pRes = await pool.query(`SELECT v FROM ${SETTINGS} WHERE k=$1`, ['krd_predictions']);
+      const hRes = await pool.query(`SELECT v FROM ${SETTINGS} WHERE k=$1`, ['krd_hof_archive']);
+      let predictions = {}, archive = [];
+      try { if (pRes.rows && pRes.rows[0] && pRes.rows[0].v) predictions = JSON.parse(pRes.rows[0].v); } catch {}
+      try { if (hRes.rows && hRes.rows[0] && hRes.rows[0].v) archive = JSON.parse(hRes.rows[0].v); } catch {}
+      return send(res, 200, { ok: 1, predictions, archive });
+    } catch {
+      return send(res, 200, { ok: 1, predictions: {}, archive: [] });
+    }
   }
   if (req.method === 'POST' && u.pathname === '/api/krd-predict') {
-    const b = await body(req);
-    const nick = String(b.nick || '').trim().slice(0, 24);
-    const matchId = Number(b.matchId), hs = Math.max(0, Math.min(99, Number(b.hs))), aws = Math.max(0, Math.min(99, Number(b.aws)));
-    if (!nick || !matchId || Number.isNaN(hs) || Number.isNaN(aws)) return send(res, 400, { error: 'Geçersiz tahmin.' });
-    const mRow = await get(`SELECT played FROM ${MATCHES} WHERE id=$1`, matchId);
-    if (!mRow || mRow.played) return send(res, 400, { error: 'Bu maça tahmin yapılamaz.' });
-    let predictions = {};
-    await tx(async t => {
-      const pRow = await t.get(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_predictions');
-      try { if (pRow && pRow.v) predictions = JSON.parse(pRow.v); } catch {}
+    try {
+      const b = await body(req);
+      const nick = String(b.nick || '').trim().slice(0, 24);
+      const matchId = Number(b.matchId);
+      const hs = Math.max(0, Math.min(99, Number(b.hs)));
+      const aws = Math.max(0, Math.min(99, Number(b.aws)));
+      if (!nick || !matchId || Number.isNaN(hs) || Number.isNaN(aws)) {
+        return send(res, 400, { error: 'Geçersiz tahmin.' });
+      }
+      const mRes = await pool.query(`SELECT played FROM ${MATCHES} WHERE id=$1`, [matchId]);
+      const mRow = mRes.rows && mRes.rows[0];
+      if (!mRow || mRow.played) {
+        return send(res, 400, { error: 'Bu maça tahmin yapılamaz.' });
+      }
+      const pRes = await pool.query(`SELECT v FROM ${SETTINGS} WHERE k=$1`, ['krd_predictions']);
+      let predictions = {};
+      try {
+        if (pRes.rows && pRes.rows[0] && pRes.rows[0].v) predictions = JSON.parse(pRes.rows[0].v);
+      } catch {}
       if (!predictions[nick]) predictions[nick] = {};
       predictions[nick][String(matchId)] = { hs, aws, at: Date.now() };
-      await t.run(`DELETE FROM ${SETTINGS} WHERE k=$1`, 'krd_predictions');
-      await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES($1,$2)`, 'krd_predictions', JSON.stringify(predictions));
-    });
-    if (typeof notifyClients === 'function') notifyClients();
-    return send(res, 200, { ok: 1, predictions });
+      await pool.query(`DELETE FROM ${SETTINGS} WHERE k=$1`, ['krd_predictions']);
+      await pool.query(`INSERT INTO ${SETTINGS}(k,v) VALUES($1,$2)`, ['krd_predictions', JSON.stringify(predictions)]);
+      if (typeof notifyClients === 'function') notifyClients();
+      return send(res, 200, { ok: 1, predictions });
+    } catch (err) {
+      return send(res, 500, { error: 'Tahmin kayıt hatası: ' + (err.message || 'Bilinmiyor') });
+    }
   }
 
   
