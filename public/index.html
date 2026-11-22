@@ -3579,6 +3579,10 @@ events.onmessage = async () => {
   });
 
   setInterval(() => checkUpdates(false), 5000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') checkUpdates(false);
+  });
+  window.addEventListener('focus', () => checkUpdates(false));
 })();
 </script>
 </body></html>
