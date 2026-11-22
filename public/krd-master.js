@@ -53,6 +53,34 @@
     } catch {}
   }
 
+  
+  // === KRD_WAKE_AND_CLOCK ===
+  let _wakeTimer = setTimeout(() => {
+    if (window._krdLiveS) return;
+    const w = document.createElement('div');
+    w.id = 'krdWakeBanner';
+    w.style.cssText = 'position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:9999;background:#0f172a;color:#fde047;border:1px solid rgba(250,204,21,.45);padding:9px 15px;border-radius:999px;font-size:12px;font-weight:800;box-shadow:0 8px 24px rgba(0,0,0,.5);';
+    w.textContent = '⏳ Sunucu uyanıyor, canlı veriler yükleniyor...';
+    document.body.appendChild(w);
+  }, 2200);
+
+  function updateLastSyncBadge() {
+    const w = document.getElementById('krdWakeBanner');
+    if (w) w.remove();
+    clearTimeout(_wakeTimer);
+    const nav = document.getElementById('krdNavTabs');
+    if (!nav || isAdm()) return;
+    let clk = document.getElementById('krdSyncClock');
+    if (!clk) {
+      clk = document.createElement('span');
+      clk.id = 'krdSyncClock';
+      clk.style.cssText = 'margin-left:auto;padding:4px 8px;font-size:10.5px;font-weight:700;color:#94a3b8;white-space:nowrap;';
+      nav.appendChild(clk);
+    }
+    const d = new Date();
+    clk.textContent = '🕒 ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  }
+
   function injectStyles() {
     if (document.getElementById('krdMasterCleanCss')) return;
     const st = document.createElement('style');
@@ -787,7 +815,7 @@
     _isApplying = true;
     try {
       injectStyles();
-      ensurePersistentChrome();
+      ensurePersistentChrome(); updateLastSyncBadge();
       if (isAdm()) {
         renderAdminPanel();
       } else {

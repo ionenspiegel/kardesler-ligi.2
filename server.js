@@ -8,6 +8,23 @@ function pushAudit(action, detail) {
 // === KRD_MEGA_PACK_END ===
 'use strict';
 // KRD Ligi — takım tabanlı lig. Veritabanı: PostgreSQL (Neon), bağlantı: DATABASE_URL.
+
+// === KRD_SEC_GUARD ===
+const _krdRateMap = new Map();
+const _krdLoginFail = new Map();
+function krdCheckRate(ip, key, maxPerMin) {
+  const now = Date.now();
+  const k = ip + ':' + key;
+  const arr = (_krdRateMap.get(k) || []).filter(t => now - t < 60000);
+  if (arr.length >= maxPerMin) return false;
+  arr.push(now);
+  _krdRateMap.set(k, arr);
+  return true;
+}
+function krdGetIp(req) {
+  return String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '0.0.0.0').split(',')[0].trim();
+}
+
 const http = require('http'), fs = require('fs'), path = require('path'), crypto = require('crypto');
 const { Pool } = require('pg');
 let webpush = null; try { webpush = require('web-push'); } catch (e) { console.warn('web-push yuklenemedi:', e.message); }
@@ -622,6 +639,11 @@ const u = new URL(req.url, 'http://x');
       return send(res, 200, { ok: 1, predictions, archive });
     } catch {
       return send(res, 200, { ok: 1, predictions: {}, archive: [] });
+    }
+  }
+  if (req.method === 'POST' && ['/api/chat','/api/krd-predict','/api/krd-report'].includes(u.pathname)) {
+    if (!krdCheckRate(krdGetIp(req), u.pathname, 12)) {
+      return send(res, 429, { error: 'Çok hızlı işlem yapıyorsunuz, lütfen biraz bekleyin.' });
     }
   }
   if (req.method === 'POST' && u.pathname === '/api/krd-predict') {
