@@ -3473,7 +3473,9 @@ events.onmessage = async () => {
       updatePushButtons(true);
       alert('Bildirimler sıfırlandı ve başarıyla etkinleştirildi!');
     } catch (err) {
-      alert('Bildirim etkinleştirilemedi (' + (err && err.name ? err.name : 'Hata') + '). Sayfayı Chrome uygulamasında açıp tekrar deneyin.');
+      localStorage.setItem('krd_push_fallback', '1');
+      updatePushButtons(true);
+      alert('Google Push servisi engellendi (' + (err && err.name ? err.name : 'Hata') + ': ' + (err && err.message ? err.message : '') + '). Canlı sayfa içi bildirim modu aktif edildi!');
     }
   };
 
@@ -3511,6 +3513,36 @@ events.onmessage = async () => {
     if (document.body) obs.observe(document.body, { childList: true, subtree: true });
   });
   window.addEventListener('load', () => setTimeout(syncPushOnLoad, 700));
+})();
+</script>
+<script>
+(function(){
+  let lastSnap = '';
+  window.krdFallbackNotify = async function(title, body) {
+    try {
+      if (Notification.permission !== 'granted') return;
+      const reg = await navigator.serviceWorker.ready;
+      if (reg && reg.showNotification) {
+        await reg.showNotification(title, { body, icon: '/icon-192.png', badge: '/icon-192.png', tag: 'krd-live' });
+      } else {
+        new Notification(title, { body });
+      }
+    } catch {}
+  };
+  setInterval(async () => {
+    try {
+      if (localStorage.getItem('krd_push_fallback') !== '1' || Notification.permission !== 'granted') return;
+      const r = await fetch('/api/league?t=' + Date.now(), { cache: 'no-store' });
+      const d = await r.json();
+      const news = (d && d.settings && d.settings.custom_news) || '';
+      const played = Array.isArray(d && d.matches) ? d.matches.filter(m => m.played).map(m => m.id + ':' + m.hs + '-' + m.aws).join(',') : '';
+      const snap = news + '|' + played;
+      if (lastSnap && snap !== lastSnap) {
+        window.krdFallbackNotify('⚽ KRD Ligi Güncellemesi', 'Yeni maç skoru veya duyuru yayınlandı!');
+      }
+      lastSnap = snap;
+    } catch {}
+  }, 15000);
 })();
 </script>
 </body></html>
