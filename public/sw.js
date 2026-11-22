@@ -1,4 +1,4 @@
-﻿const CACHE = 'krd-ligi-v20261122navfix';
+﻿const CACHE = 'krd-ligi-v20261122both';
 const ASSETS = ['/', '/manifest.json', '/icon-192.png'];
 
 self.addEventListener('install', event => {

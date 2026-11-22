@@ -1,4 +1,80 @@
 ﻿(function () {
+
+  // === KRD_UNIFIED_STYLE_START ===
+  function injectUnifiedLayoutCss() {
+    let st = document.getElementById('krdUnifiedLayoutCss');
+    if (!st) {
+      st = document.createElement('style');
+      st.id = 'krdUnifiedLayoutCss';
+      document.head.appendChild(st);
+    }
+    st.textContent = `
+      html { overflow-anchor: none; }
+      #krdPinnedAnn {
+        box-sizing: border-box !important;
+        width: calc(100% - 24px) !important; max-width: 960px !important;
+        margin: 8px auto 6px !important; padding: 10px 14px !important; border-radius: 12px !important;
+        background: linear-gradient(90deg, rgba(234,88,12,.28), rgba(250,204,21,.2)) !important;
+        border: 1.5px solid rgba(250,204,21,.55) !important; color: #fef08a !important;
+        font-size: 13px !important; font-weight: 700 !important; text-align: left !important;
+      }
+      #krdNavTabs {
+        box-sizing: border-box !important;
+        position: sticky !important; top: 8px !important; z-index: 950 !important;
+        width: calc(100% - 24px) !important; max-width: 960px !important;
+        margin: 8px auto 12px !important;
+        display: flex !important; align-items: center !important; gap: 6px !important;
+        overflow-x: auto !important; scrollbar-width: none !important;
+        padding: 7px 8px !important; border-radius: 14px !important;
+        background: #0b1120 !important;
+        border: 1px solid rgba(56, 189, 248, 0.42) !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+      }
+      #krdNavTabs::-webkit-scrollbar { display: none; }
+      #krdNavTabs * { box-sizing: border-box !important; min-width: 0 !important; }
+      .krd-tab-btn {
+        flex: 0 0 auto !important; padding: 8px 13px !important; border-radius: 10px !important;
+        font-size: 12px !important; font-weight: 800 !important; cursor: pointer !important;
+        border: 1px solid rgba(148, 163, 184, 0.25) !important;
+        background: #131c31 !important; color: #cbd5e1 !important;
+        white-space: nowrap !important; user-select: none !important; margin: 0 !important;
+      }
+      .krd-tab-btn.active {
+        background: linear-gradient(135deg, #0284c7, #2563eb) !important;
+        color: #fff !important; border-color: #38bdf8 !important;
+      }
+      #krdDedicatedView {
+        box-sizing: border-box !important;
+        width: calc(100% - 24px) !important; max-width: 960px !important;
+        margin: 10px auto 18px !important;
+        display: grid !important; gap: 12px !important;
+      }
+      #krdDedicatedView * { box-sizing: border-box !important; min-width: 0 !important; }
+      .krd-clean-card {
+        background: rgba(15, 23, 42, 0.94) !important;
+        border: 1px solid rgba(148, 163, 184, 0.24) !important;
+        border-radius: 14px !important; padding: 14px 16px !important;
+        display: grid !important; gap: 10px !important; text-align: left !important;
+      }
+      .krd-adm-box, #krdMasterAdmBox {
+        box-sizing: border-box !important;
+        width: 100% !important; max-width: 960px !important;
+        margin: 16px auto !important;
+        background: rgba(15, 23, 42, 0.96) !important;
+        border: 1.5px solid rgba(250, 204, 21, 0.42) !important;
+        border-radius: 14px !important; padding: 15px 16px !important;
+        display: grid !important; gap: 11px !important;
+        text-align: left !important; overflow-x: hidden !important;
+      }
+      #krdMasterAdmBox * { box-sizing: border-box !important; min-width: 0 !important; }
+      #krdMasterAdmBox input[type="text"], #krdMasterAdmBox textarea {
+        width: 100% !important;
+      }
+    `;
+  }
+  injectUnifiedLayoutCss();
+  // === KRD_UNIFIED_STYLE_END ===
+
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[c]));
