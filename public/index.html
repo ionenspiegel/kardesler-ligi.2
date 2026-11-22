@@ -3487,6 +3487,7 @@ events.onmessage = async () => {
     }
 
     let fcmOk = false;
+    let fcmErr = '';
     try {
       if ('serviceWorker' in navigator && 'PushManager' in window) {
         const reg = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
@@ -3508,17 +3509,24 @@ events.onmessage = async () => {
             headers: { 'Content-Type': 'application/json', 'x-kl': '1' },
             body: JSON.stringify({ subscription: sub.toJSON ? sub.toJSON() : sub })
           });
-          if (saveRes.ok) fcmOk = true;
+          const saveData = await saveRes.json().catch(() => ({}));
+          if (saveRes.ok && saveData.ok) fcmOk = true;
+          else fcmErr = saveData.error || ('HTTP ' + saveRes.status);
         }
       }
-    } catch {}
+    } catch (e) {
+      fcmErr = (e && e.name ? e.name + ': ' : '') + (e && e.message ? e.message : String(e));
+    }
 
     localStorage.setItem('krd_push_on', '1');
     setBtnState(fcmOk ? '🔔 Bildirimler Açık' : '🔔 Canlı Bildirim Açık');
     await window.krdShowLocalNotice(
       '⚽ KRD Ligi Bildirim Testi',
-      fcmOk ? 'Sunucu push aboneliği bağlandı!' : 'Canlı sayfa bildirimi bağlandı!'
+      fcmOk ? 'Sunucu arka plan bildirimi aktif!' : ('Canlı mod aktif (' + (fcmErr || 'FCM kısıtlı') + ')')
     );
+    if (!fcmOk && fcmErr) {
+      alert('Sunucu arka plan push kaydı engellendi: ' + fcmErr + '\n\nNot: Telefonda Google Play Hizmetleri arka plan verisi kapalıysa veya sayfa uygulama içi pencerede açıldıysa bu hata oluşur.');
+    }
   };
 
   function bindBtns() {

@@ -460,7 +460,7 @@ async function initPush() { if (!webpush) return;
     priv = { v: keys.privateKey };
   }
   VAPID_PUBLIC = pub.v;
-  webpush.setVapidDetails('mailto:admin@krdligi.local', pub.v, priv.v);
+  webpush.setVapidDetails('mailto:admin@kardeslerligi.com', pub.v, priv.v);
 }
 
 async function sendPushAll(payload) {
@@ -835,7 +835,7 @@ const u = new URL(req.url, 'http://x');
       const row = await one(`SELECT v FROM ${SETTINGS} WHERE k='push_subs'`);
       let subs = [];
       try { subs = JSON.parse((row && row.v) || '[]'); } catch { subs = []; }
-      await sendPushAll({ title, body });
+      await sendPushAll({ title, body }); if (typeof notifyClients === "function") notifyClients();
       return send(res, 200, { ok: 1, count: subs.length });
     }
 
