@@ -1093,8 +1093,10 @@
 
 
 
-// --- KRD PES LIGI SEZON 2027: ANA SAYFA & TUM GORUNUMLER SENKRONIZASYONU ---
-(function krdFullHomeSeason2027Sync() {
+
+
+// --- KRD PES LIGI SEZON 2027: TEMIZ HUKMEN (3-0) & BUTON YERLESIMI ---
+(function krdCleanSeason2027Fix() {
   if (typeof window === 'undefined') return;
   const EXCLUDED = ['mert', 'omer', 'ömer'];
 
@@ -1103,127 +1105,67 @@
     return EXCLUDED.some(name => s.includes(name));
   }
 
-  function applyWalkoverToDom() {
-    // Tablo satirlari ve mac kartlarinda Mert/Omer gecen satir/kartlari isaretle ve 3-0 hükmen yaz
-    const rows = document.querySelectorAll('table tr, .match-row, .fixture-item, .match-card');
-    rows.forEach(el => {
-      if (el.dataset.krdWoApplied === '1') return;
+  function applyWalkoverOnlyToMatches() {
+    // Puan tablosu (table tr / standings) haric sadece mac/fikstur kartlarina uygula
+    const candidates = document.querySelectorAll('.match-row, .fixture-item, .match-card, .fixture-card, [class*="match"], [class*="fixture"]');
+    candidates.forEach(el => {
+      if (el.closest('table, .standings, .points-table, #krdSeason2027Box')) return;
+      if (el.dataset.krdWoClean === '1') return;
       const text = (el.textContent || '').trim();
       if (!text || !isExcl(text)) return;
 
-      el.dataset.krdWoApplied = '1';
+      el.dataset.krdWoClean = '1';
       el.style.borderLeft = '3px solid #22c55e';
 
-      // Skor alani varsa 3-0 hukmen etiketini ekle
-      const scoreEl = el.querySelector('.score, .skor, .match-score, td.score');
-      if (scoreEl && !scoreEl.textContent.includes('Hükmen')) {
-        scoreEl.textContent = scoreEl.textContent.trim() + ' (Hükmen 3-0)';
-      } else if (!el.querySelector('.krd-wo-badge')) {
+      if (!el.querySelector('.krd-wo-badge')) {
         const badge = document.createElement('span');
         badge.className = 'krd-wo-badge';
         badge.textContent = 'Hükmen 3-0';
-        badge.style.cssText = 'margin-left:6px;padding:2px 6px;border-radius:6px;font-size:11px;font-weight:700;background:rgba(34,197,94,0.18);color:#86efac;';
+        badge.style.cssText = 'display:inline-block;margin-left:6px;padding:2px 7px;border-radius:999px;font-size:11px;font-weight:700;background:rgba(34,197,94,0.18);color:#86efac;white-space:nowrap;';
         el.appendChild(badge);
       }
     });
+
+    // Puan tablosuna yanlislikla eklenmis eski .krd-wo-badge varsa temizle
+    document.querySelectorAll('table .krd-wo-badge, .standings .krd-wo-badge').forEach(b => b.remove());
   }
 
-  function buildRemainingSummary() {
-    const data = window.__KRD_DATA__ || {};
-    const matches = Array.isArray(data.matches) ? data.matches : [];
-    const players = data.players || data.teams || [];
-
-    if (window.KRD_SEASON_2027 && matches.length > 0) {
-      return window.KRD_SEASON_2027.getRemainingByPlayer(matches, players);
+  function fixFloatingButtons() {
+    // Sag alttaki yukari cik butonu ile Sohbet butonunun ust uste binmesini engelle
+    const chatFab = document.getElementById('krdChatFab');
+    if (chatFab) {
+      chatFab.style.position = 'fixed';
+      chatFab.style.right = '14px';
+      chatFab.style.bottom = '14px';
+      chatFab.style.zIndex = '998';
     }
-
-    // DOM'daki oynanmamis mac satirlarindan yedek kalan mac sayaci
-    const remMap = {};
-    const rows = document.querySelectorAll('table tr, .match-row, .fixture-item, .match-card');
-    rows.forEach(el => {
-      const txt = (el.textContent || '').trim();
-      if (!txt || isExcl(txt)) return;
-      const played = /\b\d+\s*[-:]\s*\d+\b/.test(txt) || /bitti|oynand/i.test(txt);
-      if (!played) {
-        const parts = txt.split(/\s+vs\s+|\s+-\s+|\n/i).map(s => s.trim()).filter(Boolean);
-        parts.slice(0, 2).forEach(p => {
-          const clean = p.replace(/[^a-zA-Z0-9çğıöşüÇĞİÖŞÜ _-]/g, '').trim();
-          if (clean && clean.length >= 2 && clean.length <= 24 && !isExcl(clean)) {
-            remMap[clean] = (remMap[clean] || 0) + 1;
-          }
-        });
+    const allBtns = Array.from(document.querySelectorAll('button, a'));
+    allBtns.forEach(btn => {
+      if (btn.id === 'krdChatFab') return;
+      const txt = (btn.textContent || '').trim();
+      const st = window.getComputedStyle(btn);
+      if ((txt === '↑' || txt === '▲' || /top|up|scroll/i.test(btn.id || '') || /top|up|scroll/i.test(btn.className || '')) && st.position === 'fixed') {
+        btn.style.right = '14px';
+        btn.style.bottom = '72px';
+        btn.style.zIndex = '999';
       }
     });
-    return remMap;
   }
 
-  function renderHomeOverview() {
-    const host = document.getElementById('app') || document.getElementById('main-content') || document.body;
-    if (!host) return;
-
-    let panel = document.getElementById('krdSeason2027Box');
-    if (!panel) {
-      panel = document.createElement('section');
-      panel.id = 'krdSeason2027Box';
-      panel.setAttribute('aria-label', 'Sezon 2027 Ana Sayfa Ozeti');
-      panel.style.cssText = 'margin:14px 0;padding:14px;border-radius:12px;background:rgba(17,24,39,0.92);color:#f9fafb;border:1px solid rgba(255,255,255,0.14);min-height:92px;';
-      // Mumkunse ust/orta ana sayfa akisina yerlestir
-      const firstBlock = host.firstElementChild;
-      if (firstBlock && firstBlock.nextElementSibling) {
-        host.insertBefore(panel, firstBlock.nextElementSibling);
-      } else {
-        host.prepend(panel);
-      }
-    }
-
-    const rem = buildRemainingSummary();
-    const entries = Object.entries(rem);
-
-    let listHtml = '';
-    if (entries.length > 0) {
-      listHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:10px;">' +
-        entries.map(([name, val]) => {
-          const count = Array.isArray(val) ? val.length : Number(val || 0);
-          return '<div style="padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.06);font-size:13px;">' +
-            '<strong>' + name + '</strong><br><span style="opacity:0.85;">' + (count > 0 ? count + ' kalan maç' : 'Kalan maç yok') + '</span>' +
-          '</div>';
-        }).join('') +
-      '</div>';
-    } else {
-      listHtml = '<p style="margin:8px 0 0;font-size:13px;opacity:0.88;">Mert ve Ömer maçları <strong>Hükmen 3-0</strong> işlendi; kalan fikstür satırları tarandıkça otomatik listelenir.</p>';
-    }
-
-    panel.innerHTML =
-      '<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;">' +
-        '<div style="font-weight:700;font-size:15px;">KRD PES LİGİ Sezon 2027 — Ana Sayfa Durumu</div>' +
-        '<span style="font-size:12px;padding:3px 8px;border-radius:999px;background:rgba(34,197,94,0.2);color:#86efac;">Mert &amp; Ömer: Hükmen 3-0</span>' +
-      '</div>' +
-      listHtml;
-  }
-
-  function syncAll() {
-    applyWalkoverToDom();
-    renderHomeOverview();
+  function runClean() {
+    applyWalkoverOnlyToMatches();
+    fixFloatingButtons();
   }
 
   window.addEventListener('load', () => {
-    syncAll();
-    setTimeout(syncAll, 600);
-    setTimeout(syncAll, 1600);
+    runClean();
+    setTimeout(runClean, 500);
+    setTimeout(runClean, 1500);
   });
 
   document.addEventListener('click', (e) => {
     if (e.target.closest('button, [role="tab"], .tab, .nav-item, a')) {
-      setTimeout(syncAll, 120);
+      setTimeout(runClean, 120);
     }
-  });
-
-  const obs = new MutationObserver(() => {
-    clearTimeout(window.__krdSyncTimer);
-    window.__krdSyncTimer = setTimeout(syncAll, 180);
-  });
-  window.addEventListener('DOMContentLoaded', () => {
-    const target = document.getElementById('main-content') || document.body;
-    if (target) obs.observe(target, { childList: true, subtree: true });
   });
 })();
