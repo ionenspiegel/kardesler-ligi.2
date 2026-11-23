@@ -1375,31 +1375,38 @@
   }
 
   function checkAdminUI() {
-    var isAdmin = (location.hash && location.hash.indexOf('admin') !== -1) ||
-                  !!document.getElementById('admSubVal') ||
-                  !!document.querySelector('[onclick*="saveAdminExtra"], [onclick*="/api/admin/"]');
     var box = document.getElementById('krdAdminTickerBox');
-    if (!isAdmin) {
+
+    // Sadece "Duyuru, Bakim & Kurallar" sekmesi acikken icinde gorunsun
+    var duyuruCard = null;
+    var headings = document.querySelectorAll('#main-content h2, #main-content h3, #main-content .sh');
+    for (var i = 0; i < headings.length; i++) {
+      var t = (headings[i].textContent || '').trim();
+      if (t.indexOf('Duyuru') !== -1 || t.indexOf('Bakım') !== -1 || t.indexOf('Kurallar') !== -1) {
+        duyuruCard = headings[i].closest('.card') || headings[i].parentElement;
+        break;
+      }
+    }
+
+    if (!duyuruCard) {
       if (box) box.remove();
       forceRedrawTicker();
       return;
     }
     if (box) return;
 
-    var target = document.getElementById('main-content') || document.getElementById('app');
-    if (!target) return;
-
     box = document.createElement('div');
     box.id = 'krdAdminTickerBox';
     box.className = 'card';
-    box.style.cssText = 'margin:10px 0 14px;padding:12px;border:1px solid rgba(56,189,248,0.45);background:rgba(15,23,42,0.92)';
+    box.style.cssText = 'margin:0 0 14px;padding:12px;border:1px solid rgba(56,189,248,0.45);background:rgba(15,23,42,0.92)';
     box.innerHTML =
       '<div style="font-weight:700;font-size:13px;color:#38bdf8;margin-bottom:6px">📡 Canlı Yayın Akışı Duyurusu</div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
         '<input id="admLiveTickerInp" type="text" maxlength="220" placeholder="Örn: Bu akşam 21:00 THXEDO - akifl38 derbisi canlı!" style="flex:1;min-width:200px;padding:8px 10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:13px">' +
         '<button id="admLiveTickerBtn" type="button" class="pri">Yayınla</button>' +
       '</div>';
-    target.insertBefore(box, target.firstChild);
+
+    duyuruCard.parentElement.insertBefore(box, duyuruCard);
 
     var inp = document.getElementById('admLiveTickerInp');
     var btn = document.getElementById('admLiveTickerBtn');
