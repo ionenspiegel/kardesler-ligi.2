@@ -1981,3 +1981,185 @@
     injectBulletinButton();
   }, 900);
 })();
+
+
+;(function(){
+  if (window.__krdFinalExtras) return;
+  window.__krdFinalExtras = true;
+
+  // 1. MAC SONUCU AFISI (PNG) OLUSTURUCU (IonenSpiegel Tarzi Mac Posteri)
+  function downloadMatchPoster(home, hs, as, away, weekInfo) {
+    var canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1080;
+    var ctx = canvas.getContext('2d');
+
+    // Arka plan stadyum gece degradeli
+    var bg = ctx.createLinearGradient(0, 0, 1080, 1080);
+    bg.addColorStop(0, '#070b14');
+    bg.addColorStop(0.5, '#0f2942');
+    bg.addColorStop(1, '#064e3b');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, 1080, 1080);
+
+    // Dis cerceve
+    ctx.strokeStyle = 'rgba(250, 204, 21, 0.55)';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(36, 36, 1008, 1008);
+
+    // Ust Baslik
+    ctx.fillStyle = '#facc15';
+    ctx.font = '900 26px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('KRD PES LİGİ • SEZON 2027 • MAÇ SONUCU', 540, 110);
+
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.fillText(weekInfo || 'RESMİ LİG KARŞILAŞMASI', 540, 152);
+
+    // Ev Sahibi ve Deplasman Rozetleri
+    function drawTeamBadge(name, cx, cy, color) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, 95, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.stroke();
+
+      var abbr = name.slice(0, 3).toUpperCase();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 44px sans-serif';
+      ctx.fillText(abbr, cx, cy + 15);
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 34px sans-serif';
+      ctx.fillText(name, cx, cy + 150);
+    }
+
+    drawTeamBadge(home, 250, 460, '#1e3a8a');
+    drawTeamBadge(away, 830, 460, '#991b1b');
+
+    // Orta Skor Kutusu
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+    ctx.fillRect(410, 385, 260, 145);
+    ctx.strokeStyle = '#10b981';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(410, 385, 260, 145);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '900 76px sans-serif';
+    ctx.fillText(hs + ' - ' + as, 540, 482);
+
+    // Kazanan Vurgusu
+    var bannerTxt = 'BERABERLİKLE SONUÇLANDI';
+    if (Number(hs) > Number(as)) bannerTxt = '🏆 KAZANAN: ' + home.toUpperCase();
+    else if (Number(as) > Number(hs)) bannerTxt = '🏆 KAZANAN: ' + away.toUpperCase();
+
+    ctx.fillStyle = 'rgba(16, 185, 129, 0.18)';
+    ctx.fillRect(140, 720, 800, 74);
+    ctx.fillStyle = '#34d399';
+    ctx.font = '900 28px sans-serif';
+    ctx.fillText(bannerTxt, 540, 767);
+
+    // Alt IonenSpiegel Imza
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.fillText('✦ YAPIMCI: İONENSPIEGEL (@ionenspiegel) • kardesler-ligi-2.onrender.com', 540, 980);
+
+    var a = document.createElement('a');
+    a.download = 'krd-' + home + '-' + hs + '-' + as + '-' + away + '.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  }
+
+  function bindMatchPosterButtons() {
+    document.querySelectorAll('button').forEach(function(btn) {
+      if ((btn.textContent || '').indexOf('Maç Sonucu Afişi') === -1 || btn.dataset.posterBound === '1') return;
+      btn.dataset.posterBound = '1';
+      btn.addEventListener('click', function(e) {
+        var card = btn.closest('.card') || btn.parentElement;
+        if (!card) return;
+        var txt = (card.textContent || '').replace(/\s+/g, ' ').trim();
+        var m = txt.match(/([A-Za-zÇĞİÖŞÜçğıöşü0-9_]+)\s+(\d+)\s*-\s*(\d+)\s+(?:Bitti[^A-Za-z0-9]*)?(?:H\d+\s*)?([A-Za-zÇĞİÖŞÜçğıöşü0-9_]+)/);
+        var weekM = txt.match(/Bitti\s*•?\s*(H\d+)/);
+        if (m) {
+          e.preventDefault();
+          e.stopPropagation();
+          downloadMatchPoster(m[1], m[2], m[3], m[4], weekM ? ('HAFTA ' + weekM[1].replace('H', '')) : '');
+        }
+      }, true);
+    });
+  }
+
+  // 2. HERKESIN KALAN MACI OZET CUBUGU (Siradaki Maclar ustunde aktif fikstur ozeti)
+  function renderRemainingSummaryBar() {
+    if (document.getElementById('krdRemainingBar')) return;
+    var headings = Array.from(document.querySelectorAll('h2, h3, .sh, div')).filter(function(el) {
+      return (el.textContent || '').trim() === 'Sıradaki Maçlar';
+    });
+    if (!headings.length) return;
+
+    var data = window.__lastLeagueData || window.DATA || {};
+    var matches = Array.isArray(data.matches) ? data.matches : [];
+    var remaining = matches.filter(function(m) {
+      if (!m || m.played) return false;
+      var h = String(m.home || m.h || ''), a = String(m.away || m.a || '');
+      // Hukmen tamamlanan Mert ve Omer maclarini aktif fiksturden ayir
+      if (/^(Mert|Ömer|Omer)$/i.test(h) || /^(Mert|Ömer|Omer)$/i.test(a)) return false;
+      return true;
+    });
+    if (!remaining.length) return;
+
+    var counts = {};
+    remaining.forEach(function(m) {
+      var h = m.home || m.h, a = m.away || m.a;
+      counts[h] = (counts[h] || 0) + 1;
+      counts[a] = (counts[a] || 0) + 1;
+    });
+
+    var pills = Object.keys(counts).sort(function(a, b){ return counts[b] - counts[a]; }).map(function(p) {
+      return '<span style="background:#1e293b;border:1px solid rgba(56,189,248,0.3);padding:4px 9px;border-radius:8px;font-size:11px;white-space:nowrap">' +
+        '<b>' + p + '</b>: <span style="color:#38bdf8;font-weight:700">' + counts[p] + ' maç</span>' +
+      '</span>';
+    }).join('');
+
+    var bar = document.createElement('div');
+    bar.id = 'krdRemainingBar';
+    bar.style.cssText = 'background:#0f172a;border:1px solid rgba(148,163,184,0.18);border-radius:12px;padding:10px 12px;margin:8px 0 12px';
+    bar.innerHTML =
+      '<div style="font-size:11px;font-weight:800;color:#10b981;margin-bottom:6px">📅 AKTİF KALAN MAÇ SAYILARI (TOPLAM ' + remaining.length + ' MAÇ)</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:6px">' + pills + '</div>';
+
+    var target = headings[0].closest('.sh') || headings[0];
+    target.parentElement.insertBefore(bar, target.nextSibling);
+  }
+
+  // 3. YONETICI PANELINDE "BITIR" BUTONUNA BASILDIGINDA CANLI AKISA OTOMATIK SKOR BILDIRIMI
+  function hookAdminFinishTicker() {
+    document.querySelectorAll('button').forEach(function(btn) {
+      if ((btn.textContent || '').trim() !== '✓ Bitir' || btn.dataset.tickerHooked === '1') return;
+      btn.dataset.tickerHooked = '1';
+      btn.addEventListener('click', function() {
+        var card = btn.closest('.card') || btn.parentElement;
+        if (!card) return;
+        var txt = (card.textContent || '').replace(/\s+/g, ' ').trim();
+        var m = txt.match(/([A-Za-zÇĞİÖŞÜçğıöşü0-9_]+)\s+(\d+)\s*-\s*(\d+)\s+(?:Bitti|Oynanmadı|H\d+)?[^A-Za-z0-9_]*([A-Za-zÇĞİÖŞÜçğıöşü0-9_]+)/);
+        if (m) {
+          var autoMsg = '⚽ MAÇ SONUCU: ' + m[1] + ' ' + m[2] + ' - ' + m[3] + ' ' + m[4] + ' (Puan durumu güncellendi!)';
+          fetch('/api/ticker', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: autoMsg })
+          }).catch(function(){});
+        }
+      });
+    });
+  }
+
+  setInterval(function() {
+    bindMatchPosterButtons();
+    renderRemainingSummaryBar();
+    hookAdminFinishTicker();
+  }, 900);
+})();
