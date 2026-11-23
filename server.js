@@ -1,15 +1,4 @@
 
-app.get('/ai-catalog.json', (req, res) => {
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader('Cache-Control', 'public, max-age=3600');
-  return res.sendFile(require('path').resolve(__dirname, 'public/ai-catalog.json'));
-});
-app.get('/llms.txt', (req, res) => {
-  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-  res.setHeader('Cache-Control', 'public, max-age=3600');
-  return res.sendFile(require('path').resolve(__dirname, 'public/llms.txt'));
-});
-
 // === KRD_MEGA_PACK_START ===
 const krdLoginGuard = new Map();
 const krdAuditTrail = [];
@@ -1051,3 +1040,15 @@ const u = new URL(req.url, 'http://x');
   server.listen(PORT, () => console.log(`KRD Ligi: http://localhost:${PORT}`));
 })();
 for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { server.close(); pool.end().finally(() => process.exit(0)); });
+
+
+app.get('/ai-catalog.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  return res.sendFile(path.resolve(__dirname, 'public/ai-catalog.json'));
+});
+app.get('/llms.txt', (req, res) => {
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  return res.sendFile(path.resolve(__dirname, 'public/llms.txt'));
+});
