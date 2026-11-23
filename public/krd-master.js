@@ -1461,3 +1461,74 @@
   setInterval(fetchTicker, 10000);
   setInterval(checkAdminUI, 600);
 })();
+
+
+;(function(){
+  if (window.__krdUiPolish) return;
+  window.__krdUiPolish = true;
+
+  function polishLayout() {
+    // 1. Ustteki sari bildirim zilini CANLI AKIS uzerinden alip sol alta sabitle
+    document.querySelectorAll('button, div').forEach(function(el) {
+      if (el.innerHTML && el.innerHTML.indexOf('🔔') !== -1 && el.offsetWidth > 0 && el.offsetWidth < 60 && el.offsetHeight < 60) {
+        el.style.position = 'fixed';
+        el.style.top = 'auto';
+        el.style.bottom = '16px';
+        el.style.left = '14px';
+        el.style.zIndex = '9999';
+      }
+    });
+
+    // 2. En Golcu Takim / Altin Ayakkabi gibi arka arkaya dizili istatistik kutularini 2x2 izgaraya cevir
+    var statTitles = ['En Golcü Takım', 'Altın Ayakkabı'];
+    document.querySelectorAll('div, section').forEach(function(parent) {
+      if (parent.children && parent.children.length >= 3 && parent.children.length <= 4) {
+        var firstTxt = parent.children[0].textContent || '';
+        if (statTitles.some(function(t){ return firstTxt.indexOf(t) !== -1; })) {
+          parent.style.display = 'grid';
+          parent.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
+          parent.style.gap = '8px';
+          Array.from(parent.children).forEach(function(card, idx) {
+            var colors = ['#10b981', '#38bdf8', '#f59e0b', '#a855f7'];
+            card.style.margin = '0';
+            card.style.background = '#0f172a';
+            card.style.border = '1px solid rgba(148,163,184,0.16)';
+            card.style.borderLeft = '3px solid ' + colors[idx % 4];
+            card.style.borderRadius = '12px';
+            card.style.padding = '10px 12px';
+          });
+        }
+      }
+    });
+
+    // 3. Simulator basligi ile "Tahmini Skor Gir" yazisinin sikismasini duzelt
+    document.querySelectorAll('div, button, summary').forEach(function(el) {
+      var txt = el.textContent || '';
+      if (txt.indexOf('Canlı Şampiyonluk & Averaj Simülatörü') !== -1 && txt.indexOf('Tahmini Skor Gir') !== -1 && el.children.length >= 2) {
+        el.style.display = 'flex';
+        el.style.flexDirection = 'column';
+        el.style.alignItems = 'flex-start';
+        el.style.gap = '4px';
+      }
+    });
+
+    // 4. Sag alttaki yukari cik okunu (↑) Sohbet butonunun uzerine cek (cakismasin)
+    document.querySelectorAll('button, a, div').forEach(function(el) {
+      var t = (el.textContent || '').trim();
+      if ((t === '↑' || t === '▲') && el.offsetWidth > 0 && el.offsetWidth < 55) {
+        el.style.position = 'fixed';
+        el.style.bottom = '74px';
+        el.style.right = '14px';
+        el.style.zIndex = '9995';
+      }
+      // En alttaki bos yuvarlak kapsulu gizle
+      if (t === '' && el.children.length === 0 && el.offsetHeight > 20 && el.offsetHeight < 55 && el.offsetWidth > 35 && el.offsetWidth < 90 && getComputedStyle(el).borderRadius !== '0px') {
+        var rect = el.getBoundingClientRect();
+        if (rect.top > 500) el.style.display = 'none';
+      }
+    });
+  }
+
+  polishLayout();
+  setInterval(polishLayout, 800);
+})();

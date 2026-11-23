@@ -1148,6 +1148,57 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   .mvp-bar, .news-bar { min-height: 46px !important; contain: layout style; }
 </style>
 
+
+<style id="krd-pro-theme">
+  body {
+    background: #070b14 !important;
+    color: #f8fafc !important;
+  }
+
+  /* Ust bar ve Stadyum gecisi hizalamasi */
+  .topbar, .hdr-top, header > div:first-child {
+    justify-content: space-between !important;
+  }
+
+  /* Hero karti daha tok ve modern renk gecisi */
+  .hero, .banner, [class*="hero"] {
+    background: linear-gradient(135deg, #064e3b 0%, #0f172a 55%, #1e1b4b 100%) !important;
+    border: 1px solid rgba(52, 211, 153, 0.25) !important;
+    border-radius: 16px !important;
+  }
+
+  /* 4'lu ve 3'lu istatistik kartlarini mobilde 2'li yan yana kompakt izgaraya al */
+  .stats, .kpis, .grid-stats, .stat-cards {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+  .stats > div, .kpis > div, .grid-stats > div, .stat-cards > div {
+    background: #0f172a !important;
+    border: 1px solid rgba(148, 163, 184, 0.14) !important;
+    border-radius: 12px !important;
+    padding: 10px 12px !important;
+    margin: 0 !important;
+  }
+
+  /* Kart yuzeylerini tek tona sabitle (yesil-mavi karisikligi bitsin) */
+  .card, .box, .panel, .sec {
+    background: #0f172a !important;
+    border: 1px solid rgba(148, 163, 184, 0.14) !important;
+    border-radius: 14px !important;
+  }
+
+  /* Puan tablosunda ilk soluk rozeti gizleyip tek net rozet birak */
+  table td .b:first-child + .b {
+    display: none !important;
+  }
+
+  /* En alttaki bos hayalet hap/kapsulu tamamen gizle */
+  body > button:empty, #app > button:empty, .wrap > button:empty, [class*="fab"]:empty, [class*="pill"]:empty {
+    display: none !important;
+  }
+</style>
+
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
@@ -3788,7 +3839,7 @@ events.onmessage = async () => {
 
 
 
-<script defer src="/krd-master.js?v=20261124_tabactive"></script>
+<script defer src="/krd-master.js?v=20261124_cleanui"></script>
 
 <script id="krdSilentLiveSync">
 (function(){
