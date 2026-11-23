@@ -1687,3 +1687,297 @@
   applyVisitorOnlyPolish();
   setInterval(applyVisitorOnlyPolish, 700);
 })();
+
+
+;(function(){
+  if (window.__krdProSuite) return;
+  window.__krdProSuite = true;
+
+  function normTr(s) {
+    return String(s || '').trim().replace(/İ/g, 'i').replace(/I/g, 'ı').toLocaleLowerCase('tr-TR');
+  }
+
+  // A. TAHMIN KRALI SIRALAMASINDA AYNI KISIYI TEK SATIRDA BIRLESTIR
+  function mergePredictionRows() {
+    var tables = document.querySelectorAll('table');
+    tables.forEach(function(tbl) {
+      var headTxt = (tbl.querySelector('thead') || tbl).textContent || '';
+      if (headTxt.indexOf('TAHMİNCİ') === -1 || headTxt.indexOf('OYNANAN') === -1) return;
+      var tbody = tbl.querySelector('tbody');
+      if (!tbody || tbody.dataset.merged === '1') return;
+
+      var rows = Array.from(tbody.querySelectorAll('tr'));
+      if (rows.length < 2) return;
+
+      var map = {};
+      rows.forEach(function(tr) {
+        var tds = tr.querySelectorAll('td');
+        if (tds.length < 3) return;
+        var rawName = (tds[1].textContent || '').replace(/👑/g, '').trim();
+        var key = normTr(rawName);
+        if (!key) return;
+        var count = parseInt((tds[2].textContent || '').replace(/\D/g, ''), 10) || 0;
+        var pts = tds[3] ? (parseInt((tds[3].textContent || '').replace(/\D/g, ''), 10) || 0) : null;
+
+        if (!map[key]) {
+          map[key] = { display: rawName, count: 0, pts: 0, hasPts: pts !== null };
+        }
+        if (/[İÇŞĞÜÖ]/.test(rawName)) map[key].display = rawName;
+        map[key].count += count;
+        if (pts !== null) map[key].pts += pts;
+      });
+
+      var list = Object.values(map).sort(function(a, b) {
+        if (a.hasPts && b.pts !== a.pts) return b.pts - a.pts;
+        return b.count - a.count;
+      });
+
+      tbody.innerHTML = list.map(function(item, idx) {
+        var crown = idx === 0 ? '👑 ' : '';
+        var rankStyle = idx === 0 ? 'background:#facc15;color:#0f172a;font-weight:800;' : 'background:#1e293b;color:#cbd5e1;';
+        var ptsCell = item.hasPts ? '<td style="text-align:right;font-weight:700;color:#10b981">' + item.pts + '</td>' : '';
+        return '<tr>' +
+          '<td><span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;font-size:12px;' + rankStyle + '">' + (idx + 1) + '</span></td>' +
+          '<td style="font-weight:600">' + crown + item.display + '</td>' +
+          '<td style="text-align:right;font-weight:700">' + item.count + '</td>' +
+          ptsCell +
+        '</tr>';
+      }).join('');
+      tbody.dataset.merged = '1';
+    });
+  }
+
+  // B. HAFTANIN DERBISI VURGUSU (Siradaki Maclar icindeki en kritik ust sira macina rozet ekle)
+  function highlightMatchOfTheWeek() {
+    var cards = document.querySelectorAll('.card, [class*="match"]');
+    var highlighted = false;
+    cards.forEach(function(card) {
+      if (highlighted || card.dataset.derbyChecked === '1') return;
+      var txt = card.textContent || '';
+      if (txt.indexOf('Hafta') !== -1 && (txt.indexOf('Berabere') !== -1 || txt.indexOf('İlk tahmini sen yap') !== -1)) {
+        card.dataset.derbyChecked = '1';
+        if (txt.indexOf('THXEDO') !== -1 || txt.indexOf('akifl38') !== -1 || txt.indexOf('Mustafa') !== -1) {
+          highlighted = true;
+          card.style.border = '1.5px solid rgba(245, 158, 11, 0.65)';
+          card.style.boxShadow = '0 0 22px rgba(245, 158, 11, 0.16)';
+          if (!card.querySelector('.krd-derby-badge')) {
+            var badge = document.createElement('div');
+            badge.className = 'krd-derby-badge';
+            badge.style.cssText = 'display:inline-flex;align-items:center;gap:6px;background:linear-gradient(90deg,#f59e0b,#ef4444);color:#fff;font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px;margin-bottom:8px;letter-spacing:0.4px';
+            badge.textContent = '🔥 HAFTANIN DERBİSİ • 2X PRESTİJ MAÇI';
+            card.insertBefore(badge, card.firstChild);
+          }
+        }
+      }
+    });
+  }
+
+  // C. TIKLANABILIR OYUNCU PROFIL KARTI (Puan tablosundaki isimlere tiklayinca detay modal acilir)
+  function openPlayerModal(playerName) {
+    var existing = document.getElementById('krdPlayerModal');
+    if (existing) existing.remove();
+
+    var data = window.__lastLeagueData || window.DATA || {};
+    var matches = Array.isArray(data.matches) ? data.matches : [];
+    var played = matches.filter(function(m) {
+      return m && m.played && (m.home === playerName || m.away === playerName || m.h === playerName || m.a === playerName);
+    });
+
+    var w = 0, d = 0, l = 0, gf = 0, ga = 0;
+    var recentHtml = '';
+    played.slice(-6).reverse().forEach(function(m) {
+      var h = m.home || m.h, a = m.away || m.a;
+      var hs = Number(m.hs != null ? m.hs : m.hg) || 0;
+      var as = Number(m.as != null ? m.as : m.ag) || 0;
+      var isHome = (h === playerName);
+      var myG = isHome ? hs : as, opG = isHome ? as : hs;
+      gf += myG; ga += opG;
+      var resBadge = '<span style="background:#64748b;color:#fff;padding:2px 6px;border-radius:5px;font-size:11px">B</span>';
+      if (myG > opG) { w++; resBadge = '<span style="background:#10b981;color:#fff;padding:2px 6px;border-radius:5px;font-size:11px">G</span>'; }
+      else if (myG < opG) { l++; resBadge = '<span style="background:#ef4444;color:#fff;padding:2px 6px;border-radius:5px;font-size:11px">M</span>'; }
+      else { d++; }
+
+      recentHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:#1e293b;border-radius:8px;margin-bottom:6px;font-size:12px">' +
+        '<span><b>' + h + '</b> ' + hs + ' - ' + as + ' <b>' + a + '</b></span>' + resBadge +
+      '</div>';
+    });
+
+    // Tum maclardan toplam istatistik hesapla (son 6 disindakiler dahil)
+    w = 0; d = 0; l = 0; gf = 0; ga = 0;
+    played.forEach(function(m) {
+      var h = m.home || m.h;
+      var hs = Number(m.hs != null ? m.hs : m.hg) || 0;
+      var as = Number(m.as != null ? m.as : m.ag) || 0;
+      var myG = (h === playerName) ? hs : as;
+      var opG = (h === playerName) ? as : hs;
+      gf += myG; ga += opG;
+      if (myG > opG) w++; else if (myG < opG) l++; else d++;
+    });
+
+    var winRate = played.length ? Math.round((w / played.length) * 100) : 0;
+
+    var modal = document.createElement('div');
+    modal.id = 'krdPlayerModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(2,6,23,0.82);backdrop-filter:blur(6px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px';
+    modal.innerHTML =
+      '<div style="width:100%;max-width:420px;background:#0f172a;border:1px solid rgba(56,189,248,0.4);border-radius:18px;padding:18px;color:#f8fafc;box-shadow:0 20px 50px rgba(0,0,0,0.6)">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
+          '<div><div style="font-size:11px;color:#38bdf8;font-weight:700">OYUNCU KARNESİ • SEZON 2027</div><h3 style="margin:2px 0 0;font-size:20px">' + playerName + '</h3></div>' +
+          '<button id="krdClosePlayerModal" style="background:#1e293b;color:#fff;border:none;width:32px;height:32px;border-radius:10px;font-size:16px;cursor:pointer">✕</button>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;text-align:center">' +
+          '<div style="background:#1e293b;padding:8px;border-radius:10px"><div style="font-size:10px;color:#94a3b8">MAÇ</div><b style="font-size:15px">' + played.length + '</b></div>' +
+          '<div style="background:#1e293b;padding:8px;border-radius:10px"><div style="font-size:10px;color:#94a3b8">G-B-M</div><b style="font-size:14px;color:#10b981">' + w + '-' + d + '-' + l + '</b></div>' +
+          '<div style="background:#1e293b;padding:8px;border-radius:10px"><div style="font-size:10px;color:#94a3b8">GOL</div><b style="font-size:14px;color:#38bdf8">' + gf + '/' + ga + '</b></div>' +
+          '<div style="background:#1e293b;padding:8px;border-radius:10px"><div style="font-size:10px;color:#94a3b8">GALİBİYET</div><b style="font-size:14px;color:#f59e0b">%' + winRate + '</b></div>' +
+        '</div>' +
+        '<div style="font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:8px">Son Maç Performansı</div>' +
+        (recentHtml || '<div style="font-size:12px;color:#64748b">Henüz oynanmış maç kaydı bulunamadı.</div>') +
+      '</div>';
+
+    document.body.appendChild(modal);
+    document.getElementById('krdClosePlayerModal').onclick = function() { modal.remove(); };
+    modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+  }
+
+  function bindStandingsClick() {
+    document.querySelectorAll('table tbody tr').forEach(function(tr) {
+      var tds = tr.querySelectorAll('td');
+      if (tds.length < 6 || tr.dataset.playerBound === '1') return;
+      var nameCell = tds[1];
+      if (!nameCell) return;
+      // Oyuncu adini ayikla
+      var raw = (nameCell.textContent || '').trim();
+      var clean = raw.replace(/^[A-ZÇĞİÖŞÜ]{2,4}\s+/, '').replace(/▲\d+|▼\d+|\d+G Seri|[GBM](?=\s|$)/g, '').trim().split(/\s+/)[0];
+      if (!clean || clean.length < 2) return;
+      tr.dataset.playerBound = '1';
+      nameCell.style.cursor = 'pointer';
+      nameCell.title = clean + ' oyuncu profilini aç';
+      nameCell.addEventListener('click', function() {
+        openPlayerModal(clean);
+      });
+    });
+  }
+
+  // D. İONENSPIEGEL SPOR GAZETESİ HAFTA BÜLTENİ PNG OLUŞTURUCU
+  function downloadNewspaperBulletin() {
+    var canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1350;
+    var ctx = canvas.getContext('2d');
+
+    // Gazete kagit / gece manset arka plani
+    ctx.fillStyle = '#0b1120';
+    ctx.fillRect(0, 0, 1080, 1350);
+
+    // Ust Kirmizi-Altin Spor Gazetesi Masthead
+    var grad = ctx.createLinearGradient(0, 0, 1080, 0);
+    grad.addColorStop(0, '#991b1b');
+    grad.addColorStop(1, '#1e3a8a');
+    ctx.fillStyle = grad;
+    ctx.fillRect(40, 40, 1000, 150);
+
+    ctx.fillStyle = '#facc15';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.fillText('İONENSPIEGEL SPOR BÜLTENİ • RESMİ LİG ÖZETİ', 70, 90);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '900 52px sans-serif';
+    ctx.fillText('KRD PES LİGİ — SEZON 2027', 70, 155);
+
+    // Puan tablosundan ilk 5 sirayi oku
+    ctx.fillStyle = '#111827';
+    ctx.fillRect(40, 220, 1000, 520);
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(40, 220, 1000, 520);
+
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 28px sans-serif';
+    ctx.fillText('🏆 ZİRVE YARIŞI (İLK 5)', 70, 275);
+
+    var rows = Array.from(document.querySelectorAll('table tbody tr')).filter(function(r){ return r.querySelectorAll('td').length >= 6; }).slice(0, 5);
+    rows.forEach(function(tr, i) {
+      var tds = tr.querySelectorAll('td');
+      var y = 345 + (i * 76);
+      ctx.fillStyle = i === 0 ? 'rgba(250, 204, 21, 0.14)' : 'rgba(30, 41, 59, 0.7)';
+      ctx.fillRect(65, y - 42, 950, 60);
+
+      var pName = (tds[1].textContent || '').replace(/^[A-ZÇĞİÖŞÜ]{2,4}\s+/, '').replace(/▲\d+|▼\d+|\d+G Seri/g, '').trim().split(/\s+/)[0];
+      var o = (tds[2] && tds[2].textContent || '').trim();
+      var g = (tds[3] && tds[3].textContent || '').trim();
+      var pts = (tds[tds.length - 1] && tds[tds.length - 1].textContent || '').trim();
+
+      ctx.fillStyle = i === 0 ? '#facc15' : '#ffffff';
+      ctx.font = 'bold 30px sans-serif';
+      ctx.fillText((i + 1) + '.  ' + pName, 90, y);
+
+      ctx.fillStyle = '#cbd5e1';
+      ctx.font = '24px sans-serif';
+      ctx.fillText('O: ' + o + '   G: ' + g, 580, y);
+
+      ctx.fillStyle = '#10b981';
+      ctx.font = 'bold 32px sans-serif';
+      ctx.fillText(pts + ' P', 860, y);
+    });
+
+    // Canli Yayin Akisi / Manset Kutusu
+    ctx.fillStyle = '#111827';
+    ctx.fillRect(40, 770, 1000, 390);
+    ctx.strokeStyle = '#ef4444';
+    ctx.strokeRect(40, 770, 1000, 390);
+
+    ctx.fillStyle = '#ef4444';
+    ctx.font = 'bold 28px sans-serif';
+    ctx.fillText('📰 HAFTANIN MANŞETİ & CANLI AKIŞ', 70, 825);
+
+    var tickerTxt = (window.__krdLiveTickerVal || 'KRD PES Ligi Sezon 2027 heyecanı tüm hızıyla devam ediyor!').trim();
+    ctx.fillStyle = '#f8fafc';
+    ctx.font = 'bold 30px sans-serif';
+    var words = tickerTxt.split(' ');
+    var line = '', lineY = 895;
+    words.forEach(function(w) {
+      if ((line + w).length > 44) {
+        ctx.fillText(line, 70, lineY);
+        line = w + ' ';
+        lineY += 46;
+      } else {
+        line += w + ' ';
+      }
+    });
+    if (line) ctx.fillText(line, 70, lineY);
+
+    // Alt Imza
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.fillText('✦ YAPIMCI: İONENSPIEGEL (@ionenspiegel) • kardesler-ligi-2.onrender.com', 70, 1270);
+
+    var a = document.createElement('a');
+    a.download = 'ionenspiegel-krd-bulten.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  }
+
+  function injectBulletinButton() {
+    if (document.getElementById('krdBulletinBtn')) return;
+    var pngBtns = Array.from(document.querySelectorAll('button')).filter(function(b) {
+      return (b.textContent || '').indexOf('Puan Tablosunu PNG İndir') !== -1;
+    });
+    if (!pngBtns.length) return;
+    var targetBtn = pngBtns[0];
+    var btn = document.createElement('button');
+    btn.id = 'krdBulletinBtn';
+    btn.type = 'button';
+    btn.style.cssText = 'margin-top:8px;width:100%;padding:11px 14px;border-radius:12px;border:1px solid rgba(250,204,21,0.45);background:linear-gradient(90deg,#991b1b,#1e3a8a);color:#fff;font-weight:800;font-size:13px;cursor:pointer';
+    btn.textContent = '📰 İonenSpiegel Hafta Bülteni İndir (PNG)';
+    btn.onclick = downloadNewspaperBulletin;
+    targetBtn.parentElement.appendChild(btn);
+  }
+
+  setInterval(function() {
+    mergePredictionRows();
+    highlightMatchOfTheWeek();
+    bindStandingsClick();
+    injectBulletinButton();
+  }, 900);
+})();

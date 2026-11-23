@@ -573,6 +573,11 @@ function notifyClients() {
     catch { sseClients.delete(client); }
   }
 }
+
+function normNickTr(s) {
+  return String(s || '').trim().replace(/İ/g, 'i').replace(/I/g, 'ı').toLocaleLowerCase('tr-TR');
+}
+
 const server = http.createServer(async (req, res) => {
   if (req.url && req.url.split('?')[0] === '/api/ticker') {
     if (req.method === 'GET') {
@@ -715,7 +720,19 @@ const u = new URL(req.url, 'http://x');
       let predictions = {}, archive = [];
       try { if (pRes.rows && pRes.rows[0] && pRes.rows[0].v) predictions = JSON.parse(pRes.rows[0].v); } catch {}
       try { if (hRes.rows && hRes.rows[0] && hRes.rows[0].v) archive = JSON.parse(hRes.rows[0].v); } catch {}
-      return send(res, 200, { ok: 1, predictions, archive });
+      const mergedPreds = {};
+      for (const [rawNick, userMap] of Object.entries(predictions || {})) {
+        const key = normNickTr(rawNick);
+        if (!key) continue;
+        if (!mergedPreds[key]) mergedPreds[key] = { _display: rawNick.trim(), items: {} };
+        if (/[İÇŞĞÜÖ]/.test(rawNick)) mergedPreds[key]._display = rawNick.trim();
+        Object.assign(mergedPreds[key].items, userMap || {});
+      }
+      const cleanPredictions = {};
+      for (const obj of Object.values(mergedPreds)) {
+        cleanPredictions[obj._display] = obj.items;
+      }
+      return send(res, 200, { ok: 1, predictions: cleanPredictions, archive });
     } catch {
       return send(res, 200, { ok: 1, predictions: {}, archive: [] });
     }
