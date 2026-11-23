@@ -1089,3 +1089,58 @@
     } catch (_) {}
   });
 })();
+
+
+// --- KRD PES LIGI SEZON 2027: EKRAN PANELI ---
+(function krdRenderSeason2027Panel() {
+  if (typeof window === 'undefined') return;
+
+  function renderPanel() {
+    const host = document.getElementById('app') || document.getElementById('main-content') || document.body;
+    if (!host || document.getElementById('krdSeason2027Box')) return;
+
+    const data = window.__KRD_DATA__ || {};
+    const matches = Array.isArray(data.matches) ? data.matches : [];
+    const players = data.players || data.teams || [];
+
+    const box = document.createElement('section');
+    box.id = 'krdSeason2027Box';
+    box.setAttribute('aria-label', 'Sezon 2027 Kalan Maclar ve Hukmen');
+    box.style.cssText = 'margin:16px 0;padding:12px;border-radius:10px;background:rgba(20,24,33,0.9);color:#f3f4f6;border:1px solid rgba(255,255,255,0.12);font-size:14px;';
+
+    const title = document.createElement('div');
+    title.style.cssText = 'font-weight:700;margin-bottom:8px;';
+    title.textContent = 'Sezon 2027 — Hukmen (3-0) & Kalan Maclar';
+    box.appendChild(title);
+
+    if (window.KRD_SEASON_2027 && matches.length > 0) {
+      const remMap = window.KRD_SEASON_2027.getRemainingByPlayer(matches, players);
+      const keys = Object.keys(remMap);
+      if (keys.length > 0) {
+        const ul = document.createElement('ul');
+        ul.style.cssText = 'margin:0;padding-left:18px;display:grid;gap:4px;';
+        keys.forEach(k => {
+          const li = document.createElement('li');
+          const count = remMap[k].length;
+          li.textContent = k + ': ' + (count > 0 ? count + ' kalan mac' : 'Kalan mac yok');
+          ul.appendChild(li);
+        });
+        box.appendChild(ul);
+      } else {
+        const p = document.createElement('p');
+        p.style.cssText = 'margin:0;opacity:0.85;';
+        p.textContent = 'Mert ve Omer maclari 3-0 hukmen kurali aktif; aktif oyuncu kalan maclari senkronize ediliyor.';
+        box.appendChild(p);
+      }
+    } else {
+      const p = document.createElement('p');
+      p.style.cssText = 'margin:0;opacity:0.85;';
+      p.textContent = 'Sezon 2027 hukmen (3-0) ve kalan mac motoru hazir; lig verisi yuklendiginde otomatik guncellenir.';
+      box.appendChild(p);
+    }
+
+    host.appendChild(box);
+  }
+
+  window.addEventListener('load', () => setTimeout(renderPanel, 400));
+})();
