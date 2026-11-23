@@ -1097,6 +1097,49 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   main#main-content { min-height: 90vh; contain: layout style; }
 </style>
 
+
+<style id="krd-mobile-ui-fix">
+  /* 1. Bildirim zili butonunu CANLI AKIS seridinin uzerinden alip sol alta sabitle */
+  #krdPushBellBtn, #krdNotifBellBtn, .krd-bell-fab, button[aria-label*="Bildirim"], button[title*="Bildirim"] {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 18px !important;
+    left: 16px !important;
+    z-index: 9990 !important;
+  }
+
+  /* 2. Ust sabit bar (KRD LIGI / Stadyum) sola-saga dengeli hizalama */
+  .krd-sticky-top, .top-nav-bar, .sticky-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  /* 3. Canli Sampiyonluk & Averaj Simulatoru baslik ve 'Tahmini Skor Gir' sikismasini coz */
+  @media (max-width: 600px) {
+    .sim-header, .simulator-header, [id*="sim"] > .card-head, [class*="sim"] > .head {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 6px !important;
+    }
+    /* 4. Yukari cik butonu Sohbet butonunun ustune binmesin */
+    #scrollTopBtn, .scroll-top-btn, button[aria-label*="Yukarı"], button[title*="Yukarı"] {
+      bottom: 78px !important;
+      right: 16px !important;
+      z-index: 9985 !important;
+    }
+  }
+
+  /* 5. En alttaki bos hayalet hap/kapsul butonunu gizle */
+  button:empty, .fab-placeholder:empty, .floating-pill:empty {
+    display: none !important;
+  }
+</style>
+
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
