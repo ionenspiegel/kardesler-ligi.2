@@ -1254,7 +1254,11 @@
     });
 
     if (items.length === 0) {
-      items.push('<span class="krd-tick-item krd-tick-live"><span class="krd-dot-live"></span> KRD PES LİGİ SEZON 2027 CANLI YAYIN AKIŞI AKTİF</span>');
+      var _ct = (window.__krdLiveTickerVal || '').trim();
+    if (_ct) {
+      items.unshift('<span class="krd-tick-item krd-tick-live"><span class="krd-dot-live"></span> 📢 ' + _ct.replace(/[<>&]/g, '') + '</span>');
+    }
+    items.push('<span class="krd-tick-item krd-tick-live"><span class="krd-dot-live"></span> KRD PES LİGİ SEZON 2027 CANLI YAYIN AKIŞI AKTİF</span>');
     }
 
     const hero = Array.from(document.querySelectorAll('section, div')).find(el =>
@@ -1336,16 +1340,28 @@
 
 
 
+
+
 ;(function(){
   window.__krdLiveTickerVal = '';
 
-  function refreshTickerNow() {
+  function forceRedrawTicker() {
     if (typeof renderLiveMatchTicker === 'function') {
-      try { renderLiveMatchTicker(window.__lastLeagueData || {}); } catch(e) {}
+      try { renderLiveMatchTicker(window.__lastLeagueData || window.DATA || {}); } catch(e) {}
     }
+    // Eger renderLiveMatchTicker henuz veri bekleme asamasindaysa DOM'daki mevcut seride de aninda bas
+    var txt = (window.__krdLiveTickerVal || '').trim();
+    var tracks = document.querySelectorAll('#krdLiveTickerBar .krd-ticker-track');
+    tracks.forEach(function(tr){
+      if (!txt) return;
+      if (tr.innerHTML.indexOf(txt.replace(/[<>&]/g, '')) === -1) {
+        var span = '<span class="krd-tick-item krd-tick-live"><span class="krd-dot-live"></span> 📢 ' + txt.replace(/[<>&]/g, '') + '</span><span class="krd-tick-sep">✦</span>';
+        tr.innerHTML = span + tr.innerHTML;
+      }
+    });
   }
 
-  function loadTickerFromServer() {
+  function fetchTicker() {
     fetch('/api/ticker?_=' + Date.now())
       .then(function(r){ return r.json(); })
       .then(function(d){
@@ -1353,28 +1369,27 @@
           window.__krdLiveTickerVal = d.text;
           var inp = document.getElementById('admLiveTickerInp');
           if (inp && document.activeElement !== inp) inp.value = d.text;
-          refreshTickerNow();
+          forceRedrawTicker();
         }
       }).catch(function(){});
   }
 
-  function manageAdminTickerBox() {
-    var isAdminView = (location.hash && location.hash.indexOf('admin') !== -1) ||
-                      !!document.getElementById('admSubVal') ||
-                      !!document.querySelector('[onclick*="saveAdminExtra"], [onclick*="/api/admin/"]');
-    var existing = document.getElementById('krdAdminTickerBox');
-
-    // Yonetici ekranindan cikildiysa kutuyu kaldir
-    if (!isAdminView) {
-      if (existing) existing.remove();
+  function checkAdminUI() {
+    var isAdmin = (location.hash && location.hash.indexOf('admin') !== -1) ||
+                  !!document.getElementById('admSubVal') ||
+                  !!document.querySelector('[onclick*="saveAdminExtra"], [onclick*="/api/admin/"]');
+    var box = document.getElementById('krdAdminTickerBox');
+    if (!isAdmin) {
+      if (box) box.remove();
+      forceRedrawTicker();
       return;
     }
-    if (existing) return;
+    if (box) return;
 
     var target = document.getElementById('main-content') || document.getElementById('app');
     if (!target) return;
 
-    var box = document.createElement('div');
+    box = document.createElement('div');
     box.id = 'krdAdminTickerBox';
     box.className = 'card';
     box.style.cssText = 'margin:10px 0 14px;padding:12px;border:1px solid rgba(56,189,248,0.45);background:rgba(15,23,42,0.92)';
@@ -1384,7 +1399,6 @@
         '<input id="admLiveTickerInp" type="text" maxlength="220" placeholder="Örn: Bu akşam 21:00 THXEDO - akifl38 derbisi canlı!" style="flex:1;min-width:200px;padding:8px 10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:13px">' +
         '<button id="admLiveTickerBtn" type="button" class="pri">Yayınla</button>' +
       '</div>';
-
     target.insertBefore(box, target.firstChild);
 
     var inp = document.getElementById('admLiveTickerInp');
@@ -1403,7 +1417,7 @@
       .then(function(r){ return r.json(); })
       .then(function(res){
         window.__krdLiveTickerVal = (res && typeof res.text === 'string') ? res.text : v;
-        refreshTickerNow();
+        forceRedrawTicker();
         btn.textContent = 'Yayınlandı ✓';
         setTimeout(function(){ btn.textContent = 'Yayınla'; btn.disabled = false; }, 1200);
       })
@@ -1414,6 +1428,7 @@
     };
   }
 
-  loadTickerFromServer();
-  setInterval(manageAdminTickerBox, 600);
+  fetchTicker();
+  setInterval(fetchTicker, 10000);
+  setInterval(checkAdminUI, 600);
 })();
