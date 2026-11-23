@@ -1,0 +1,4 @@
+﻿User-agent: *
+Allow: /
+Disallow: /api/
+Sitemap: https://kardesler-ligi-2.onrender.com/sitemap.xml
