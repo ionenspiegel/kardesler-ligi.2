@@ -910,3 +910,55 @@
   });
   setTimeout(pollMaintenanceStatus, 800);
 })();
+
+
+// --- KRD LIGI MOBIL PERFORMANS & LIG YARDIMCILARI ---
+(function krdPerfGuard() {
+  if (typeof window === 'undefined') return;
+  window.KRD_PERF = {
+    isMobile: () => window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent),
+    debounce(fn, wait = 150) {
+      let t;
+      return function (...args) {
+        clearTimeout(t);
+        t = setTimeout(() => fn.apply(this, args), wait);
+      };
+    }
+  };
+
+  // Kalan maclar ve hukmen (3-0) hesaplama yardimcisi
+  window.krdComputeRemainingAndWalkover = function (matches, teams, excludedPlayers = ['Mert', 'Omer', 'Ömer']) {
+    const excl = new Set(excludedPlayers.map(x => String(x).toLowerCase()));
+    const list = Array.isArray(matches) ? matches : [];
+    const remainingByPlayer = {};
+    (teams || []).forEach(t => {
+      const name = typeof t === 'string' ? t : (t.name || t.team || '');
+      if (name && !excl.has(name.toLowerCase())) remainingByPlayer[name] = [];
+    });
+
+    const normalized = list.map(m => {
+      const home = m.home || m.ev || '';
+      const away = m.away || m.dep || '';
+      const homeExcluded = excl.has(String(home).toLowerCase());
+      const awayExcluded = excl.has(String(away).toLowerCase());
+      let hGoals = m.homeGoals ?? m.evGol ?? null;
+      let aGoals = m.awayGoals ?? m.depGol ?? null;
+      let status = m.status || 'scheduled';
+
+      if ((homeExcluded || awayExcluded) && (hGoals === null || aGoals === null)) {
+        hGoals = homeExcluded ? 0 : 3;
+        aGoals = awayExcluded ? 0 : 3;
+        status = 'walkover';
+      }
+
+      const isPlayed = status === 'played' || status === 'walkover' || (hGoals !== null && aGoals !== null);
+      if (!isPlayed) {
+        if (remainingByPlayer[home]) remainingByPlayer[home].push(m);
+        if (remainingByPlayer[away]) remainingByPlayer[away].push(m);
+      }
+      return Object.assign({}, m, { home, away, homeGoals: hGoals, awayGoals: aGoals, status, isPlayed });
+    });
+
+    return { matches: normalized, remainingByPlayer };
+  };
+})();
