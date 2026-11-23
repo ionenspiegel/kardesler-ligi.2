@@ -1008,3 +1008,84 @@
     return { matches: normalized, remainingByPlayer };
   };
 })();
+
+
+// --- KRD PES LIGI SEZON 2027: HUKMEN 3-0 & HERKESIN KALAN MACI ---
+(function krdSeason2027Engine() {
+  if (typeof window === 'undefined') return;
+  const REMOVED_PLAYERS = new Set(['mert', 'omer', 'ömer']);
+
+  function normName(v) {
+    return String(v || '').trim();
+  }
+
+  function isRemoved(name) {
+    return REMOVED_PLAYERS.has(normName(name).toLowerCase());
+  }
+
+  window.KRD_SEASON_2027 = {
+    applyWalkovers(matches) {
+      return (Array.isArray(matches) ? matches : []).map(m => {
+        const home = normName(m.home || m.ev || m.teamA || m.p1);
+        const away = normName(m.away || m.dep || m.teamB || m.p2);
+        const hRem = isRemoved(home);
+        const aRem = isRemoved(away);
+
+        if (hRem || aRem) {
+          const homeGoals = hRem ? 0 : 3;
+          const awayGoals = aRem ? 0 : 3;
+          return Object.assign({}, m, {
+            home,
+            away,
+            homeGoals,
+            awayGoals,
+            evGol: homeGoals,
+            depGol: awayGoals,
+            played: true,
+            status: 'walkover',
+            walkover: true,
+            note: m.note || 'Hukmen (3-0)'
+          });
+        }
+
+        const hasScore = m.homeGoals !== undefined && m.homeGoals !== null && m.homeGoals !== '' &&
+                         m.awayGoals !== undefined && m.awayGoals !== null && m.awayGoals !== '';
+        return Object.assign({}, m, {
+          home,
+          away,
+          played: Boolean(m.played || hasScore || m.status === 'played' || m.status === 'walkover')
+        });
+      });
+    },
+
+    getRemainingByPlayer(matches, players) {
+      const processed = this.applyWalkovers(matches);
+      const map = {};
+      (players || []).forEach(p => {
+        const name = normName(typeof p === 'string' ? p : (p.name || p.player || p.team));
+        if (name && !isRemoved(name)) map[name] = [];
+      });
+
+      processed.forEach(m => {
+        if (m.played) return;
+        if (map[m.home]) map[m.home].push(m);
+        if (map[m.away]) map[m.away].push(m);
+      });
+
+      return map;
+    }
+  };
+
+  // Sayfa yuklendiginde mevcut lig verisi varsa hesaplayip window'a bagla
+  window.addEventListener('DOMContentLoaded', () => {
+    try {
+      if (window.__KRD_DATA__ && Array.isArray(window.__KRD_DATA__.matches)) {
+        window.__KRD_DATA__.matches = window.KRD_SEASON_2027.applyWalkovers(window.__KRD_DATA__.matches);
+        window.__KRD_DATA__.remainingByPlayer = window.KRD_SEASON_2027.getRemainingByPlayer(
+          window.__KRD_DATA__.matches,
+          window.__KRD_DATA__.players || window.__KRD_DATA__.teams || []
+        );
+      }
+    } catch (_) {}
+  });
+})();

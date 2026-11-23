@@ -914,6 +914,13 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   .announcement, .ticker, .news-bar, .mvp-bar { min-height: 44px; contain: layout; }
 </style>
 
+
+<style id="krd-cls-stable">
+  #main-content, #app { overflow-anchor: none; }
+  .announcement, .ticker, .news-bar, .mvp-bar, .tabs, .nav-tabs { min-height: 44px; contain: layout style; }
+  #krdChatFab { position: fixed !important; right: 16px; bottom: 16px; width: auto; min-height: 44px; }
+</style>
+
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main"><div class="wrap" id="app"></div><div id="toast"></div>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
