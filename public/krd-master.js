@@ -1377,28 +1377,46 @@
   function checkAdminUI() {
     var box = document.getElementById('krdAdminTickerBox');
 
-    // Sadece "Duyuru, Bakim & Kurallar" sekmesi acikken icinde gorunsun
-    var duyuruCard = null;
-    var headings = document.querySelectorAll('#main-content h2, #main-content h3, #main-content .sh');
-    for (var i = 0; i < headings.length; i++) {
-      var t = (headings[i].textContent || '').trim();
-      if (t.indexOf('Duyuru') !== -1 || t.indexOf('Bakım') !== -1 || t.indexOf('Kurallar') !== -1) {
-        duyuruCard = headings[i].closest('.card') || headings[i].parentElement;
+    // "Duyuru, Bakim & Kurallar" sekme butonunu bul
+    var btns = document.querySelectorAll('button, [role="tab"], .tab');
+    var duyuruBtn = null;
+    for (var i = 0; i < btns.length; i++) {
+      var txt = (btns[i].textContent || '').trim();
+      if (txt.indexOf('Duyuru') !== -1 && (txt.indexOf('Bakım') !== -1 || txt.indexOf('Kurallar') !== -1)) {
+        duyuruBtn = btns[i];
         break;
       }
     }
 
-    if (!duyuruCard) {
+    if (!duyuruBtn) {
       if (box) box.remove();
       forceRedrawTicker();
       return;
     }
+
+    // Sekme butonunun aktif olup olmadigini kontrol et (class veya aria-selected veya renk/arka plan)
+    var isActive = duyuruBtn.classList.contains('active') ||
+                   duyuruBtn.classList.contains('pri') ||
+                   duyuruBtn.classList.contains('sel') ||
+                   duyuruBtn.getAttribute('aria-selected') === 'true' ||
+                   (duyuruBtn.style && duyuruBtn.style.background && duyuruBtn.style.background.indexOf('transparent') === -1);
+
+    // Eger sekme pasifse kutuyu kaldir
+    if (!isActive) {
+      if (box) box.remove();
+      return;
+    }
     if (box) return;
+
+    // Sekme cubugunun hemen altindaki icerik alanini bul
+    var tabBar = duyuruBtn.parentElement;
+    var mountParent = (tabBar && tabBar.parentElement) || document.getElementById('main-content') || document.getElementById('app');
+    if (!mountParent) return;
 
     box = document.createElement('div');
     box.id = 'krdAdminTickerBox';
     box.className = 'card';
-    box.style.cssText = 'margin:0 0 14px;padding:12px;border:1px solid rgba(56,189,248,0.45);background:rgba(15,23,42,0.92)';
+    box.style.cssText = 'margin:12px 0 14px;padding:12px;border:1px solid rgba(56,189,248,0.45);background:rgba(15,23,42,0.92)';
     box.innerHTML =
       '<div style="font-weight:700;font-size:13px;color:#38bdf8;margin-bottom:6px">📡 Canlı Yayın Akışı Duyurusu</div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
@@ -1406,7 +1424,11 @@
         '<button id="admLiveTickerBtn" type="button" class="pri">Yayınla</button>' +
       '</div>';
 
-    duyuruCard.parentElement.insertBefore(box, duyuruCard);
+    if (tabBar && tabBar.nextSibling) {
+      mountParent.insertBefore(box, tabBar.nextSibling);
+    } else {
+      mountParent.appendChild(box);
+    }
 
     var inp = document.getElementById('admLiveTickerInp');
     var btn = document.getElementById('admLiveTickerBtn');
