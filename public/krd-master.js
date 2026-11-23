@@ -1365,16 +1365,17 @@
   function mountAdminTickerBox() {
     window.__applyKrdTicker();
     if (document.getElementById('krdAdminTickerBox')) return;
-    var subEl = document.getElementById('admSubVal');
-    if (!subEl) return;
-    var statsCard = subEl.closest('.card');
-    var statsGrid = statsCard && statsCard.parentElement;
-    if (!statsGrid || !statsGrid.parentElement) return;
+    var isAdminView = (location.hash && location.hash.indexOf('admin') !== -1) ||
+                      document.getElementById('admSubVal') ||
+                      document.querySelector('[onclick*="saveAdminExtra"], [onclick*="/api/admin/"]');
+    if (!isAdminView) return;
+    var target = document.getElementById('main-content') || document.getElementById('app') || document.body;
+    if (!target) return;
 
     var box = document.createElement('div');
     box.id = 'krdAdminTickerBox';
     box.className = 'card';
-    box.style.cssText = 'margin:10px 0 14px;padding:12px;border:1px solid rgba(56,189,248,0.35)';
+    box.style.cssText = 'margin:10px 0 14px;padding:12px;border:1px solid rgba(56,189,248,0.45);background:rgba(15,23,42,0.92)';
     box.innerHTML =
       '<div style="font-weight:700;font-size:13px;color:#38bdf8;margin-bottom:6px">📡 Canlı Yayın Akışı Duyurusu</div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
@@ -1382,7 +1383,7 @@
         '<button id="admLiveTickerBtn" type="button" class="pri">Yayınla</button>' +
       '</div>';
 
-    statsGrid.parentElement.insertBefore(box, statsGrid.nextSibling);
+    target.insertBefore(box, target.firstChild);
 
     var inp = document.getElementById('admLiveTickerInp');
     inp.value = (window.KRD_EXTRAS && window.KRD_EXTRAS.live_ticker) || window.__krdLiveTickerVal || '';
