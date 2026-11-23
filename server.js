@@ -574,41 +574,35 @@ function notifyClients() {
   }
 }
 const server = http.createServer(async (req, res) => {
-
   if (req.url && req.url.split('?')[0] === '/api/ticker') {
-    if (typeof global.__krdCustomTicker !== 'string') global.__krdCustomTicker = '';
     if (req.method === 'GET') {
+      let text = '';
       try {
-        if (typeof pool !== 'undefined' && pool) {
-          await pool.query('CREATE TABLE IF NOT EXISTS krd_settings (k TEXT PRIMARY KEY, v TEXT)');
-          const r = await pool.query("SELECT v FROM krd_settings WHERE k='live_ticker'");
-          if (r.rows && r.rows[0]) global.__krdCustomTicker = r.rows[0].v || '';
-        }
-      } catch (e) {}
+        const r = await pool.query(`SELECT v FROM ${SETTINGS} WHERE k=$1`, ['live_ticker']);
+        if (r.rows && r.rows[0] && typeof r.rows[0].v === 'string') text = r.rows[0].v;
+      } catch (e) { console.error('Ticker GET hata:', e.message); }
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
-      return res.end(JSON.stringify({ ok: true, text: global.__krdCustomTicker }));
+      return res.end(JSON.stringify({ ok: true, text }));
     }
     if (req.method === 'POST') {
-      let body = '';
-      req.on('data', c => { body += c; });
+      let raw = '';
+      req.on('data', c => { raw += c; });
       req.on('end', async () => {
+        let text = '';
         try {
-          const parsed = JSON.parse(body || '{}');
-          global.__krdCustomTicker = String(parsed.text || '').trim().slice(0, 240);
-          if (typeof pool !== 'undefined' && pool) {
-            await pool.query('CREATE TABLE IF NOT EXISTS krd_settings (k TEXT PRIMARY KEY, v TEXT)');
-            await pool.query(
-              "INSERT INTO krd_settings (k, v) VALUES ('live_ticker', createServer(async (req, res) => {) ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v",
-              [global.__krdCustomTicker]
-            );
-          }
-        } catch (e) {}
+          const parsed = JSON.parse(raw || '{}');
+          text = String(parsed.text || '').trim().slice(0, 240);
+          await pool.query(`DELETE FROM ${SETTINGS} WHERE k=$1`, ['live_ticker']);
+          await pool.query(`INSERT INTO ${SETTINGS}(k,v) VALUES($1,$2)`, ['live_ticker', text]);
+        } catch (e) { console.error('Ticker POST hata:', e.message); }
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ ok: true, text: global.__krdCustomTicker }));
+        res.end(JSON.stringify({ ok: true, text }));
       });
       return;
     }
   }
+
+  
 
 
   
