@@ -1228,101 +1228,12 @@
 
   // 4) Gercek /api/league verisinden Mert & Omer 3-0 hukmen + Herkesin Kalan Maci ozetini cikar
   
+  
   function renderCleanRemainingCard(data) {
-    const matches = Array.isArray(data.matches) ? data.matches : (Array.isArray(data.fixtures) ? data.fixtures : []);
-    const teams = Array.isArray(data.teams) ? data.teams : (Array.isArray(data.players) ? data.players : []);
-    if (matches.length === 0 || teams.length === 0) return;
+    const oldCard = document.getElementById('krdCleanRemainingCard');
+    if (oldCard) oldCard.remove();
 
-    // Takim ID / kisaltma / isim haritasini kur
-    const lookup = new Map();
-    const remByPlayer = {};
-    teams.forEach((t, idx) => {
-      const name = String(typeof t === 'string' ? t : (t.name || t.player || t.username || t.team || t.title || '')).trim();
-      if (!name) return;
-      const keys = [
-        name,
-        name.toLowerCase(),
-        t.id,
-        String(t.id ?? ''),
-        t.code,
-        t.short,
-        t.abbr,
-        t.slug,
-        String(idx)
-      ].filter(v => v !== undefined && v !== null && String(v).trim() !== '');
-      keys.forEach(k => lookup.set(String(k).trim().toLowerCase(), name));
-      if (!isExcl(name)) remByPlayer[name] = [];
-    });
-
-    function resolveTeamName(raw) {
-      if (raw && typeof raw === 'object') {
-        raw = raw.name || raw.player || raw.username || raw.id || raw.code || '';
-      }
-      const key = String(raw ?? '').trim();
-      if (!key) return '';
-      return lookup.get(key.toLowerCase()) || key;
-    }
-
-    let walkoverCount = 0;
-    matches.forEach(m => {
-      const rawH = m.home ?? m.homeId ?? m.homeTeam ?? m.ev ?? m.evId ?? m.teamA ?? m.team1 ?? m.t1 ?? m.p1 ?? m.user1;
-      const rawA = m.away ?? m.awayId ?? m.awayTeam ?? m.dep ?? m.depId ?? m.teamB ?? m.team2 ?? m.t2 ?? m.p2 ?? m.user2;
-      const h = resolveTeamName(rawH);
-      const a = resolveTeamName(rawA);
-      if (!h || !a) return;
-
-      if (isExcl(h) || isExcl(a)) {
-        walkoverCount++;
-        return;
-      }
-
-      const hg = m.homeGoals ?? m.homeScore ?? m.evGol ?? m.score1 ?? m.g1;
-      const ag = m.awayGoals ?? m.awayScore ?? m.depGol ?? m.score2 ?? m.g2;
-      const hasScore = (hg !== undefined && hg !== null && String(hg).trim() !== '') &&
-                       (ag !== undefined && ag !== null && String(ag).trim() !== '');
-      const played = Boolean(m.played || m.isPlayed || m.finished || hasScore || m.status === 'played' || m.status === 'finished' || m.status === 'walkover');
-
-      if (!played) {
-        if (!remByPlayer[h]) remByPlayer[h] = [];
-        if (!remByPlayer[a]) remByPlayer[a] = [];
-        remByPlayer[h].push(a);
-        remByPlayer[a].push(h);
-      }
-    });
-
-    const entries = Object.entries(remByPlayer);
-    if (entries.length === 0) return;
-
-    const anchor = Array.from(document.querySelectorAll('div, section')).find(el =>
-      (el.textContent || '').includes('Canlı Şampiyonluk') || (el.textContent || '').includes('Kafa Kafaya (H2H)')
-    );
-    const parent = anchor ? anchor.parentElement : (document.getElementById('main-content') || document.body);
-    if (!parent) return;
-
-    let card = document.getElementById('krdCleanRemainingCard');
-    if (!card) {
-      card = document.createElement('section');
-      card.id = 'krdCleanRemainingCard';
-      card.style.cssText = 'margin:12px 0;padding:14px;border-radius:12px;background:rgba(17,24,39,0.92);color:#f9fafb;border:1px solid rgba(255,255,255,0.12);';
-      if (anchor) parent.insertBefore(card, anchor);
-      else parent.appendChild(card);
-    }
-
-    card.innerHTML =
-      '<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px;margin-bottom:10px;">' +
-        '<strong style="font-size:14px;">📋 Herkesin Kalan Maçı (Sezon 2027)</strong>' +
-        '<span style="font-size:11px;padding:3px 8px;border-radius:999px;background:rgba(34,197,94,0.18);color:#86efac;">Mert &amp; Ömer: ' + walkoverCount + ' Maç Hükmen 3-0</span>' +
-      '</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;">' +
-        entries.map(([player, opps]) =>
-          '<div style="padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.05);font-size:12px;">' +
-            '<div style="font-weight:700;color:#fff;">' + player + ' (' + opps.length + ' maç)</div>' +
-            '<div style="opacity:0.82;margin-top:3px;line-height:1.35;">' + (opps.length > 0 ? 'Kalan: ' + opps.join(', ') : 'Tüm maçlar tamamlandı') + '</div>' +
-          '</div>'
-        ).join('') +
-      '</div>';
-
-    // Sag alttaki yukari cik butonunu Sohbet butonunun ustune tasi
+    // Sag alttaki yukari cik butonunu Sohbet butonunun ustunde tut
     document.querySelectorAll('button, a').forEach(btn => {
       if (btn.id === 'krdChatFab') return;
       const txt = (btn.textContent || '').trim();
@@ -1332,7 +1243,10 @@
         btn.style.setProperty('z-index', '1050', 'important');
       }
     });
+
+    renderLiveMatchTicker(data);
   }
+
 
 
   let lastAnnouncement = '';
