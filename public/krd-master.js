@@ -1567,3 +1567,123 @@
   polishLayout();
   setInterval(polishLayout, 700);
 })();
+
+
+;(function(){
+  if (window.__krdSafeVisitorPolish) return;
+  window.__krdSafeVisitorPolish = true;
+
+  function isAdminScreen() {
+    if (location.hash && location.hash.indexOf('admin') !== -1) return true;
+    if (document.getElementById('admSubVal')) return true;
+    if (document.querySelector('[onclick*="saveAdminExtra"], [onclick*="/api/admin/"]')) return true;
+    if (document.body && document.body.textContent.indexOf('Notu Kaydet') !== -1) return true;
+    return false;
+  }
+
+  function applyVisitorOnlyPolish() {
+    var admin = isAdminScreen();
+    if (admin) {
+      document.body.classList.add('krd-admin-active');
+      return; // Yonetici ekranina HICBIR sekilde dokunma!
+    }
+    document.body.classList.remove('krd-admin-active');
+
+    // A. Ustteki sari bildirim zili butonunu CANLI AKIS uzerinden alip sol alta sabitle
+    document.querySelectorAll('button, a, div').forEach(function(el) {
+      var txt = (el.textContent || '').trim();
+      if (txt.length > 3) return;
+      var rect = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+      if (!rect) return;
+      var isTopLeftBell = (rect.top >= 65 && rect.top <= 175 && rect.left >= 0 && rect.left <= 55 &&
+                           rect.width >= 26 && rect.width <= 56 && rect.height >= 26 && rect.height <= 56);
+      if (isTopLeftBell || (el.id && (el.id.toLowerCase().indexOf('bell') !== -1 || el.id.toLowerCase().indexOf('push') !== -1) && rect.width < 60)) {
+        el.style.position = 'fixed';
+        el.style.top = 'auto';
+        el.style.bottom = '16px';
+        el.style.left = '14px';
+        el.style.zIndex = '9998';
+      }
+    });
+
+    // B. Istatistik kartlarini (En Golcu Takim & Altin Ayakkabi gruplari) 2'li izgaraya al, tek kalan son karti tam genislik yap
+    var groups = ['En Golcü Takım', 'Altın Ayakkabı'];
+    document.querySelectorAll('div, section').forEach(function(parent) {
+      if (!parent.children || parent.children.length < 3 || parent.children.length > 6) return;
+      var firstTxt = parent.children[0].textContent || '';
+      if (!groups.some(function(g){ return firstTxt.indexOf(g) !== -1; })) return;
+
+      parent.style.display = 'grid';
+      parent.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
+      parent.style.gap = '8px';
+      var kids = Array.from(parent.children);
+      var colors = ['#10b981', '#38bdf8', '#f59e0b', '#a855f7', '#ec4899'];
+      kids.forEach(function(card, idx) {
+        card.style.margin = '0';
+        card.style.background = '#0f172a';
+        card.style.border = '1px solid rgba(148,163,184,0.16)';
+        card.style.borderLeft = '3px solid ' + colors[idx % colors.length];
+        card.style.borderRadius = '12px';
+        card.style.padding = '10px 12px';
+        if (kids.length % 2 === 1 && idx === kids.length - 1) {
+          card.style.gridColumn = '1 / -1';
+        }
+      });
+    });
+
+    // C. Puan tablosundaki cift yuvarlak rozetlerden fazlaligi gizle
+    document.querySelectorAll('table td').forEach(function(td) {
+      var circleCount = 0;
+      td.querySelectorAll('span, div').forEach(function(b) {
+        var t = (b.textContent || '').trim();
+        if (/^[A-ZÇĞİÖŞÜ]{2,4}$/.test(t) && b.children.length === 0) {
+          circleCount++;
+          if (circleCount > 1) b.style.display = 'none';
+        }
+      });
+    });
+
+    // D. En altta tekrar eden ikinci H2H blokunu gizle (ortadaki tam H2H karti kalsin)
+    var h2hCount = 0;
+    document.querySelectorAll('div, section').forEach(function(el) {
+      var t = (el.textContent || '').trim();
+      if (t.indexOf('Kafa Kafaya (H2H) Rekabet & PNG Tablo İndir') === 0 && el.children.length <= 4) {
+        h2hCount++;
+        // Baslik satirini sadece "PNG Tablo Indir" olarak sadeleştir
+        var hdr = el.firstElementChild;
+        if (hdr && hdr.textContent.indexOf('Kafa Kafaya') !== -1) {
+          hdr.innerHTML = '📸 Puan Tablosunu Kaydet & Paylaş';
+        }
+      }
+    });
+
+    // E. 1v1 Tahmin Oyunu metin sarma, Simulator basligi ve Sag alt Yukari Cik (↑) konumu
+    document.querySelectorAll('div, p, span, button, a, summary').forEach(function(el) {
+      var txt = el.textContent || '';
+      if (txt.indexOf('1v1 Tahmin Oyunu') !== -1 && el.children.length <= 2) {
+        el.style.whiteSpace = 'normal';
+        el.style.wordBreak = 'break-word';
+      }
+      if (txt.indexOf('Canlı Şampiyonluk & Averaj Simülatörü') !== -1 && txt.indexOf('Tahmini Skor Gir') !== -1 && el.children.length >= 2) {
+        el.style.display = 'flex';
+        el.style.flexDirection = 'column';
+        el.style.alignItems = 'flex-start';
+        el.style.gap = '4px';
+      }
+      var t = txt.trim();
+      if ((t === '↑' || t === '▲') && el.offsetWidth > 0 && el.offsetWidth < 55) {
+        el.style.position = 'fixed';
+        el.style.bottom = '74px';
+        el.style.right = '14px';
+        el.style.zIndex = '9995';
+      }
+      if (t === '' && el.children.length === 0 && el.offsetHeight > 20 && el.offsetHeight < 55 && el.offsetWidth > 35 && el.offsetWidth < 90) {
+        var r = el.getBoundingClientRect();
+        if (r.top > 500) el.style.display = 'none';
+      }
+    });
+  }
+
+  applyVisitorOnlyPolish();
+  setInterval(applyVisitorOnlyPolish, 700);
+})();

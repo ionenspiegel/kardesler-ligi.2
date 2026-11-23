@@ -1211,6 +1211,32 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   }
 </style>
 
+
+<style id="krd-visitor-theme">
+  body {
+    background: #070b14 !important;
+    color: #f8fafc !important;
+  }
+
+  /* Hero karti modern zumrut-lacivert gecis */
+  body:not(.krd-admin-active) .hero,
+  body:not(.krd-admin-active) [class*="hero"] {
+    background: linear-gradient(135deg, #064e3b 0%, #0f172a 55%, #1e1b4b 100%) !important;
+    border: 1px solid rgba(52, 211, 153, 0.28) !important;
+    border-radius: 16px !important;
+  }
+
+  /* Puan tablosunda cift rozetlerden ikincisini gizle */
+  body:not(.krd-admin-active) table td .b:first-child + .b {
+    display: none !important;
+  }
+
+  /* En alttaki bos yuvarlak kapsulu gizle */
+  body > button:empty, #app > button:empty, .wrap > button:empty {
+    display: none !important;
+  }
+</style>
+
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
@@ -3851,7 +3877,7 @@ events.onmessage = async () => {
 
 
 
-<script defer src="/krd-master.js?v=20261124_adminfix"></script>
+<script defer src="/krd-master.js?v=20261124_allin"></script>
 
 <script id="krdSilentLiveSync">
 (function(){
