@@ -1126,79 +1126,98 @@
 })();
 
 
-// --- KRD CANLI BILDIRIM, DUYURU & MAC SENKRONIZASYONU ---
-(function krdRealtimeSyncFix() {
+
+
+// --- KRD ANLIK BILDIRIM, DUYURU & MAC BITISI GUNCELLEYICI ---
+(function krdInstantRealtime() {
   if (typeof window === 'undefined' || !window.fetch) return;
   const origFetch = window.fetch.bind(window);
-  const inflight = new Map();
 
-  // /api/ isteklerinde eski veriye dusmemek icin cache: 'no-store' kullan; sadece ayni anda cift gideni tekillestir
+  // /api/ isteklerinde tarayici/CDN onbellegini tamamen bypass et
   window.fetch = function(input, init) {
-    const method = (init && init.method ? init.method : 'GET').toUpperCase();
     const url = typeof input === 'string' ? input : (input && input.url ? input.url : '');
-    if (method !== 'GET' || !url.includes('/api/')) {
-      return origFetch(input, init);
+    if (url.includes('/api/')) {
+      const headers = new Headers((init && init.headers) || {});
+      headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      headers.set('Pragma', 'no-cache');
+      const nextInit = Object.assign({}, init, { cache: 'no-store', headers });
+      return origFetch(input, nextInit);
     }
-    const nextInit = Object.assign({}, init, { cache: 'no-store' });
-    if (inflight.has(url)) {
-      return inflight.get(url).then(r => r.clone());
-    }
-    const p = origFetch(input, nextInit).then(res => {
-      inflight.delete(url);
-      return res;
-    }).catch(err => {
-      inflight.delete(url);
-      throw err;
-    });
-    inflight.set(url, p);
-    return p.then(r => r.clone());
+    return origFetch(input, init);
   };
 
-  // Duyuru, bildirim ve mac degisikliklerini yakalamak icin hafif periyodik senkronizasyon
-  let lastSnapshot = '';
-  async function pollLiveUpdates() {
-    if (document.hidden) return;
+  let lastLeagueHash = '';
+  let lastEventId = '';
+  let isReloading = false;
+
+  function triggerDataRefresh(reason) {
+    if (isReloading) return;
+    // Sayfadaki mevcut yenileme fonksiyonlarini dene
+    const refreshFns = ['loadLeague', 'fetchLeague', 'renderAll', 'initApp', 'refreshData', 'krdRefreshAll'];
+    let called = false;
+    for (const fnName of refreshFns) {
+      if (typeof window[fnName] === 'function') {
+        try {
+          window[fnName](true);
+          called = true;
+        } catch (_) {}
+      }
+    }
+    // Eger sayfa disaridan yenileme fonksiyonu acmiyorsa ve kullanici yazi yazmiyorsa (input/textarea odakli degilse) sayfayi guncelle
+    const active = document.activeElement;
+    const typing = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
+    if (!called && !typing && reason === 'changed') {
+      isReloading = true;
+      window.location.reload();
+    }
+  }
+
+  // 1) SSE (/api/events) baglantisi: Sunucudan olay geldigi an yakala ve koparsa 2sn icinde yeniden baglan
+  function connectSSE() {
+    if (typeof EventSource === 'undefined') return;
     try {
-      const ts = Date.now();
-      const [leagueRes, eventsRes] = await Promise.allSettled([
-        origFetch('/api/league?_t=' + ts, { cache: 'no-store' }),
-        origFetch('/api/events?_t=' + ts, { cache: 'no-store' })
-      ]);
-
-      let parts = [];
-      if (leagueRes.status === 'fulfilled' && leagueRes.value.ok) {
-        const txt = await leagueRes.value.text();
-        parts.push(txt.slice(0, 1200));
-      }
-      if (eventsRes.status === 'fulfilled' && eventsRes.value.ok) {
-        const etxt = await eventsRes.value.text();
-        parts.push(etxt.slice(0, 600));
-      }
-
-      const snap = parts.join('|');
-      if (snap && snap !== lastSnapshot) {
-        const hadPrev = Boolean(lastSnapshot);
-        lastSnapshot = snap;
-        if (hadPrev) {
-          // Yeni veri geldiyse mevcut sayfa yenileme fonksiyonu varsa cagir, yoksa hafif tetikle
-          if (typeof window.krdRefreshAll === 'function') {
-            window.krdRefreshAll();
-          } else if (typeof window.loadLeague === 'function') {
-            window.loadLeague(true);
-          } else {
-            document.dispatchEvent(new CustomEvent('krd:live-update'));
+      const es = new EventSource('/api/events?_t=' + Date.now());
+      es.onmessage = function(ev) {
+        if (ev && ev.data) {
+          if (ev.data !== lastEventId) {
+            lastEventId = ev.data;
+            triggerDataRefresh('changed');
           }
         }
+      };
+      es.onerror = function() {
+        try { es.close(); } catch (_) {}
+        setTimeout(connectSSE, 2000);
+      };
+    } catch (_) {}
+  }
+
+  // 2) Yedek anlik kontrol (3 saniyede bir): Duyuru, bildirim veya mac skoru degistigi an yakala
+  async function checkInstantChanges() {
+    if (document.hidden) return;
+    try {
+      const res = await origFetch('/api/league?_t=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) return;
+      const raw = await res.text();
+      if (!raw) return;
+      if (!lastLeagueHash) {
+        lastLeagueHash = raw;
+        return;
+      }
+      if (raw !== lastLeagueHash) {
+        lastLeagueHash = raw;
+        triggerDataRefresh('changed');
       }
     } catch (_) {}
   }
 
   window.addEventListener('load', () => {
-    pollLiveUpdates();
-    setInterval(pollLiveUpdates, 5000);
+    connectSSE();
+    checkInstantChanges();
+    setInterval(checkInstantChanges, 3000);
   });
 
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) pollLiveUpdates();
+    if (!document.hidden) checkInstantChanges();
   });
 })();
