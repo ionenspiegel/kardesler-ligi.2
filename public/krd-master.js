@@ -1334,42 +1334,44 @@
 
 
 
-;(function(){
-  window.__applyKrdTicker = function() {
-    var txt = ((window.KRD_EXTRAS && window.KRD_EXTRAS.live_ticker) || window.__krdLiveTickerVal || '').trim();
-    var tracks = document.querySelectorAll('#krdLiveTickerBar .krd-ticker-track');
-    tracks.forEach(function(track) {
-      var old = track.querySelector('.krd-custom-msg');
-      if (!txt) { if (old) old.remove(); return; }
-      if (!old) {
-        old = document.createElement('span');
-        old.className = 'krd-tick-item krd-tick-live krd-custom-msg';
-        track.insertBefore(old, track.firstChild);
-      }
-      old.innerHTML = '<span class="krd-dot-live"></span> 📢 ' + txt.replace(/[<>&]/g, '');
-    });
-  };
 
-  function syncExtras() {
-    fetch('/api/krd-extras?_=' + Date.now()).then(function(r){ return r.json(); }).then(function(d){
-      if (d && typeof d.live_ticker === 'string') {
-        window.__krdLiveTickerVal = d.live_ticker;
-        if (window.KRD_EXTRAS) window.KRD_EXTRAS.live_ticker = d.live_ticker;
-        var inp = document.getElementById('admLiveTickerInp');
-        if (inp && document.activeElement !== inp && !inp.value) inp.value = d.live_ticker;
-        window.__applyKrdTicker();
-      }
-    }).catch(function(){});
+
+;(function(){
+  window.__krdLiveTickerVal = '';
+
+  function refreshTickerNow() {
+    if (typeof renderLiveMatchTicker === 'function') {
+      try { renderLiveMatchTicker(window.__lastLeagueData || {}); } catch(e) {}
+    }
   }
 
-  function mountAdminTickerBox() {
-    window.__applyKrdTicker();
-    if (document.getElementById('krdAdminTickerBox')) return;
+  function loadTickerFromServer() {
+    fetch('/api/ticker?_=' + Date.now())
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (d && typeof d.text === 'string') {
+          window.__krdLiveTickerVal = d.text;
+          var inp = document.getElementById('admLiveTickerInp');
+          if (inp && document.activeElement !== inp) inp.value = d.text;
+          refreshTickerNow();
+        }
+      }).catch(function(){});
+  }
+
+  function manageAdminTickerBox() {
     var isAdminView = (location.hash && location.hash.indexOf('admin') !== -1) ||
-                      document.getElementById('admSubVal') ||
-                      document.querySelector('[onclick*="saveAdminExtra"], [onclick*="/api/admin/"]');
-    if (!isAdminView) return;
-    var target = document.getElementById('main-content') || document.getElementById('app') || document.body;
+                      !!document.getElementById('admSubVal') ||
+                      !!document.querySelector('[onclick*="saveAdminExtra"], [onclick*="/api/admin/"]');
+    var existing = document.getElementById('krdAdminTickerBox');
+
+    // Yonetici ekranindan cikildiysa kutuyu kaldir
+    if (!isAdminView) {
+      if (existing) existing.remove();
+      return;
+    }
+    if (existing) return;
+
+    var target = document.getElementById('main-content') || document.getElementById('app');
     if (!target) return;
 
     var box = document.createElement('div');
@@ -1386,24 +1388,32 @@
     target.insertBefore(box, target.firstChild);
 
     var inp = document.getElementById('admLiveTickerInp');
-    inp.value = (window.KRD_EXTRAS && window.KRD_EXTRAS.live_ticker) || window.__krdLiveTickerVal || '';
-    document.getElementById('admLiveTickerBtn').onclick = async function() {
+    var btn = document.getElementById('admLiveTickerBtn');
+    inp.value = window.__krdLiveTickerVal || '';
+
+    btn.onclick = function() {
       var v = inp.value.trim();
-      if (typeof window.saveAdminExtra === 'function') {
-        await window.saveAdminExtra('live_ticker', v);
-      } else {
-        await fetch('/api/admin/extras', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ key: 'live_ticker', value: JSON.stringify(v) })
-        });
-      }
-      window.__krdLiveTickerVal = v;
-      if (window.KRD_EXTRAS) window.KRD_EXTRAS.live_ticker = v;
-      window.__applyKrdTicker();
+      btn.disabled = true;
+      btn.textContent = 'Kaydediliyor...';
+      fetch('/api/ticker', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: v })
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(res){
+        window.__krdLiveTickerVal = (res && typeof res.text === 'string') ? res.text : v;
+        refreshTickerNow();
+        btn.textContent = 'Yayınlandı ✓';
+        setTimeout(function(){ btn.textContent = 'Yayınla'; btn.disabled = false; }, 1200);
+      })
+      .catch(function(){
+        btn.textContent = 'Yayınla';
+        btn.disabled = false;
+      });
     };
   }
 
-  syncExtras();
-  setInterval(mountAdminTickerBox, 1000);
+  loadTickerFromServer();
+  setInterval(manageAdminTickerBox, 600);
 })();

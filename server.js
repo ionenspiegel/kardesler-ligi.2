@@ -576,18 +576,32 @@ function notifyClients() {
 const server = http.createServer(async (req, res) => {
 
   if (req.url && req.url.split('?')[0] === '/api/ticker') {
-    if (!global.__krdCustomTicker) global.__krdCustomTicker = '';
+    if (typeof global.__krdCustomTicker !== 'string') global.__krdCustomTicker = '';
     if (req.method === 'GET') {
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      return res.end(JSON.stringify({ text: global.__krdCustomTicker }));
+      try {
+        if (typeof pool !== 'undefined' && pool) {
+          await pool.query('CREATE TABLE IF NOT EXISTS krd_settings (k TEXT PRIMARY KEY, v TEXT)');
+          const r = await pool.query("SELECT v FROM krd_settings WHERE k='live_ticker'");
+          if (r.rows && r.rows[0]) global.__krdCustomTicker = r.rows[0].v || '';
+        }
+      } catch (e) {}
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+      return res.end(JSON.stringify({ ok: true, text: global.__krdCustomTicker }));
     }
     if (req.method === 'POST') {
       let body = '';
       req.on('data', c => { body += c; });
-      req.on('end', () => {
+      req.on('end', async () => {
         try {
           const parsed = JSON.parse(body || '{}');
           global.__krdCustomTicker = String(parsed.text || '').trim().slice(0, 240);
+          if (typeof pool !== 'undefined' && pool) {
+            await pool.query('CREATE TABLE IF NOT EXISTS krd_settings (k TEXT PRIMARY KEY, v TEXT)');
+            await pool.query(
+              "INSERT INTO krd_settings (k, v) VALUES ('live_ticker', createServer(async (req, res) => {) ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v",
+              [global.__krdCustomTicker]
+            );
+          }
         } catch (e) {}
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ ok: true, text: global.__krdCustomTicker }));
@@ -595,6 +609,9 @@ const server = http.createServer(async (req, res) => {
       return;
     }
   }
+
+
+  
 
 
   // === KRD_HARD_AUTH_GUARD ===
