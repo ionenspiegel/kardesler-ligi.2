@@ -1332,6 +1332,8 @@
 
 
 
+
+
 ;(function(){
   window.__applyKrdTicker = function() {
     var txt = ((window.KRD_EXTRAS && window.KRD_EXTRAS.live_ticker) || window.__krdLiveTickerVal || '').trim();
@@ -1360,6 +1362,47 @@
     }).catch(function(){});
   }
 
+  function mountAdminTickerBox() {
+    window.__applyKrdTicker();
+    if (document.getElementById('krdAdminTickerBox')) return;
+    var subEl = document.getElementById('admSubVal');
+    if (!subEl) return;
+    var statsCard = subEl.closest('.card');
+    var statsGrid = statsCard && statsCard.parentElement;
+    if (!statsGrid || !statsGrid.parentElement) return;
+
+    var box = document.createElement('div');
+    box.id = 'krdAdminTickerBox';
+    box.className = 'card';
+    box.style.cssText = 'margin:10px 0 14px;padding:12px;border:1px solid rgba(56,189,248,0.35)';
+    box.innerHTML =
+      '<div style="font-weight:700;font-size:13px;color:#38bdf8;margin-bottom:6px">📡 Canlı Yayın Akışı Duyurusu</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        '<input id="admLiveTickerInp" type="text" maxlength="220" placeholder="Örn: Bu akşam 21:00 THXEDO - akifl38 derbisi canlı!" style="flex:1;min-width:200px;padding:8px 10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:13px">' +
+        '<button id="admLiveTickerBtn" type="button" class="pri">Yayınla</button>' +
+      '</div>';
+
+    statsGrid.parentElement.insertBefore(box, statsGrid.nextSibling);
+
+    var inp = document.getElementById('admLiveTickerInp');
+    inp.value = (window.KRD_EXTRAS && window.KRD_EXTRAS.live_ticker) || window.__krdLiveTickerVal || '';
+    document.getElementById('admLiveTickerBtn').onclick = async function() {
+      var v = inp.value.trim();
+      if (typeof window.saveAdminExtra === 'function') {
+        await window.saveAdminExtra('live_ticker', v);
+      } else {
+        await fetch('/api/admin/extras', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: 'live_ticker', value: JSON.stringify(v) })
+        });
+      }
+      window.__krdLiveTickerVal = v;
+      if (window.KRD_EXTRAS) window.KRD_EXTRAS.live_ticker = v;
+      window.__applyKrdTicker();
+    };
+  }
+
   syncExtras();
-  setInterval(window.__applyKrdTicker, 1500);
+  setInterval(mountAdminTickerBox, 1000);
 })();
