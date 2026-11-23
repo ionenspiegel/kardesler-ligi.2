@@ -1199,6 +1199,18 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   }
 </style>
 
+
+<style id="krd-admin-fix">
+  @media (max-width: 768px) {
+    /* Yonetici mac kartlari kapsayicisini tek sutuna dondur */
+    body.admin-mode .grid,
+    body.admin-mode [class*="grid"],
+    #main-content .grid {
+      grid-template-columns: 1fr !important;
+    }
+  }
+</style>
+
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
@@ -3839,7 +3851,7 @@ events.onmessage = async () => {
 
 
 
-<script defer src="/krd-master.js?v=20261124_finalui"></script>
+<script defer src="/krd-master.js?v=20261124_adminfix"></script>
 
 <script id="krdSilentLiveSync">
 (function(){

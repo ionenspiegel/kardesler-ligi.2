@@ -1464,20 +1464,26 @@
 
 
 
+
 ;(function(){
   if (window.__krdUiPolish) return;
   window.__krdUiPolish = true;
 
   function polishLayout() {
-    // 1. Ustteki sari bildirim zili butonunu (SVG veya emoji) CANLI AKIS uzerinden alip sol alta sabitle
+    var isAdmin = (location.hash && location.hash.indexOf('admin') !== -1) ||
+                  !!document.querySelector('[onclick*="saveAdminExtra"], [onclick*="/api/admin/"]') ||
+                  document.body.textContent.indexOf('Notu Kaydet') !== -1;
+
+    // 1. Sadece metni olmayan (icerisinde "Bildirim" yazisi bulunmayan) kucuk yuzen zili sol alta al
     document.querySelectorAll('button, a, div').forEach(function(el) {
+      var txt = (el.textContent || '').trim();
+      if (txt.indexOf('Bildirim') !== -1) return; // Sekme butonuna dokunma!
       var rect = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
       if (!rect) return;
-      var isBell = (el.innerHTML && el.innerHTML.indexOf('🔔') !== -1) ||
-                   (el.id && el.id.toLowerCase().indexOf('bell') !== -1) ||
-                   (el.id && el.id.toLowerCase().indexOf('push') !== -1 && rect.width < 60) ||
-                   (rect.top > 70 && rect.top < 170 && rect.left < 50 && rect.width > 28 && rect.width < 56 && rect.height > 28 && rect.height < 56 && el.querySelector('svg'));
-      if (isBell) {
+      var isFloatingBell = ((el.innerHTML && el.innerHTML.indexOf('🔔') !== -1 && txt.length <= 2) ||
+                           (el.id && (el.id.toLowerCase().indexOf('bell') !== -1 || el.id.toLowerCase().indexOf('push') !== -1))) &&
+                           rect.width > 24 && rect.width < 58 && rect.height > 24 && rect.height < 58;
+      if (isFloatingBell) {
         el.style.position = 'fixed';
         el.style.top = 'auto';
         el.style.bottom = '16px';
@@ -1486,34 +1492,49 @@
       }
     });
 
-    // 2. Istatistik kutularini (5'li ve 3'lu gruplar) 2'li izgaraya al, tek kalan son karti tam genislik yap
-    var statTitles = ['En Golcü Takım', 'Altın Ayakkabı'];
-    document.querySelectorAll('div, section').forEach(function(parent) {
-      if (parent.children && parent.children.length >= 3 && parent.children.length <= 6) {
-        var firstTxt = parent.children[0].textContent || '';
-        if (statTitles.some(function(t){ return firstTxt.indexOf(t) !== -1; })) {
-          parent.style.display = 'grid';
-          parent.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
-          parent.style.gap = '8px';
-          var kids = Array.from(parent.children);
-          kids.forEach(function(card, idx) {
-            var colors = ['#10b981', '#38bdf8', '#f59e0b', '#a855f7', '#ec4899'];
-            card.style.margin = '0';
-            card.style.background = '#0f172a';
-            card.style.border = '1px solid rgba(148,163,184,0.16)';
-            card.style.borderLeft = '3px solid ' + colors[idx % colors.length];
-            card.style.borderRadius = '12px';
-            card.style.padding = '10px 12px';
-            // Tek kalan son karti tam genislige yay (bosluk kalmasin)
-            if (kids.length % 2 === 1 && idx === kids.length - 1) {
-              card.style.gridColumn = '1 / -1';
-            }
-          });
+    // 2. Yonetici ekraninda mac kartlari kapsayicisini mobilde tek sutun yap (sagdan tasmayi bitir)
+    if (isAdmin && window.innerWidth <= 768) {
+      document.querySelectorAll('div, section').forEach(function(parent) {
+        if (parent.textContent && parent.textContent.indexOf('Notu Kaydet') !== -1 && parent.children.length >= 2) {
+          var firstChildTxt = parent.children[0].textContent || '';
+          if (firstChildTxt.indexOf('Notu Kaydet') !== -1) {
+            parent.style.display = 'grid';
+            parent.style.gridTemplateColumns = '1fr';
+            parent.style.gap = '12px';
+          }
         }
-      }
-    });
+      });
+    }
 
-    // 3. Puan tablosundaki cift yuvarlak takim rozetlerinden fazlaligi gizle
+    // 3. Ana ekrandaki istatistik kutularini (En Golcu Takim / Altin Ayakkabi) 2'li izgaraya al
+    if (!isAdmin) {
+      var statTitles = ['En Golcü Takım', 'Altın Ayakkabı'];
+      document.querySelectorAll('div, section').forEach(function(parent) {
+        if (parent.children && parent.children.length >= 3 && parent.children.length <= 6) {
+          var firstTxt = parent.children[0].textContent || '';
+          if (statTitles.some(function(t){ return firstTxt.indexOf(t) !== -1; })) {
+            parent.style.display = 'grid';
+            parent.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
+            parent.style.gap = '8px';
+            var kids = Array.from(parent.children);
+            kids.forEach(function(card, idx) {
+              var colors = ['#10b981', '#38bdf8', '#f59e0b', '#a855f7', '#ec4899'];
+              card.style.margin = '0';
+              card.style.background = '#0f172a';
+              card.style.border = '1px solid rgba(148,163,184,0.16)';
+              card.style.borderLeft = '3px solid ' + colors[idx % colors.length];
+              card.style.borderRadius = '12px';
+              card.style.padding = '10px 12px';
+              if (kids.length % 2 === 1 && idx === kids.length - 1) {
+                card.style.gridColumn = '1 / -1';
+              }
+            });
+          }
+        }
+      });
+    }
+
+    // 4. Puan tablosundaki cift yuvarlak takim rozetlerinden fazlaligi gizle
     document.querySelectorAll('table td').forEach(function(td) {
       var badges = td.querySelectorAll('span, div');
       var circleCount = 0;
@@ -1526,23 +1547,12 @@
       });
     });
 
-    // 4. 1v1 Tahmin Oyunu satirinin sagdan kesilmesini onle
-    document.querySelectorAll('div, p, span').forEach(function(el) {
-      if (el.textContent && el.textContent.indexOf('1v1 Tahmin Oyunu') !== -1 && el.children.length <= 2) {
+    // 5. 1v1 Tahmin Oyunu satirinin sagdan kesilmesini onle & yukari cik butonunu duzelt
+    document.querySelectorAll('div, p, span, button, a').forEach(function(el) {
+      var txt = el.textContent || '';
+      if (txt.indexOf('1v1 Tahmin Oyunu') !== -1 && el.children.length <= 2) {
         el.style.whiteSpace = 'normal';
         el.style.wordBreak = 'break-word';
-        el.style.lineHeight = '1.4';
-      }
-    });
-
-    // 5. Simulator basligi ve yukari cik butonu
-    document.querySelectorAll('div, button, summary').forEach(function(el) {
-      var txt = el.textContent || '';
-      if (txt.indexOf('Canlı Şampiyonluk & Averaj Simülatörü') !== -1 && txt.indexOf('Tahmini Skor Gir') !== -1 && el.children.length >= 2) {
-        el.style.display = 'flex';
-        el.style.flexDirection = 'column';
-        el.style.alignItems = 'flex-start';
-        el.style.gap = '4px';
       }
       var t = txt.trim();
       if ((t === '↑' || t === '▲') && el.offsetWidth > 0 && el.offsetWidth < 55) {
