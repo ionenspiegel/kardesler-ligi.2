@@ -1128,96 +1128,145 @@
 
 
 
-// --- KRD ANLIK BILDIRIM, DUYURU & MAC BITISI GUNCELLEYICI ---
-(function krdInstantRealtime() {
+
+
+// --- KRD BILDIRIM BUTONU DUZENI & ANLIK BILDIRIM MOTORU ---
+(function krdNotifAndLayoutFix() {
   if (typeof window === 'undefined' || !window.fetch) return;
   const origFetch = window.fetch.bind(window);
 
-  // /api/ isteklerinde tarayici/CDN onbellegini tamamen bypass et
+  // 1) /api/ isteklerinde onbellegi kapat
   window.fetch = function(input, init) {
     const url = typeof input === 'string' ? input : (input && input.url ? input.url : '');
     if (url.includes('/api/')) {
       const headers = new Headers((init && init.headers) || {});
       headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       headers.set('Pragma', 'no-cache');
-      const nextInit = Object.assign({}, init, { cache: 'no-store', headers });
-      return origFetch(input, nextInit);
+      return origFetch(input, Object.assign({}, init, { cache: 'no-store', headers }));
     }
     return origFetch(input, init);
   };
 
-  let lastLeagueHash = '';
-  let lastEventId = '';
-  let isReloading = false;
+  // 2) Bildirim butonu (🔔) duyuru cubugunun ustune binmesin; ust bara hizalansin
+  function fixBellButtonPosition() {
+    const candidates = Array.from(document.querySelectorAll('button, a, div[role="button"], span[role="button"]'));
+    const bellBtn = candidates.find(el => {
+      const txt = (el.textContent || '').trim();
+      const aria = (el.getAttribute('aria-label') || '').toLowerCase();
+      return txt.includes('🔔') || aria.includes('bildirim') || /notif|bell/i.test(el.id || '') || /notif|bell/i.test(el.className || '');
+    });
 
-  function triggerDataRefresh(reason) {
-    if (isReloading) return;
-    // Sayfadaki mevcut yenileme fonksiyonlarini dene
-    const refreshFns = ['loadLeague', 'fetchLeague', 'renderAll', 'initApp', 'refreshData', 'krdRefreshAll'];
-    let called = false;
-    for (const fnName of refreshFns) {
-      if (typeof window[fnName] === 'function') {
-        try {
-          window[fnName](true);
-          called = true;
-        } catch (_) {}
+    if (bellBtn) {
+      const st = window.getComputedStyle(bellBtn);
+      if (st.position === 'fixed' || st.position === 'absolute') {
+        bellBtn.style.position = 'fixed';
+        bellBtn.style.top = '42px';
+        bellBtn.style.left = '12px';
+        bellBtn.style.zIndex = '1100';
       }
-    }
-    // Eger sayfa disaridan yenileme fonksiyonu acmiyorsa ve kullanici yazi yazmiyorsa (input/textarea odakli degilse) sayfayi guncelle
-    const active = document.activeElement;
-    const typing = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
-    if (!called && !typing && reason === 'changed') {
-      isReloading = true;
-      window.location.reload();
+      // Tiklandiginda tarayici bildirim izni henuz istenmediyse iste
+      if (!bellBtn.dataset.krdPermBound) {
+        bellBtn.dataset.krdPermBound = '1';
+        bellBtn.addEventListener('click', () => {
+          if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission().catch(() => {});
+          }
+        });
+      }
     }
   }
 
-  // 1) SSE (/api/events) baglantisi: Sunucudan olay geldigi an yakala ve koparsa 2sn icinde yeniden baglan
-  function connectSSE() {
+  // 3) Ekranda anlik bildirim balonu (Toast) + Tarayici bildirimi goster
+  function showInstantNotification(title, body) {
+    let toast = document.getElementById('krdInstantToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'krdInstantToast';
+      toast.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;max-width:92vw;width:360px;padding:12px 14px;border-radius:12px;background:#111827;color:#f9fafb;border:1px solid #22c55e;box-shadow:0 10px 25px rgba(0,0,0,0.45);font-size:13px;line-height:1.4;transition:opacity 0.25s;';
+      document.body.appendChild(toast);
+    }
+    toast.innerHTML = '<div style="font-weight:700;color:#86efac;margin-bottom:2px;">🔔 ' + title + '</div><div>' + body + '</div>';
+    toast.style.opacity = '1';
+    toast.style.display = 'block';
+    clearTimeout(window.__krdToastTimer);
+    window.__krdToastTimer = setTimeout(() => {
+      toast.style.opacity = '0';
+      setTimeout(() => { toast.style.display = 'none'; }, 260);
+    }, 5500);
+
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification(title, { body: body, tag: 'krd-ligi-live' });
+      } catch (_) {}
+    }
+  }
+
+  // 4) Duyuru, bildirim veya mac skoru degisince sayfa yenilemeden yakala ve bildir
+  let lastAnnouncement = '';
+  let lastMatchesSig = '';
+  let initialized = false;
+
+  async function pollForNotifications() {
+    try {
+      const res = await origFetch('/api/league?_t=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json();
+
+      const ann = String(data.announcement || data.duyuru || data.banner || (data.news && data.news[0] && (data.news[0].title || data.news[0])) || '').trim();
+      const matches = Array.isArray(data.matches) ? data.matches : [];
+      const matchesSig = matches.map(m => (m.id || '') + ':' + (m.homeGoals ?? m.evGol ?? '') + '-' + (m.awayGoals ?? m.depGol ?? '') + ':' + (m.played || m.status || '')).join('|');
+
+      if (!initialized) {
+        lastAnnouncement = ann;
+        lastMatchesSig = matchesSig;
+        initialized = true;
+        return;
+      }
+
+      if (ann && ann !== lastAnnouncement) {
+        lastAnnouncement = ann;
+        showInstantNotification('Yeni Duyuru / Bildirim', ann);
+      }
+
+      if (matchesSig && matchesSig !== lastMatchesSig) {
+        lastMatchesSig = matchesSig;
+        showInstantNotification('Maç Güncellendi', 'KRD PES Ligi maç sonucu veya fikstür verisi güncellendi.');
+        if (typeof window.loadLeague === 'function') window.loadLeague(true);
+        else if (typeof window.fetchLeague === 'function') window.fetchLeague(true);
+      }
+    } catch (_) {}
+  }
+
+  // SSE (/api/events) uzerinden gelen olaylari da direkt yakala
+  function connectEventsSSE() {
     if (typeof EventSource === 'undefined') return;
     try {
       const es = new EventSource('/api/events?_t=' + Date.now());
       es.onmessage = function(ev) {
-        if (ev && ev.data) {
-          if (ev.data !== lastEventId) {
-            lastEventId = ev.data;
-            triggerDataRefresh('changed');
+        if (!ev || !ev.data) return;
+        try {
+          const payload = JSON.parse(ev.data);
+          const msg = payload.message || payload.text || payload.title || payload.announcement;
+          if (msg) showInstantNotification('Canlı Bildirim', String(msg));
+        } catch (_) {
+          if (ev.data.length > 2 && ev.data !== 'ping' && ev.data !== 'ok') {
+            showInstantNotification('Canlı Bildirim', ev.data);
           }
         }
+        pollForNotifications();
       };
       es.onerror = function() {
         try { es.close(); } catch (_) {}
-        setTimeout(connectSSE, 2000);
+        setTimeout(connectEventsSSE, 2500);
       };
-    } catch (_) {}
-  }
-
-  // 2) Yedek anlik kontrol (3 saniyede bir): Duyuru, bildirim veya mac skoru degistigi an yakala
-  async function checkInstantChanges() {
-    if (document.hidden) return;
-    try {
-      const res = await origFetch('/api/league?_t=' + Date.now(), { cache: 'no-store' });
-      if (!res.ok) return;
-      const raw = await res.text();
-      if (!raw) return;
-      if (!lastLeagueHash) {
-        lastLeagueHash = raw;
-        return;
-      }
-      if (raw !== lastLeagueHash) {
-        lastLeagueHash = raw;
-        triggerDataRefresh('changed');
-      }
     } catch (_) {}
   }
 
   window.addEventListener('load', () => {
-    connectSSE();
-    checkInstantChanges();
-    setInterval(checkInstantChanges, 3000);
-  });
-
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) checkInstantChanges();
+    fixBellButtonPosition();
+    setTimeout(fixBellButtonPosition, 500);
+    connectEventsSSE();
+    pollForNotifications();
+    setInterval(pollForNotifications, 3000);
   });
 })();
