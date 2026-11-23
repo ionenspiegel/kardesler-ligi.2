@@ -1015,13 +1015,41 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
 </style>
 
 
-<style id="krd-perf-cls-v4">
-  main#main-content { min-height: 88vh; overflow-anchor: none; }
-  #krdPushBtn { position: fixed !important; top: 42px !important; left: 12px !important; width: 42px !important; height: 42px !important; }
-  .krd-crest, span.b { color: #0b1120 !important; font-weight: 800 !important; text-shadow: none !important; }
+
+<style id="krd-zero-cls-v5">
+  #krdChatFab {
+    position: fixed !important;
+    right: 14px !important;
+    bottom: 14px !important;
+    z-index: 998 !important;
+  }
+  #krdPushBtn {
+    position: fixed !important;
+    top: 42px !important;
+    left: 12px !important;
+    width: 42px !important;
+    height: 42px !important;
+    z-index: 1100 !important;
+  }
+  /* Koyu arkaplanli aramalarda beyaz yazi, acik arkaplanlilarda koyu yazi */
+  .krd-crest, span.b { color: #ffffff !important; font-weight: 800 !important; text-shadow: 0 1px 2px rgba(0,0,0,0.65) !important; }
+  .krd-crest[style*="#b290a5"], .krd-crest[style*="#afd5c4"], .krd-crest[style*="#24ebb9"],
+  span.b[style*="#ffff00"], span.b[style*="#ffffff"], span.b[style*="#24ebb9"] {
+    color: #0b1120 !important;
+    text-shadow: none !important;
+  }
 </style>
 
-</head><body><div id="goal">GOL!</div><main id="main-content" role="main"><div class="wrap" id="app"></div><div id="toast"></div>
+</head><body><div id="goal">GOL!</div><main id="main-content" role="main">
+
+<div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
+  <div class="krd-ticker-label"><span class="krd-pulse-dot"></span>CANLI AKIŞ</div>
+  <div class="krd-ticker-viewport">
+    <div class="krd-ticker-track">
+      <span class="krd-tick-item krd-tick-live"><span class="krd-dot-live"></span> KRD PES LİGİ SEZON 2027 CANLI YAYIN AKIŞI YÜKLENİYOR...</span>
+    </div>
+  </div>
+</div><div class="wrap" id="app"></div><div id="toast"></div>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let S={settings:{},teams:[],matches:[],table:[],goals:[],archives:[]},ME={},tab='m',wk=0,htab='ozet',selTeam=null,story=null,goalMatch=null,archView=null,h2hA=0,h2hB=0,bump=null;
