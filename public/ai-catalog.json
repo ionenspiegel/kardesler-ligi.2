@@ -1,14 +1,18 @@
 {
-  "@context": "https://schema.org",
-  "@type": "DataCatalog",
-  "name": "KRD PES Ligi",
-  "description": "KRD PES Ligi Sezon 2027 puan durumu, fikstur, kalan maclar ve istatistikler",
-  "url": "https://kardesler-ligi-2.onrender.com/",
-  "dataset": [
+  "schema_version": "1.0",
+  "name": "KRD PES Ligi — Sezon 2027",
+  "description": "KRD PES Ligi resmi puan durumu, fikstür, istatistikler ve canlı maç platformu.",
+  "url": "https://kardesler-ligi-2.onrender.com",
+  "endpoints": [
     {
-      "@type": "Dataset",
-      "name": "KRD PES Ligi Sezon 2027 Verileri",
-      "url": "https://kardesler-ligi-2.onrender.com/sitemap.xml"
+      "path": "/api/league",
+      "method": "GET",
+      "description": "Güncel puan durumu, takımlar ve maç fikstürü"
+    },
+    {
+      "path": "/llms.txt",
+      "method": "GET",
+      "description": "Yapay zeka ajanları için özet lig dokümantasyonu"
     }
   ]
 }
