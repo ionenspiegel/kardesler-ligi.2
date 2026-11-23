@@ -1,50 +1,5 @@
 
-// --- KRD API TEKILLESTIRME & TELEFON DONMA ENGELLEYICI ---
-(function krdFetchDedupe() {
-  if (typeof window === 'undefined' || !window.fetch) return;
-  const origFetch = window.fetch.bind(window);
-  const inflight = new Map();
-  const shortCache = new Map();
-
-  window.fetch = function(input, init) {
-    const method = (init && init.method ? init.method : 'GET').toUpperCase();
-    const url = typeof input === 'string' ? input : (input && input.url ? input.url : '');
-    if (method !== 'GET' || !url.includes('/api/')) {
-      return origFetch(input, init);
-    }
-    // _t ve _ timestamp parametrelerini normalize et ki ayni endpoint 3 kez cagrilmasin
-    const cleanUrl = url.replace(/([?&])(_t|_)=\d+&?/g, '$1').replace(/[?&]$/, '');
-    const now = Date.now();
-    const cached = shortCache.get(cleanUrl);
-    if (cached && (now - cached.ts) < 2500) {
-      return Promise.resolve(cached.res.clone());
-    }
-    if (inflight.has(cleanUrl)) {
-      return inflight.get(cleanUrl).then(r => r.clone());
-    }
-    const p = origFetch(input, init).then(res => {
-      inflight.delete(cleanUrl);
-      if (res.ok) shortCache.set(cleanUrl, { ts: Date.now(), res: res.clone() });
-      return res;
-    }).catch(err => {
-      inflight.delete(cleanUrl);
-      throw err;
-    });
-    inflight.set(cleanUrl, p);
-    return p.then(r => r.clone());
-  };
-
-  // Sohbet kutusunda 25'ten fazla eski mesaj varsa DOM'u sisirmemek icin eskileri gizle
-  const trimChat = () => {
-    const box = document.getElementById('krdChatMsgs');
-    if (box && box.children.length > 25) {
-      while (box.children.length > 25) box.removeChild(box.firstChild);
-    }
-  };
-  window.addEventListener('load', () => setInterval(trimChat, 3000));
-})();
-
-﻿(function () {
+(function () {
   if (window._krdMasterLoaded) return;
   window._krdMasterLoaded = true;
 
@@ -1167,5 +1122,83 @@
     if (e.target.closest('button, [role="tab"], .tab, .nav-item, a')) {
       setTimeout(runClean, 120);
     }
+  });
+})();
+
+
+// --- KRD CANLI BILDIRIM, DUYURU & MAC SENKRONIZASYONU ---
+(function krdRealtimeSyncFix() {
+  if (typeof window === 'undefined' || !window.fetch) return;
+  const origFetch = window.fetch.bind(window);
+  const inflight = new Map();
+
+  // /api/ isteklerinde eski veriye dusmemek icin cache: 'no-store' kullan; sadece ayni anda cift gideni tekillestir
+  window.fetch = function(input, init) {
+    const method = (init && init.method ? init.method : 'GET').toUpperCase();
+    const url = typeof input === 'string' ? input : (input && input.url ? input.url : '');
+    if (method !== 'GET' || !url.includes('/api/')) {
+      return origFetch(input, init);
+    }
+    const nextInit = Object.assign({}, init, { cache: 'no-store' });
+    if (inflight.has(url)) {
+      return inflight.get(url).then(r => r.clone());
+    }
+    const p = origFetch(input, nextInit).then(res => {
+      inflight.delete(url);
+      return res;
+    }).catch(err => {
+      inflight.delete(url);
+      throw err;
+    });
+    inflight.set(url, p);
+    return p.then(r => r.clone());
+  };
+
+  // Duyuru, bildirim ve mac degisikliklerini yakalamak icin hafif periyodik senkronizasyon
+  let lastSnapshot = '';
+  async function pollLiveUpdates() {
+    if (document.hidden) return;
+    try {
+      const ts = Date.now();
+      const [leagueRes, eventsRes] = await Promise.allSettled([
+        origFetch('/api/league?_t=' + ts, { cache: 'no-store' }),
+        origFetch('/api/events?_t=' + ts, { cache: 'no-store' })
+      ]);
+
+      let parts = [];
+      if (leagueRes.status === 'fulfilled' && leagueRes.value.ok) {
+        const txt = await leagueRes.value.text();
+        parts.push(txt.slice(0, 1200));
+      }
+      if (eventsRes.status === 'fulfilled' && eventsRes.value.ok) {
+        const etxt = await eventsRes.value.text();
+        parts.push(etxt.slice(0, 600));
+      }
+
+      const snap = parts.join('|');
+      if (snap && snap !== lastSnapshot) {
+        const hadPrev = Boolean(lastSnapshot);
+        lastSnapshot = snap;
+        if (hadPrev) {
+          // Yeni veri geldiyse mevcut sayfa yenileme fonksiyonu varsa cagir, yoksa hafif tetikle
+          if (typeof window.krdRefreshAll === 'function') {
+            window.krdRefreshAll();
+          } else if (typeof window.loadLeague === 'function') {
+            window.loadLeague(true);
+          } else {
+            document.dispatchEvent(new CustomEvent('krd:live-update'));
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  window.addEventListener('load', () => {
+    pollLiveUpdates();
+    setInterval(pollLiveUpdates, 5000);
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) pollLiveUpdates();
   });
 })();
