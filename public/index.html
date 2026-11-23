@@ -869,7 +869,24 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
 }
 </style>
 
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-796F0HVER4"></script>
+<script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      (function(){
+        var loaded = false;
+        function loadGTM(){
+          if(loaded) return; loaded = true;
+          var s = document.createElement('script');
+          s.async = true;
+          s.src = 'https://www.googletagmanager.com/gtag/js?id=G-796F0HVER4';
+          document.head.appendChild(s);
+        }
+        setTimeout(loadGTM, 2800);
+        ['pointerdown','keydown','scroll'].forEach(function(e){
+          window.addEventListener(e, loadGTM, {once:true, passive:true});
+        });
+      })();
+    </script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -1032,6 +1049,52 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
     color: #0b1120 !important;
     text-shadow: none !important;
   }
+</style>
+
+
+<style id="krd-cls-news-lock">
+  .news-bar, .mvp-bar, .ticker-wrap, .announcement-bar { min-height: 46px !important; contain: layout style; }
+  .news-title { min-height: 22px; }
+</style>
+
+
+<style id="krd-cls-final-lock">
+  #krdLiveTickerBar {
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    overflow: hidden !important;
+    contain: strict !important;
+  }
+  .news-bar, .mvp-bar, .hero-stats, .stats-row {
+    min-height: 48px !important;
+    contain: layout style !important;
+  }
+</style>
+
+
+<style id="krd-perf-100">
+  #app.wrap { min-height: 100vh; }
+  header, .top-hero, .league-header { min-height: 118px; contain: layout style; }
+  #krdLiveTickerBar { height: 44px !important; min-height: 44px !important; max-height: 44px !important; overflow: hidden !important; contain: strict !important; }
+  .news-bar, .mvp-bar { min-height: 52px !important; contain: layout style !important; }
+  main#main-content { min-height: 85vh; contain: layout style; }
+  .table-wrap, #standingsWrap, .standings-card { min-height: 420px; }
+</style>
+
+
+<style id="krd-cls-lcp-boost">
+  #app.wrap { min-height: 100vh; }
+  #app > header, #app > .hdr, #app > .top, #app > div:first-child { min-height: 124px; }
+  #krdLiveTickerBar {
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    overflow: hidden !important;
+    contain: strict !important;
+  }
+  .news-bar, .mvp-bar { min-height: 54px !important; contain: layout style !important; }
+  main#main-content { min-height: 90vh; contain: layout style; }
 </style>
 
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
