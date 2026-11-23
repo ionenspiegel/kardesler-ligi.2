@@ -1130,10 +1130,17 @@
 
 
 
-// --- KRD BILDIRIM BUTONU DUZENI & ANLIK BILDIRIM MOTORU ---
-(function krdNotifAndLayoutFix() {
+
+
+// --- KRD FINAL: TURKCE CANLI BILDIRIMLER + GERCEK VERIYLE HUKMEN 3-0 & KALAN MACLAR ---
+(function krdFinalPolish() {
   if (typeof window === 'undefined' || !window.fetch) return;
   const origFetch = window.fetch.bind(window);
+  const EXCLUDED = new Set(['mert', 'omer', 'ömer']);
+
+  function isExcl(name) {
+    return EXCLUDED.has(String(name || '').trim().toLowerCase());
+  }
 
   // 1) /api/ isteklerinde onbellegi kapat
   window.fetch = function(input, init) {
@@ -1147,7 +1154,7 @@
     return origFetch(input, init);
   };
 
-  // 2) Bildirim butonu (🔔) duyuru cubugunun ustune binmesin; ust bara hizalansin
+  // 2) Bildirim butonu konumu ve izin tetikleyicisi
   function fixBellButtonPosition() {
     const candidates = Array.from(document.querySelectorAll('button, a, div[role="button"], span[role="button"]'));
     const bellBtn = candidates.find(el => {
@@ -1164,7 +1171,6 @@
         bellBtn.style.left = '12px';
         bellBtn.style.zIndex = '1100';
       }
-      // Tiklandiginda tarayici bildirim izni henuz istenmediyse iste
       if (!bellBtn.dataset.krdPermBound) {
         bellBtn.dataset.krdPermBound = '1';
         bellBtn.addEventListener('click', () => {
@@ -1176,8 +1182,27 @@
     }
   }
 
-  // 3) Ekranda anlik bildirim balonu (Toast) + Tarayici bildirimi goster
+  // 3) Ham "update" mesajlarini anlamli Turkce bildirime cevir
+  function humanizeEventText(rawText) {
+    const t = String(rawText || '').trim();
+    const low = t.toLowerCase();
+    if (!t || low === 'ping' || low === 'ok' || low === 'heartbeat') return '';
+    if (low === 'update' || low === 'updated' || low === 'refresh' || low === 'league_update') {
+      return 'Lig verileri, puan durumu ve fikstür güncellendi.';
+    }
+    if (low === 'match_end' || low === 'match_update' || low === 'goal') {
+      return 'Maç sonucu kaydedildi, tablo ve kalan maçlar yenilendi.';
+    }
+    if (low === 'announcement' || low === 'duyuru') {
+      return 'Yeni lig duyurusu yayınlandı.';
+    }
+    return t;
+  }
+
   function showInstantNotification(title, body) {
+    const cleanBody = humanizeEventText(body);
+    if (!cleanBody) return;
+
     let toast = document.getElementById('krdInstantToast');
     if (!toast) {
       toast = document.createElement('div');
@@ -1185,32 +1210,101 @@
       toast.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;max-width:92vw;width:360px;padding:12px 14px;border-radius:12px;background:#111827;color:#f9fafb;border:1px solid #22c55e;box-shadow:0 10px 25px rgba(0,0,0,0.45);font-size:13px;line-height:1.4;transition:opacity 0.25s;';
       document.body.appendChild(toast);
     }
-    toast.innerHTML = '<div style="font-weight:700;color:#86efac;margin-bottom:2px;">🔔 ' + title + '</div><div>' + body + '</div>';
+    toast.innerHTML = '<div style="font-weight:700;color:#86efac;margin-bottom:2px;">🔔 ' + title + '</div><div>' + cleanBody + '</div>';
     toast.style.opacity = '1';
     toast.style.display = 'block';
     clearTimeout(window.__krdToastTimer);
     window.__krdToastTimer = setTimeout(() => {
       toast.style.opacity = '0';
       setTimeout(() => { toast.style.display = 'none'; }, 260);
-    }, 5500);
+    }, 5000);
 
     if ('Notification' in window && Notification.permission === 'granted') {
       try {
-        new Notification(title, { body: body, tag: 'krd-ligi-live' });
+        new Notification(title, { body: cleanBody, tag: 'krd-ligi-live' });
       } catch (_) {}
     }
   }
 
-  // 4) Duyuru, bildirim veya mac skoru degisince sayfa yenilemeden yakala ve bildir
+  // 4) Gercek /api/league verisinden Mert & Omer 3-0 hukmen + Herkesin Kalan Maci ozetini cikar
+  function renderCleanRemainingCard(data) {
+    const matches = Array.isArray(data.matches) ? data.matches : [];
+    const teams = Array.isArray(data.teams) ? data.teams : (Array.isArray(data.players) ? data.players : []);
+    if (matches.length === 0) return;
+
+    const remByPlayer = {};
+    teams.forEach(t => {
+      const name = String(typeof t === 'string' ? t : (t.name || t.player || t.team || '')).trim();
+      if (name && !isExcl(name)) remByPlayer[name] = [];
+    });
+
+    let walkoverCount = 0;
+    matches.forEach(m => {
+      const h = String(m.home || m.ev || m.teamA || m.p1 || '').trim();
+      const a = String(m.away || m.dep || m.teamB || m.p2 || '').trim();
+      if (!h || !a) return;
+
+      if (isExcl(h) || isExcl(a)) {
+        walkoverCount++;
+        return;
+      }
+
+      const hasScore = (m.homeGoals !== undefined && m.homeGoals !== null && m.homeGoals !== '') ||
+                       (m.evGol !== undefined && m.evGol !== null && m.evGol !== '');
+      const played = Boolean(m.played || hasScore || m.status === 'played' || m.status === 'walkover');
+      if (!played) {
+        if (!remByPlayer[h]) remByPlayer[h] = [];
+        if (!remByPlayer[a]) remByPlayer[a] = [];
+        remByPlayer[h].push(a);
+        remByPlayer[a].push(h);
+      }
+    });
+
+    const entries = Object.entries(remByPlayer);
+    if (entries.length === 0) return;
+
+    // Simülasyon veya Fikstür alanının hemen üstüne temiz kart yerleştir
+    const anchor = Array.from(document.querySelectorAll('div, section')).find(el =>
+      (el.textContent || '').includes('Canlı Şampiyonluk') || (el.textContent || '').includes('Kafa Kafaya (H2H)')
+    );
+    const parent = anchor ? anchor.parentElement : (document.getElementById('main-content') || document.body);
+    if (!parent) return;
+
+    let card = document.getElementById('krdCleanRemainingCard');
+    if (!card) {
+      card = document.createElement('section');
+      card.id = 'krdCleanRemainingCard';
+      card.style.cssText = 'margin:12px 0;padding:14px;border-radius:12px;background:rgba(17,24,39,0.92);color:#f9fafb;border:1px solid rgba(255,255,255,0.12);';
+      if (anchor) parent.insertBefore(card, anchor);
+      else parent.appendChild(card);
+    }
+
+    card.innerHTML =
+      '<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px;margin-bottom:10px;">' +
+        '<strong style="font-size:14px;">📋 Herkesin Kalan Maçı (Sezon 2027)</strong>' +
+        '<span style="font-size:11px;padding:3px 8px;border-radius:999px;background:rgba(34,197,94,0.18);color:#86efac;">Mert &amp; Ömer: ' + walkoverCount + ' Maç Hükmen 3-0</span>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;">' +
+        entries.map(([player, opps]) =>
+          '<div style="padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.05);font-size:12px;">' +
+            '<div style="font-weight:700;color:#fff;">' + player + ' (' + opps.length + ')</div>' +
+            '<div style="opacity:0.8;margin-top:2px;">' + (opps.length > 0 ? 'Kalan: ' + opps.join(', ') : 'Tüm maçlar tamamlandı') + '</div>' +
+          '</div>'
+        ).join('') +
+      '</div>';
+  }
+
   let lastAnnouncement = '';
   let lastMatchesSig = '';
   let initialized = false;
 
-  async function pollForNotifications() {
+  async function pollForNotificationsAndData() {
     try {
       const res = await origFetch('/api/league?_t=' + Date.now(), { cache: 'no-store' });
       if (!res.ok) return;
       const data = await res.json();
+
+      renderCleanRemainingCard(data);
 
       const ann = String(data.announcement || data.duyuru || data.banner || (data.news && data.news[0] && (data.news[0].title || data.news[0])) || '').trim();
       const matches = Array.isArray(data.matches) ? data.matches : [];
@@ -1225,19 +1319,18 @@
 
       if (ann && ann !== lastAnnouncement) {
         lastAnnouncement = ann;
-        showInstantNotification('Yeni Duyuru / Bildirim', ann);
+        showInstantNotification('Yeni Duyuru', ann);
       }
 
       if (matchesSig && matchesSig !== lastMatchesSig) {
         lastMatchesSig = matchesSig;
-        showInstantNotification('Maç Güncellendi', 'KRD PES Ligi maç sonucu veya fikstür verisi güncellendi.');
+        showInstantNotification('Maç Güncellendi', 'KRD PES Ligi maç sonucu ve puan durumu güncellendi.');
         if (typeof window.loadLeague === 'function') window.loadLeague(true);
         else if (typeof window.fetchLeague === 'function') window.fetchLeague(true);
       }
     } catch (_) {}
   }
 
-  // SSE (/api/events) uzerinden gelen olaylari da direkt yakala
   function connectEventsSSE() {
     if (typeof EventSource === 'undefined') return;
     try {
@@ -1246,14 +1339,12 @@
         if (!ev || !ev.data) return;
         try {
           const payload = JSON.parse(ev.data);
-          const msg = payload.message || payload.text || payload.title || payload.announcement;
+          const msg = payload.message || payload.text || payload.title || payload.announcement || payload.type;
           if (msg) showInstantNotification('Canlı Bildirim', String(msg));
         } catch (_) {
-          if (ev.data.length > 2 && ev.data !== 'ping' && ev.data !== 'ok') {
-            showInstantNotification('Canlı Bildirim', ev.data);
-          }
+          showInstantNotification('Canlı Bildirim', ev.data);
         }
-        pollForNotifications();
+        pollForNotificationsAndData();
       };
       es.onerror = function() {
         try { es.close(); } catch (_) {}
@@ -1266,7 +1357,7 @@
     fixBellButtonPosition();
     setTimeout(fixBellButtonPosition, 500);
     connectEventsSSE();
-    pollForNotifications();
-    setInterval(pollForNotifications, 3000);
+    pollForNotificationsAndData();
+    setInterval(pollForNotificationsAndData, 3000);
   });
 })();
