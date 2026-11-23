@@ -1,0 +1,110 @@
+[1mdiff --git a/public/sw.js b/public/sw.js[m
+[1mindex 1252a28..81a37e8 100644[m
+[1m--- a/public/sw.js[m
+[1m+++ b/public/sw.js[m
+[36m@@ -1,4 +1,4 @@[m
+[31m-﻿const CACHE = 'krd-ligi-v20261122pushfast';[m
+[32m+[m[32m﻿const CACHE = 'krd-ligi-v20261123mobile';[m
+ const ASSETS = ['/', '/manifest.json', '/icon-192.png'];[m
+ [m
+ self.addEventListener('install', event => {[m
+[1mdiff --git a/server.js b/server.js[m
+[1mindex 2dd8918..3d090b6 100644[m
+[1m--- a/server.js[m
+[1m+++ b/server.js[m
+[36m@@ -244,7 +244,7 @@[m [mconst body = req => new Promise((ok, no) => { let d = ''; req.on('data', c => {[m
+ const cookie = (v, age) => `kl_s=${v}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${age}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;[m
+ [m
+ async function api(req, res, u) {[m
+[31m-  const M = req.method, P = u.pathname, ip = req.socket.remoteAddress;[m
+[32m+[m[32m  const M = req.method, P = u.pathname, ip = (typeof krdGetIp === 'function' ? krdGetIp(req) : req.socket.remoteAddress);[m
+   if (M === 'GET' && P === '/api/league') return send(res, 200, await league());[m
+   if (M === 'GET' && P === '/api/me') return send(res, 200, { admin: isAdmin(req), needsSetup: await needsSetup() });[m
+   if (M !== 'GET' && req.headers['x-kl'] !== '1') throw E(403, 'Geçersiz istek');[m
+[36m@@ -262,6 +262,10 @@[m [masync function api(req, res, u) {[m
+     return send(res, 200, { ok: 1 }, { 'Set-Cookie': cookie(mkToken(), 43200) });[m
+   }[m
+   if (M === 'POST' && P === '/api/admin/logout') return send(res, 200, { ok: 1 }, { 'Set-Cookie': cookie('', 0) });[m
+[32m+[m[32m  // === KRD_HARD_AUTH_GUARD ===[m
+[32m+[m[32m  if ((M !== 'GET' && P === '/api/krd-extras') || P.startsWith('/api/admin/')) {[m
+[32m+[m[32m    if (!isAdmin(req)) throw E(401, 'Yönetici girişi gerekli');[m
+[32m+[m[32m  }[m
+   if (M === 'POST' && P === '/api/krd-extras') {[m
+     const b = await body(req);[m
+     await pool.query(`DELETE FROM ${SETTINGS} WHERE k=$1`, ['krd_extras_v2']);[m
+[36m@@ -456,7 +460,7 @@[m [masync function initPush() { if (!webpush) return;[m
+     priv = { v: keys.privateKey };[m
+   }[m
+   VAPID_PUBLIC = pub.v;[m
+[31m-  webpush.setVapidDetails('mailto:admin@krdligi.local', pub.v, priv.v);[m
+[32m+[m[32m  webpush.setVapidDetails('mailto:admin@kardeslerligi.com', pub.v, priv.v);[m
+ }[m
+ [m
+ async function sendPushAll(payload) {[m
+[36m@@ -570,6 +574,25 @@[m [mfunction notifyClients() {[m
+   }[m
+ }[m
+ const server = http.createServer(async (req, res) => {[m
+[32m+[m
+[32m+[m[32m  // === KRD_HARD_AUTH_GUARD ===[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    const _rawPath = String(req.url || '').split('?')[0].replace(/\/+$/, '') || '/';[m
+[32m+[m[32m    const _rawMethod = String(req.method || 'GET').toUpperCase();[m
+[32m+[m[32m    const _openLoginPaths = ["/api/login","/api/admin/login","/api/auth","/api/admin/auth"];[m
+[32m+[m[32m    if (!_openLoginPaths.includes(_rawPath)) {[m
+[32m+[m[32m      if ((_rawPath === '/api/krd-extras' && _rawMethod !== 'GET') || _rawPath.startsWith('/api/admin/')) {[m
+[32m+[m[32m        if (!isAdmin(req)) {[m
+[32m+[m[32m          res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });[m
+[32m+[m[32m          return res.end(JSON.stringify({ error: 'Yönetici girişi gerekli' }));[m
+[32m+[m[32m        }[m
+[32m+[m[32m      }[m
+[32m+[m[32m    }[m
+[32m+[m[32m  } catch (_e) {[m
+[32m+[m[32m    res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });[m
+[32m+[m[32m    return res.end(JSON.stringify({ error: 'Yetkisiz erişim' }));[m
+[32m+[m[32m  }[m
+[32m+[m
+   res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('X-Frame-Options', 'DENY'); res.setHeader('Referrer-Policy', 'same-origin');[m
+   if (req.url.startsWith('/sw.js')) res.setHeader('Service-Worker-Allowed', '/');[m
+   try {[m
+[36m@@ -588,23 +611,19 @@[m [masync function krdDbGet(sql, ...params) {[m
+ [m
+ const u = new URL(req.url, 'http://x');[m
+ [m
+[31m-  // === KRD_HARD_AUTH_GUARD ===[m
+[31m-  const _krdPath = u.pathname;[m
+[31m-  const _krdMethod = (req.method || 'GET').toUpperCase();[m
+[31m-  if ((_krdPath === '/api/krd-extras' && _krdMethod !== 'GET') || _krdPath.startsWith('/api/admin/')) {[m
+[31m-    const _authed = (typeof isAdmin === 'function' && isAdmin(req)) || (typeof checkAdmin === 'function' && checkAdmin(req));[m
+[31m-    if (!_authed) {[m
+[31m-      res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });[m
+[31m-      return res.end(JSON.stringify({ error: 'Yönetici girişi gerekli' }));[m
+[31m-    }[m
+[31m-  }[m
+[32m+[m
+ [m
+   // === KRD_EXTRAS_START ===[m
+   if (req.method === 'GET' && u.pathname === '/api/krd-extras') {[m
+     try {[m
+       const r = await pool.query(`SELECT v FROM ${SETTINGS} WHERE k=$1`, ['krd_extras_v2']);[m
+       const extras = (r.rows && r.rows[0] && r.rows[0].v) ? JSON.parse(r.rows[0].v) : {};[m
+[31m-      return send(res, 200, { ok: 1, extras });[m
+[32m+[m[32m      let lastBroadcast = null;[m
+[32m+[m[32m      try {[m
+[32m+[m[32m        const bRow = await pool.query(`SELECT v FROM ${SETTINGS} WHERE k=$1`, ['krd_last_broadcast']);[m
+[32m+[m[32m        if (bRow.rows && bRow.rows[0] && bRow.rows[0].v) lastBroadcast = JSON.parse(bRow.rows[0].v);[m
+[32m+[m[32m      } catch {}[m
+[32m+[m[32m      return send(res, 200, { ok: 1, extras, lastBroadcast });[m
+     } catch (e) {[m
+       return send(res, 200, { ok: 1, extras: {} });[m
+     }[m
+[36m@@ -821,7 +840,8 @@[m [mconst u = new URL(req.url, 'http://x');[m
+       const row = await one(`SELECT v FROM ${SETTINGS} WHERE k='push_subs'`);[m
+       let subs = [];[m
+       try { subs = JSON.parse((row && row.v) || '[]'); } catch { subs = []; }[m
+[31m-      await sendPushAll({ title, body });[m
+[32m+[m[32m      await run(`INSERT INTO ${SETTINGS}(k,v) VALUES('krd_last_broadcast',$1) ON CONFLICT(k) DO UPDATE SET v=EXCLUDED.v`, JSON.stringify({ id: Date.now(), title, body }));[m
+[32m+[m[32m      await sendPushAll({ title, body }); if (typeof notifyClients === "function") notifyClients();[m
+       return send(res, 200, { ok: 1, count: subs.length });[m
+     }[m
+ [m
