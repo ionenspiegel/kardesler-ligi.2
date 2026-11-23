@@ -1,3 +1,49 @@
+
+// --- KRD API TEKILLESTIRME & TELEFON DONMA ENGELLEYICI ---
+(function krdFetchDedupe() {
+  if (typeof window === 'undefined' || !window.fetch) return;
+  const origFetch = window.fetch.bind(window);
+  const inflight = new Map();
+  const shortCache = new Map();
+
+  window.fetch = function(input, init) {
+    const method = (init && init.method ? init.method : 'GET').toUpperCase();
+    const url = typeof input === 'string' ? input : (input && input.url ? input.url : '');
+    if (method !== 'GET' || !url.includes('/api/')) {
+      return origFetch(input, init);
+    }
+    // _t ve _ timestamp parametrelerini normalize et ki ayni endpoint 3 kez cagrilmasin
+    const cleanUrl = url.replace(/([?&])(_t|_)=\d+&?/g, '$1').replace(/[?&]$/, '');
+    const now = Date.now();
+    const cached = shortCache.get(cleanUrl);
+    if (cached && (now - cached.ts) < 2500) {
+      return Promise.resolve(cached.res.clone());
+    }
+    if (inflight.has(cleanUrl)) {
+      return inflight.get(cleanUrl).then(r => r.clone());
+    }
+    const p = origFetch(input, init).then(res => {
+      inflight.delete(cleanUrl);
+      if (res.ok) shortCache.set(cleanUrl, { ts: Date.now(), res: res.clone() });
+      return res;
+    }).catch(err => {
+      inflight.delete(cleanUrl);
+      throw err;
+    });
+    inflight.set(cleanUrl, p);
+    return p.then(r => r.clone());
+  };
+
+  // Sohbet kutusunda 25'ten fazla eski mesaj varsa DOM'u sisirmemek icin eskileri gizle
+  const trimChat = () => {
+    const box = document.getElementById('krdChatMsgs');
+    if (box && box.children.length > 25) {
+      while (box.children.length > 25) box.removeChild(box.firstChild);
+    }
+  };
+  window.addEventListener('load', () => setInterval(trimChat, 3000));
+})();
+
 ﻿(function () {
   if (window._krdMasterLoaded) return;
   window._krdMasterLoaded = true;
