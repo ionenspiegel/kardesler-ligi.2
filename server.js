@@ -1039,3 +1039,31 @@ const u = new URL(req.url, 'http://x');
   server.listen(PORT, () => console.log(`KRD Ligi: http://localhost:${PORT}`));
 })();
 for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { server.close(); pool.end().finally(() => process.exit(0)); });
+
+
+let __krdCustomTicker = '';
+app.get('/api/ticker', async (req, res) => {
+  try {
+    if (typeof pool !== 'undefined' && pool) {
+      await pool.query('CREATE TABLE IF NOT EXISTS krd_settings (k TEXT PRIMARY KEY, v TEXT)');
+      const r = await pool.query("SELECT v FROM krd_settings WHERE k='live_ticker'");
+      if (r.rows && r.rows[0]) __krdCustomTicker = r.rows[0].v || '';
+    }
+  } catch (e) {}
+  res.json({ text: __krdCustomTicker });
+});
+
+app.post('/api/ticker', async (req, res) => {
+  const txt = String((req.body && req.body.text) || '').trim().slice(0, 240);
+  __krdCustomTicker = txt;
+  try {
+    if (typeof pool !== 'undefined' && pool) {
+      await pool.query('CREATE TABLE IF NOT EXISTS krd_settings (k TEXT PRIMARY KEY, v TEXT)');
+      await pool.query(
+        "INSERT INTO krd_settings (k, v) VALUES ('live_ticker', $1) ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v",
+        [txt]
+      );
+    }
+  } catch (e) {}
+  res.json({ ok: true, text: __krdCustomTicker });
+});

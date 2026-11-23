@@ -1328,3 +1328,67 @@
     if (!document.hidden) pollOnce();
   });
 })();
+
+
+;(function(){
+  if (window.__krdTickerInit) return;
+  window.__krdTickerInit = true;
+  window.__krdCustomTickerText = '';
+
+  function applyCustomTicker() {
+    var txt = (window.__krdCustomTickerText || '').trim();
+    var tracks = document.querySelectorAll('#krdLiveTickerBar .krd-ticker-track');
+    tracks.forEach(function(track) {
+      var old = track.querySelector('.krd-custom-msg');
+      if (!txt) { if (old) old.remove(); return; }
+      if (!old) {
+        old = document.createElement('span');
+        old.className = 'krd-tick-item krd-tick-live krd-custom-msg';
+        track.insertBefore(old, track.firstChild);
+      }
+      old.innerHTML = '<span class="krd-dot-live"></span> 📢 ' + txt.replace(/[<>&]/g, '');
+    });
+  }
+
+  fetch('/api/ticker').then(function(r){ return r.json(); }).then(function(d){
+    if (d && d.text) {
+      window.__krdCustomTickerText = d.text;
+      applyCustomTicker();
+    }
+  }).catch(function(){});
+
+  // Yonetici paneli acildiginda Canli Yayin Akisi kutusunu otomatik ekle
+  setInterval(function(){
+    applyCustomTicker();
+    if (document.getElementById('krdAdminTickerBox')) return;
+    // Yonetici paneli aciksa (admin icerigi gorunuyorsa) kutuyu en uste ekle
+    var adminPanel = document.querySelector('#adminPanel, .admin-panel, [id*="adminBody"], [data-admin-open="1"]');
+    if (!adminPanel || adminPanel.offsetParent === null) return;
+
+    var box = document.createElement('div');
+    box.id = 'krdAdminTickerBox';
+    box.style.cssText = 'margin:10px 0 14px;padding:12px;border-radius:12px;background:rgba(15,23,42,0.85);border:1px solid rgba(56,189,248,0.35);';
+    box.innerHTML =
+      '<div style="font-weight:700;font-size:13px;color:#38bdf8;margin-bottom:6px;">📡 Canlı Yayın Akışı Duyurusu</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+        '<input id="krdAdminTickerInput" type="text" maxlength="200" placeholder="Örn: Bu akşam 21:00 THXEDO - akifl38 derbisi canlı!" style="flex:1;min-width:200px;padding:8px 10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:13px;">' +
+        '<button id="krdAdminTickerSave" type="button" style="padding:8px 14px;border-radius:8px;border:0;background:#10b981;color:#fff;font-weight:700;cursor:pointer;">Yayınla</button>' +
+      '</div>';
+    adminPanel.insertBefore(box, adminPanel.firstChild);
+
+    var inp = document.getElementById('krdAdminTickerInput');
+    inp.value = window.__krdCustomTickerText || '';
+    document.getElementById('krdAdminTickerSave').onclick = function() {
+      var val = inp.value.trim();
+      fetch('/api/ticker', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: val })
+      }).then(function(r){ return r.json(); }).then(function(res){
+        window.__krdCustomTickerText = res.text || '';
+        applyCustomTicker();
+        alert(val ? 'Canlı yayın akışı güncellendi!' : 'Özel akış yazısı temizlendi.');
+      });
+    };
+  }, 1200);
+})();
