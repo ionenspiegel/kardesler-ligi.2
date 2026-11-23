@@ -908,6 +908,12 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   .b, .krd-crest { text-shadow: 0 1px 2px rgba(0,0,0,0.75); }
 </style>
 
+
+<style id="krd-cls-v3">
+  #main-content { min-height: 110vh; contain: layout style; overflow-anchor: none; }
+  .announcement, .ticker, .news-bar, .mvp-bar { min-height: 44px; contain: layout; }
+</style>
+
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main"><div class="wrap" id="app"></div><div id="toast"></div>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
