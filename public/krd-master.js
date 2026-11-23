@@ -1227,21 +1227,48 @@
   }
 
   // 4) Gercek /api/league verisinden Mert & Omer 3-0 hukmen + Herkesin Kalan Maci ozetini cikar
+  
   function renderCleanRemainingCard(data) {
-    const matches = Array.isArray(data.matches) ? data.matches : [];
+    const matches = Array.isArray(data.matches) ? data.matches : (Array.isArray(data.fixtures) ? data.fixtures : []);
     const teams = Array.isArray(data.teams) ? data.teams : (Array.isArray(data.players) ? data.players : []);
-    if (matches.length === 0) return;
+    if (matches.length === 0 || teams.length === 0) return;
 
+    // Takim ID / kisaltma / isim haritasini kur
+    const lookup = new Map();
     const remByPlayer = {};
-    teams.forEach(t => {
-      const name = String(typeof t === 'string' ? t : (t.name || t.player || t.team || '')).trim();
-      if (name && !isExcl(name)) remByPlayer[name] = [];
+    teams.forEach((t, idx) => {
+      const name = String(typeof t === 'string' ? t : (t.name || t.player || t.username || t.team || t.title || '')).trim();
+      if (!name) return;
+      const keys = [
+        name,
+        name.toLowerCase(),
+        t.id,
+        String(t.id ?? ''),
+        t.code,
+        t.short,
+        t.abbr,
+        t.slug,
+        String(idx)
+      ].filter(v => v !== undefined && v !== null && String(v).trim() !== '');
+      keys.forEach(k => lookup.set(String(k).trim().toLowerCase(), name));
+      if (!isExcl(name)) remByPlayer[name] = [];
     });
+
+    function resolveTeamName(raw) {
+      if (raw && typeof raw === 'object') {
+        raw = raw.name || raw.player || raw.username || raw.id || raw.code || '';
+      }
+      const key = String(raw ?? '').trim();
+      if (!key) return '';
+      return lookup.get(key.toLowerCase()) || key;
+    }
 
     let walkoverCount = 0;
     matches.forEach(m => {
-      const h = String(m.home || m.ev || m.teamA || m.p1 || '').trim();
-      const a = String(m.away || m.dep || m.teamB || m.p2 || '').trim();
+      const rawH = m.home ?? m.homeId ?? m.homeTeam ?? m.ev ?? m.evId ?? m.teamA ?? m.team1 ?? m.t1 ?? m.p1 ?? m.user1;
+      const rawA = m.away ?? m.awayId ?? m.awayTeam ?? m.dep ?? m.depId ?? m.teamB ?? m.team2 ?? m.t2 ?? m.p2 ?? m.user2;
+      const h = resolveTeamName(rawH);
+      const a = resolveTeamName(rawA);
       if (!h || !a) return;
 
       if (isExcl(h) || isExcl(a)) {
@@ -1249,9 +1276,12 @@
         return;
       }
 
-      const hasScore = (m.homeGoals !== undefined && m.homeGoals !== null && m.homeGoals !== '') ||
-                       (m.evGol !== undefined && m.evGol !== null && m.evGol !== '');
-      const played = Boolean(m.played || hasScore || m.status === 'played' || m.status === 'walkover');
+      const hg = m.homeGoals ?? m.homeScore ?? m.evGol ?? m.score1 ?? m.g1;
+      const ag = m.awayGoals ?? m.awayScore ?? m.depGol ?? m.score2 ?? m.g2;
+      const hasScore = (hg !== undefined && hg !== null && String(hg).trim() !== '') &&
+                       (ag !== undefined && ag !== null && String(ag).trim() !== '');
+      const played = Boolean(m.played || m.isPlayed || m.finished || hasScore || m.status === 'played' || m.status === 'finished' || m.status === 'walkover');
+
       if (!played) {
         if (!remByPlayer[h]) remByPlayer[h] = [];
         if (!remByPlayer[a]) remByPlayer[a] = [];
@@ -1263,7 +1293,6 @@
     const entries = Object.entries(remByPlayer);
     if (entries.length === 0) return;
 
-    // Simülasyon veya Fikstür alanının hemen üstüne temiz kart yerleştir
     const anchor = Array.from(document.querySelectorAll('div, section')).find(el =>
       (el.textContent || '').includes('Canlı Şampiyonluk') || (el.textContent || '').includes('Kafa Kafaya (H2H)')
     );
@@ -1287,12 +1316,24 @@
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;">' +
         entries.map(([player, opps]) =>
           '<div style="padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.05);font-size:12px;">' +
-            '<div style="font-weight:700;color:#fff;">' + player + ' (' + opps.length + ')</div>' +
-            '<div style="opacity:0.8;margin-top:2px;">' + (opps.length > 0 ? 'Kalan: ' + opps.join(', ') : 'Tüm maçlar tamamlandı') + '</div>' +
+            '<div style="font-weight:700;color:#fff;">' + player + ' (' + opps.length + ' maç)</div>' +
+            '<div style="opacity:0.82;margin-top:3px;line-height:1.35;">' + (opps.length > 0 ? 'Kalan: ' + opps.join(', ') : 'Tüm maçlar tamamlandı') + '</div>' +
           '</div>'
         ).join('') +
       '</div>';
+
+    // Sag alttaki yukari cik butonunu Sohbet butonunun ustune tasi
+    document.querySelectorAll('button, a').forEach(btn => {
+      if (btn.id === 'krdChatFab') return;
+      const txt = (btn.textContent || '').trim();
+      if (txt === '↑' || txt === '▲' || /scroll|top|up/i.test(btn.id || '') || /scroll|top|up/i.test(btn.className || '')) {
+        btn.style.setProperty('bottom', '74px', 'important');
+        btn.style.setProperty('right', '14px', 'important');
+        btn.style.setProperty('z-index', '1050', 'important');
+      }
+    });
   }
+
 
   let lastAnnouncement = '';
   let lastMatchesSig = '';
