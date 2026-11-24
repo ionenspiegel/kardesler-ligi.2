@@ -2185,20 +2185,29 @@
   // 1. Sohbet butonunu en ustteki "YAPIMCI: IONELSPIEGEL SUNAR" seridinin sagina al
   function placeChatInTopStrip() {
     var chatFab = document.getElementById('krdChatFab');
-    if (!chatFab || chatFab.classList.contains('krd-creator-chat')) return;
+    if (!chatFab) return;
 
-    var topStrip = Array.from(document.querySelectorAll('div, span, header')).find(function(el) {
-      var t = (el.textContent || '');
-      return t.indexOf('YAPIMCI:') !== -1 && t.indexOf('Resmi Lig Platformu') !== -1 && el.children.length <= 4;
+    // KRD LIGI yazisinin bulundugu satiri bul ve sohbeti sol tarafa tek satirda yerlestir
+    var leagueLabel = Array.from(document.querySelectorAll('span, div')).find(function(el) {
+      return (el.textContent || '').trim() === 'KRD LİGİ' && el.children.length === 0;
     });
 
-    if (topStrip) {
-      chatFab.classList.add('krd-creator-chat');
-      topStrip.style.display = 'flex';
-      topStrip.style.alignItems = 'center';
-      topStrip.style.justifyContent = 'center';
-      topStrip.style.flexWrap = 'wrap';
-      topStrip.appendChild(chatFab);
+    if (leagueLabel && leagueLabel.parentElement) {
+      var bar = leagueLabel.parentElement;
+      if (chatFab.parentElement !== bar) {
+        chatFab.classList.add('krd-creator-chat');
+        bar.insertBefore(chatFab, leagueLabel);
+      }
+    }
+
+    // Acilan sohbet kutusunu da her ihtimale karsi ust-ortaya hizala
+    var chatBox = document.getElementById('krdChatPanel') || document.getElementById('krdChatBox');
+    if (chatBox) {
+      chatBox.style.setProperty('top', '88px', 'important');
+      chatBox.style.setProperty('bottom', 'auto', 'important');
+      chatBox.style.setProperty('left', '50%', 'important');
+      chatBox.style.setProperty('right', 'auto', 'important');
+      chatBox.style.setProperty('transform', 'translateX(-50%)', 'important');
     }
   }
 

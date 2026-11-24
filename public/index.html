@@ -1238,29 +1238,44 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
 
   <link rel="icon" type="image/svg+xml" href="/krd-logo-2027.svg">
 
+
 <style id="krd-clean-addons">
-  /* Sohbet butonunu en ustteki yapimci seridinin sagina duzgunce yerlestir */
+  /* 1. Sohbet rozeti: KRD LIGI satirinin solunda tek satirda sik durur */
   #krdChatFab.krd-creator-chat {
     position: static !important;
     inset: auto !important;
-    height: 22px !important;
-    padding: 0 8px !important;
-    border-radius: 6px !important;
-    font-size: 10.5px !important;
+    height: 28px !important;
+    padding: 0 9px !important;
+    border-radius: 8px !important;
+    font-size: 11px !important;
     font-weight: 800 !important;
-    background: rgba(16, 185, 129, 0.18) !important;
+    background: rgba(16, 185, 129, 0.16) !important;
     border: 1px solid rgba(16, 185, 129, 0.45) !important;
     color: #6ee7b7 !important;
     display: inline-flex !important;
     align-items: center !important;
-    gap: 4px !important;
-    margin-left: 8px !important;
+    gap: 5px !important;
+    margin: 0 8px 0 0 !important;
     box-shadow: none !important;
-    vertical-align: middle !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
     cursor: pointer !important;
   }
 
-  /* Genel & ayarlanabilir mac teslim geri sayim seridi */
+  /* 2. Sohbet penceresi acildiginda en altta degil, ust-orta goz hizasinda acilir */
+  #krdChatPanel, #krdChatBox, .krd-chat-panel, .krd-chat-box, [id*="chatPanel" i], [id*="chatBox" i] {
+    top: 88px !important;
+    bottom: auto !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    width: min(94vw, 400px) !important;
+    max-height: 70vh !important;
+    z-index: 100000 !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75) !important;
+  }
+
+  /* 3. Genel & ayarlanabilir mac teslim geri sayim seridi */
   #krdGeneralCountdownBar {
     margin: 8px auto 10px auto;
     padding: 8px 12px;
@@ -3926,7 +3941,7 @@ events.onmessage = async () => {
 
 
 
-<script defer src="/krd-master.js?v=20261124_gen_cd"></script>
+<script defer src="/krd-master.js?v=20261124_chatpos"></script>
 
 <script id="krdSilentLiveSync">
 (function(){
