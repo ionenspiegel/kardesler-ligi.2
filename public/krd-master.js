@@ -2289,3 +2289,39 @@
   setTimeout(fixHeaderCleanly, 250);
   setTimeout(fixHeaderCleanly, 1000);
 })();
+
+
+;(function(){
+  if (window.__krdMobileBellEnsure) return;
+  window.__krdMobileBellEnsure = true;
+
+  function ensureMobileHeaderAndBell() {
+    // 1. KRD LIGI basliginin bulundugu ust satiri ekran genisligine yay
+    var themeBtn = document.getElementById('krdThemeBtn');
+    if (themeBtn) {
+      var bar = themeBtn.closest('div');
+      if (bar && bar.parentElement) {
+        var row = bar.parentElement;
+        row.style.setProperty('width', '100%', 'important');
+        row.style.setProperty('display', 'flex', 'important');
+        row.style.setProperty('justify-content', 'space-between', 'important');
+        row.style.setProperty('align-items', 'center', 'important');
+        row.style.setProperty('padding', '6px 12px', 'important');
+        row.style.setProperty('box-sizing', 'border-box', 'important');
+      }
+    }
+
+    // 2. Bildirim zilini dogrudan body altina alip sol alt koseye kilitle
+    var bell = document.getElementById('krdPushBtn');
+    if (bell && bell.parentElement !== document.body) {
+      document.body.appendChild(bell);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ensureMobileHeaderAndBell);
+  } else {
+    ensureMobileHeaderAndBell();
+  }
+  setTimeout(ensureMobileHeaderAndBell, 350);
+})();

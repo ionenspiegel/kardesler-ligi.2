@@ -1243,23 +1243,51 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
 <link rel="icon" type="image/svg+xml" href="/krd-logo-2027.svg">
 
 
+
 <style id="krd-top-pill-fix">
+  /* 1. Mobil ve masaustunde ust bar tam genislikte sola-saga dengeli */
+  .krd-sticky-top, .top-nav-bar, .sticky-header, header > div:first-child {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 2. Bildirim zili (#krdPushBtn) her zaman sol alt kosede gorunur ve sabit */
   #krdPushBtn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     position: fixed !important;
     top: auto !important;
+    right: auto !important;
     bottom: 16px !important;
     left: 14px !important;
-    right: auto !important;
-    z-index: 9998 !important;
-  }
-  /* Sag ustteki canli durum + tema kapsulunu ic ice olmaktan kurtar */
-  .krd-hdr-right, #krdThemeWrap, [class*="theme-wrap"] {
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 6px !important;
-    background: transparent !important;
-    border: none !important;
+    width: 44px !important;
+    height: 44px !important;
     padding: 0 !important;
+    border-radius: 50% !important;
+    background: #131c2e !important;
+    border: 1.5px solid rgba(250, 204, 21, 0.55) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55) !important;
+    font-size: 19px !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    z-index: 99999 !important;
+  }
+
+  /* 3. Mobil ekranda ustteki 3 oge (KRD LIGI / Canli / Tema) tasma yapmasin */
+  @media (max-width: 600px) {
+    #krdThemeBtn {
+      height: 28px !important;
+      padding: 0 8px !important;
+      font-size: 11px !important;
+    }
   }
 </style>
 
@@ -2482,7 +2510,7 @@ events.onmessage = async () => {
   async function updatePushBtnState() {
     if (!pushBtn) return;
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      pushBtn.style.display = 'none';
+      // pushBtn her cihazda gorunur
       return;
     }
     const savedOn = localStorage.getItem('krd_live_notify') === '1' || localStorage.getItem('krd_push_subscribed') === '1';
@@ -3903,7 +3931,7 @@ events.onmessage = async () => {
 
 
 
-<script defer src="/krd-master.js?v=20261124_cleanhdr"></script>
+<script defer src="/krd-master.js?v=20261124_mobilefix"></script>
 
 <script id="krdSilentLiveSync">
 (function(){
