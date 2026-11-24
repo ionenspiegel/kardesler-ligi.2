@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#0f2942"/>
+      <stop offset="65%" stop-color="#070b14"/>
+      <stop offset="100%" stop-color="#030712"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="50%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="emerald" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+  </defs>
+  <circle cx="256" cy="256" r="246" fill="url(#bg)" stroke="url(#gold)" stroke-width="14"/>
+  <circle cx="256" cy="256" r="224" fill="none" stroke="#38bdf8" stroke-width="3" stroke-opacity="0.45"/>
+  <text x="256" y="155" text-anchor="middle" font-family="Arial Black, sans-serif" font-weight="900" font-size="64" fill="url(#gold)" letter-spacing="2">KRD PES LİGİ</text>
+  <path d="M196 195 H316 L300 280 C295 312 217 312 212 280 Z" fill="url(#gold)"/>
+  <rect x="242" y="302" width="28" height="36" fill="url(#gold)"/>
+  <rect x="210" y="335" width="92" height="16" rx="6" fill="url(#gold)"/>
+  <text x="256" y="412" text-anchor="middle" font-family="Arial Black, sans-serif" font-weight="900" font-size="54" fill="url(#emerald)">SEZON 2027</text>
+  <text x="256" y="452" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="20" fill="#cbd5e1" letter-spacing="3">YENİ SEZON</text>
+</svg>

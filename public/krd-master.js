@@ -2221,3 +2221,80 @@
   fixTopRightPill();
   setInterval(fixTopRightPill, 600);
 })();
+
+
+;(function(){
+  if (window.__krdCeremonyPack) return;
+  window.__krdCeremonyPack = true;
+
+  // A. CANLI MAC TESLIM GERI SAYIM SAYACI (24 Kasim 2026 22:30 hedefi)
+  function updateDeadlineCountdown() {
+    var remBar = document.getElementById('krdRemainingBar');
+    if (!remBar) return;
+
+    var badge = document.getElementById('krdDeadlineTimer');
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.id = 'krdDeadlineTimer';
+      badge.style.cssText = 'margin-top:8px;padding-top:8px;border-top:1px dashed rgba(148,163,184,0.22);display:flex;justify-content:space-between;align-items:center;font-size:11px';
+      remBar.appendChild(badge);
+    }
+
+    var target = new Date('2026-11-24T22:30:00+03:00').getTime();
+    var now = Date.now();
+    var diff = target - now;
+
+    if (diff > 0) {
+      var h = Math.floor(diff / 3600000);
+      var m = Math.floor((diff % 3600000) / 60000);
+      var s = Math.floor((diff % 60000) / 1000);
+      var pad = function(n){ return n < 10 ? '0' + n : String(n); };
+      badge.innerHTML =
+        '<span style="color:#facc15;font-weight:700">⏳ Maç Teslim Süresi (22:30)</span>' +
+        '<span style="background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.5);color:#fca5a5;padding:2px 8px;border-radius:6px;font-family:monospace;font-weight:800">' +
+          pad(h) + ':' + pad(m) + ':' + pad(s) +
+        '</span>';
+    } else {
+      badge.innerHTML =
+        '<span style="color:#f87171;font-weight:800">⚠️ MAÇ TESLİM SÜRESİ DOLDU!</span>' +
+        '<span style="color:#cbd5e1">Oynanmayan maçlar hakem kararında</span>';
+    }
+  }
+
+  // B. SEZON SONU SAMPIYONLUK SEREMONISI (Tum maclar bittiginde otomatik kutlama karti)
+  function checkChampionCeremony() {
+    if (document.getElementById('krdChampionBanner')) return;
+    var data = window.__lastLeagueData || window.DATA || {};
+    var matches = Array.isArray(data.matches) ? data.matches : [];
+    if (matches.length < 6) return;
+
+    var unplayed = matches.filter(function(m){ return m && !m.played; });
+    if (unplayed.length > 0) return; // Hala oynanmamis mac varsa bekle
+
+    var rows = Array.from(document.querySelectorAll('table tbody tr')).filter(function(r){ return r.querySelectorAll('td').length >= 6; });
+    if (!rows.length) return;
+
+    var firstTds = rows[0].querySelectorAll('td');
+    var champName = (firstTds[1].textContent || '').replace(/^[A-ZÇĞİÖŞÜ]{2,4}\s+/, '').replace(/▲\d+|▼\d+|\d+G Seri/g, '').trim().split(/\s+/)[0];
+    var champPts = (firstTds[firstTds.length - 1].textContent || '').trim();
+    if (!champName) return;
+
+    var tbl = rows[0].closest('table');
+    if (!tbl || !tbl.parentElement) return;
+
+    var banner = document.createElement('div');
+    banner.id = 'krdChampionBanner';
+    banner.style.cssText = 'margin:12px 0;padding:16px;border-radius:16px;background:linear-gradient(135deg,rgba(250,204,21,0.22),rgba(16,185,129,0.2),#0f172a);border:1.5px solid rgba(250,204,21,0.7);text-align:center;box-shadow:0 12px 35px rgba(250,204,21,0.18)';
+    banner.innerHTML =
+      '<div style="font-size:12px;font-weight:900;color:#facc15;letter-spacing:1.2px">🏆 KRD PES LİGİ • SEZON 2027 ŞAMPİYONU 🏆</div>' +
+      '<div style="font-size:26px;font-weight:900;color:#ffffff;margin:6px 0">' + champName + '</div>' +
+      '<div style="font-size:13px;color:#34d399;font-weight:700">' + champPts + ' Puan ile Sezonu Zirvede Tamamladı!</div>';
+
+    tbl.parentElement.insertBefore(banner, tbl);
+  }
+
+  setInterval(function() {
+    updateDeadlineCountdown();
+    checkChampionCeremony();
+  }, 1000);
+})();
