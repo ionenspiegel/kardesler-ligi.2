@@ -2163,3 +2163,61 @@
     hookAdminFinishTicker();
   }, 900);
 })();
+
+
+;(function(){
+  if (window.__krdTopPillFix) return;
+  window.__krdTopPillFix = true;
+
+  function fixTopRightPill() {
+    var stadiumEl = Array.from(document.querySelectorAll('button, span, div')).find(function(el) {
+      var t = (el.textContent || '').trim();
+      return (t === 'Stadyum' || t.indexOf('Stadyum') !== -1) && el.children.length <= 2 && el.offsetWidth > 0 && el.offsetWidth < 240;
+    });
+    if (!stadiumEl) return;
+
+    var outerBox = stadiumEl.closest('div');
+    if (!outerBox || outerBox.dataset.pillFixed === '1') return;
+    if (outerBox.textContent.indexOf('Stadyum') === -1 || outerBox.offsetWidth > 320) return;
+
+    outerBox.dataset.pillFixed = '1';
+    outerBox.classList.add('krd-top-controls');
+
+    // Ic kutulardaki gereksiz cerceveleri temizle
+    Array.from(outerBox.children).forEach(function(child) {
+      child.style.background = 'transparent';
+      child.style.border = 'none';
+      child.style.padding = '0';
+      child.style.margin = '0';
+      child.style.boxShadow = 'none';
+    });
+
+    // Sol tarafa temiz Canli + Yenile butonu ekle/duzenle
+    var statusBtn = outerBox.querySelector('button, div');
+    if (statusBtn && statusBtn !== stadiumEl) {
+      statusBtn.classList.add('krd-pill-item');
+      statusBtn.title = 'Canlı bağlantı aktif • Verileri yenilemek için dokun';
+      statusBtn.innerHTML = '<span class="krd-live-dot"></span><span style="color:#cbd5e1;font-size:11px">Canlı</span><span class="krd-refresh-ico" style="font-size:12px">↻</span>';
+      statusBtn.onclick = function(e) {
+        e.stopPropagation();
+        var ico = statusBtn.querySelector('.krd-refresh-ico');
+        if (ico) {
+          ico.classList.remove('krd-spinning');
+          void ico.offsetWidth;
+          ico.classList.add('krd-spinning');
+        }
+        if (typeof load === 'function') load();
+        else if (typeof fetchState === 'function') fetchState();
+        else location.reload();
+      };
+    }
+
+    // Sag tarafa Stadyum tema butonunu esit boyutta hizala
+    var themeTarget = stadiumEl.closest('button') || stadiumEl;
+    themeTarget.classList.add('krd-pill-item');
+    themeTarget.style.color = '#facc15';
+  }
+
+  fixTopRightPill();
+  setInterval(fixTopRightPill, 600);
+})();
