@@ -2229,40 +2229,63 @@
 
 
 
+
+
 ;(function(){
   if (window.__krdTopPillFix) return;
   window.__krdTopPillFix = true;
 
-  function fixPillOnce() {
+  function fixHeaderCleanly() {
     var btns = Array.from(document.querySelectorAll('button'));
     var themeBtn = btns.find(function(b) {
       var t = (b.textContent || '').trim();
       return t.indexOf('Stadyum') !== -1 || t.indexOf('Gece Mavisi') !== -1 || t.indexOf('Spor Basını') !== -1;
     });
-    if (!themeBtn || !themeBtn.parentElement) return;
+    if (!themeBtn) return;
 
-    var box = themeBtn.parentElement;
-    if (box.dataset.krdFixed === '1') return;
-    box.dataset.krdFixed = '1';
+    // 1. Eger KRD LIGI basligi yanlislikla "Canlı ↻" olduysa geri getir
+    var hdr = themeBtn.closest('header') || themeBtn.parentElement.parentElement;
+    if (hdr) {
+      Array.from(hdr.querySelectorAll('*')).forEach(function(el) {
+        if (el.textContent.trim() === 'Canlı↻' || el.textContent.trim() === 'Canlı ↻') {
+          el.innerHTML = 'KRD LİGİ';
+          el.style.cssText = 'font-weight:900;font-size:15px;letter-spacing:0.5px;color:#f8fafc;background:transparent;border:none;padding:0';
+        }
+      });
+    }
 
-    box.style.cssText = 'display:inline-flex;align-items:center;gap:6px;background:transparent;border:none;padding:0;box-shadow:none';
+    // 2. Tema butonunun icindeki veya hemen yanindaki ic ice kutuyu duzelt
+    var wrap = themeBtn.parentElement;
+    if (wrap && wrap.dataset.cleanDone !== '1') {
+      wrap.dataset.cleanDone = '1';
+      wrap.style.cssText = 'display:inline-flex;align-items:center;gap:6px;background:transparent;border:none;padding:0;box-shadow:none';
 
-    // Sol taraftaki yesil nokta + yenile kutusunu ayir ve sadeleştir
-    Array.from(box.children).forEach(function(ch) {
-      if (ch === themeBtn) {
-        ch.style.cssText = 'height:32px;padding:0 10px;border-radius:9px;background:#131c2e;border:1px solid rgba(148,163,184,0.28);color:#facc15;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:5px;margin:0';
-      } else {
-        ch.style.cssText = 'height:32px;padding:0 9px;border-radius:9px;background:#131c2e;border:1px solid rgba(148,163,184,0.28);color:#cbd5e1;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:5px;margin:0;cursor:pointer';
-        ch.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 6px #10b981;display:inline-block"></span><span>Canlı</span><span>↻</span>';
-        ch.onclick = function(e) {
-          e.stopPropagation();
-          if (typeof load === 'function') load();
-          else location.reload();
-        };
+      // Wrap icindeki diger eleman (yesil nokta + yenileme butonu)
+      Array.from(wrap.children).forEach(function(child) {
+        if (child === themeBtn) {
+          child.style.cssText = 'height:32px;padding:0 10px;border-radius:9px;background:#131c2e;border:1px solid rgba(148,163,184,0.28);color:#facc15;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:5px;margin:0;box-shadow:none';
+        } else {
+          // Ic ice kutu cercevesini kaldirip tek hap buton yap
+          child.style.cssText = 'height:32px;padding:0 9px;border-radius:9px;background:#131c2e;border:1px solid rgba(148,163,184,0.28);color:#cbd5e1;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:5px;margin:0;box-shadow:none;cursor:pointer';
+          Array.from(child.children).forEach(function(sub) {
+            sub.style.background = 'transparent';
+            sub.style.border = 'none';
+            sub.style.padding = '0';
+            sub.style.boxShadow = 'none';
+          });
+        }
+      });
+    }
+
+    // 3. Istatistik kartlarinda tek kalan son karti (Gol Ortalamasi) tam genislik yap
+    document.querySelectorAll('div').forEach(function(grid) {
+      var st = window.getComputedStyle(grid);
+      if (st.display === 'grid' && grid.children.length === 5 && grid.textContent.indexOf('Gol Ortalaması') !== -1) {
+        grid.lastElementChild.style.gridColumn = '1 / -1';
       }
     });
   }
 
-  setTimeout(fixPillOnce, 200);
-  setTimeout(fixPillOnce, 900);
+  setTimeout(fixHeaderCleanly, 250);
+  setTimeout(fixHeaderCleanly, 1000);
 })();
