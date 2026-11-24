@@ -1244,8 +1244,9 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
 
 
 
+
 <style id="krd-top-pill-fix">
-  /* Bildirim zili: Sol alt kose */
+  /* 1. Bildirim zili: Hem PC hem mobilde sol alt kosede kesin gorunur */
   #krdPushBtn {
     display: flex !important;
     align-items: center !important;
@@ -1260,38 +1261,63 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
     padding: 0 !important;
     border-radius: 50% !important;
     background: #131c2e !important;
-    border: 1.5px solid rgba(250, 204, 21, 0.55) !important;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55) !important;
+    border: 1.5px solid rgba(250, 204, 21, 0.65) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6) !important;
     font-size: 18px !important;
     opacity: 1 !important;
     visibility: visible !important;
-    z-index: 9999 !important;
+    pointer-events: auto !important;
+    z-index: 99999 !important;
   }
 
-  /* Sohbet butonu: Alttan kaldirip ustte kompakt hap yap */
-  #krdChatFab.krd-top-chat {
+  /* 2. Ust bar: Saga kaymayi onle, tam genislikte sola-saga yasla */
+  .krd-fixed-topbar {
+    width: 100% !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 6px 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+  .krd-fixed-rightgroup {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    margin-left: auto !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* 3. Ust sagdaki 3 buton (Sohbet, Canli Yenile, Tema) esit ve kompakt */
+  #krdChatFab.krd-top-chat,
+  #krdThemeBtn,
+  .krd-conn-pill {
     position: static !important;
-    top: auto !important;
-    right: auto !important;
-    bottom: auto !important;
-    left: auto !important;
-    height: 30px !important;
-    padding: 0 10px !important;
+    inset: auto !important;
+    height: 28px !important;
+    padding: 0 8px !important;
     border-radius: 8px !important;
     font-size: 11px !important;
     font-weight: 700 !important;
     display: inline-flex !important;
     align-items: center !important;
-    gap: 5px !important;
-    margin-right: 6px !important;
+    gap: 4px !important;
+    margin: 0 !important;
     box-shadow: none !important;
+    white-space: nowrap !important;
   }
 
-  @media (max-width: 600px) {
-    #krdThemeBtn, #krdChatFab.krd-top-chat {
-      height: 28px !important;
-      padding: 0 8px !important;
-      font-size: 11px !important;
+  @media (max-width: 430px) {
+    .krd-fixed-topbar { padding: 6px 8px !important; }
+    #krdChatFab.krd-top-chat,
+    #krdThemeBtn,
+    .krd-conn-pill {
+      height: 26px !important;
+      padding: 0 6px !important;
+      font-size: 10.5px !important;
     }
   }
 </style>
@@ -2515,7 +2541,7 @@ events.onmessage = async () => {
   async function updatePushBtnState() {
     if (!pushBtn) return;
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      pushBtn.style.display = 'none';
+      /* mobile visible */
       return;
     }
     const savedOn = localStorage.getItem('krd_live_notify') === '1' || localStorage.getItem('krd_push_subscribed') === '1';
@@ -3936,7 +3962,7 @@ events.onmessage = async () => {
 
 
 
-<script defer src="/krd-master.js?v=20261124_safeui"></script>
+<script defer src="/krd-master.js?v=20261124_centered"></script>
 
 <script id="krdSilentLiveSync">
 (function(){

@@ -2291,14 +2291,17 @@
 })();
 
 
+
+
 ;(function(){
   if (window.__krdSafeTopBarAndBell) return;
   window.__krdSafeTopBarAndBell = true;
 
-  function arrangeTopAndBell() {
-    // 1. Bildirim zilini sol alt koseye sabitle
+  function syncTopAndBell() {
+    // 1. Bildirim zili: Body icinde ve sol alt kosede
     var bell = document.getElementById('krdPushBtn');
     if (bell) {
+      if (bell.parentElement !== document.body) document.body.appendChild(bell);
       bell.style.setProperty('display', 'flex', 'important');
       bell.style.setProperty('position', 'fixed', 'important');
       bell.style.setProperty('top', 'auto', 'important');
@@ -2307,36 +2310,50 @@
       bell.style.setProperty('left', '14px', 'important');
       bell.style.setProperty('opacity', '1', 'important');
       bell.style.setProperty('visibility', 'visible', 'important');
-      bell.style.setProperty('z-index', '9999', 'important');
+      bell.style.setProperty('z-index', '99999', 'important');
     }
 
-    // 2. Ust bari tam genislige yay ve Sohbet butonunu ust sag gruba tasi
+    // 2. Ust bar: KRD LIGI solda; Sohbet + Canli + Tema sagda, saga kayma sifir
     var themeBtn = document.getElementById('krdThemeBtn');
     var chatFab = document.getElementById('krdChatFab');
+    var connDot = document.getElementById('krdConnDot');
+    var connBtn = connDot ? connDot.closest('button') : null;
+
     if (themeBtn && themeBtn.parentElement) {
       var rightGroup = themeBtn.parentElement;
-      var topRow = rightGroup.parentElement;
-      if (topRow) {
-        topRow.style.setProperty('width', '100%', 'important');
-        topRow.style.setProperty('display', 'flex', 'important');
-        topRow.style.setProperty('justify-content', 'space-between', 'important');
-        topRow.style.setProperty('align-items', 'center', 'important');
-        topRow.style.setProperty('padding', '6px 12px', 'important');
-        topRow.style.setProperty('box-sizing', 'border-box', 'important');
+      rightGroup.classList.add('krd-fixed-rightgroup');
+
+      if (connBtn) {
+        connBtn.classList.add('krd-conn-pill');
+        connBtn.innerHTML = '<span id="krdConnDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;"></span><span>↻</span>';
       }
 
-      if (chatFab && !chatFab.classList.contains('krd-top-chat')) {
+      if (chatFab) {
         chatFab.classList.add('krd-top-chat');
-        rightGroup.insertBefore(chatFab, rightGroup.firstChild);
+        if (chatFab.parentElement !== rightGroup) {
+          rightGroup.insertBefore(chatFab, rightGroup.firstChild);
+        }
+      }
+
+      var topRow = rightGroup.parentElement;
+      if (topRow) {
+        topRow.classList.add('krd-fixed-topbar');
+        // Ust satiri kapsayan dis kutu varsa saga itilmesini engelle
+        if (topRow.parentElement && topRow.parentElement !== document.body) {
+          topRow.parentElement.style.setProperty('width', '100%', 'important');
+          topRow.parentElement.style.setProperty('max-width', '100%', 'important');
+          topRow.parentElement.style.setProperty('margin-left', '0', 'important');
+          topRow.parentElement.style.setProperty('margin-right', '0', 'important');
+        }
       }
     }
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', arrangeTopAndBell);
+    document.addEventListener('DOMContentLoaded', syncTopAndBell);
   } else {
-    arrangeTopAndBell();
+    syncTopAndBell();
   }
-  setTimeout(arrangeTopAndBell, 300);
-  setTimeout(arrangeTopAndBell, 1000);
+  setTimeout(syncTopAndBell, 250);
+  setTimeout(syncTopAndBell, 850);
 })();
