@@ -2363,24 +2363,78 @@
 })();
 
 
+
+
 ;(function(){
   if (window.__krdAutoTickerAndExportFix) return;
   window.__krdAutoTickerAndExportFix = true;
 
   var DEADLINE_MS = new Date('2026-11-24T22:30:00+03:00').getTime();
-  var switched = false;
+  var baseAdminText = '';
+  var recentMatchesText = '';
 
-  function checkAutoTickerUpdate() {
-    if (switched || Date.now() < DEADLINE_MS) return;
+  function findTickerMarquee() {
     var tickerBar = document.getElementById('krdLiveTickerBar') || document.querySelector('.ticker');
-    if (!tickerBar) return;
+    if (!tickerBar) return null;
+    return tickerBar.querySelector('marquee, .marquee, span:last-child, div:last-child');
+  }
 
-    var marquee = tickerBar.querySelector('marquee, .marquee, span:last-child, div:last-child');
-    if (marquee && (marquee.textContent || '').indexOf('24 kasım salı 22:30') !== -1) {
-      marquee.textContent = '📢 H6 Teslim Süresi Tamamlandı • H7 ve Kalan Fikstür Maçları Başladı • Güncel Puan Durumu ve İonenSpiegel Hafta Bülteni Yayında!';
-      switched = true;
+  function applyCombinedTicker() {
+    var el = findTickerMarquee();
+    if (!el) return;
+
+    var current = (el.textContent || '').trim();
+    if (!baseAdminText) {
+      baseAdminText = current.split(' • ⚽ SON MAÇLAR:')[0].trim();
+    } else if (current.indexOf(' • ⚽ SON MAÇLAR:') === -1 && current !== baseAdminText) {
+      baseAdminText = current;
+    }
+
+    if (Date.now() >= DEADLINE_MS && baseAdminText.indexOf('24 kasım salı 22:30') !== -1) {
+      baseAdminText = '📢 H6 Teslim Süresi Tamamlandı • H7 ve Kalan Fikstür Maçları Başladı';
+    }
+
+    var combined = recentMatchesText
+      ? (baseAdminText + '   •   ⚽ SON MAÇLAR: ' + recentMatchesText)
+      : baseAdminText;
+
+    if (el.textContent !== combined) {
+      el.textContent = combined;
     }
   }
 
-  setInterval(checkAutoTickerUpdate, 5000);
+  async function refreshRecentMatchesForTicker() {
+    try {
+      var res = await fetch('/api/league?t=' + Date.now());
+      if (!res.ok) return;
+      var data = await res.json();
+      if (!data || !Array.isArray(data.matches) || !Array.isArray(data.teams)) return;
+
+      var teamMap = {};
+      data.teams.forEach(function(t) { teamMap[String(t.id)] = t.name; });
+
+      var played = data.matches
+        .filter(function(m) { return Number(m.played) === 1; })
+        .sort(function(a, b) {
+          var ta = a.updated ? new Date(a.updated).getTime() : 0;
+          var tb = b.updated ? new Date(b.updated).getTime() : 0;
+          if (tb !== ta) return tb - ta;
+          return Number(b.id) - Number(a.id);
+        })
+        .slice(0, 6);
+
+      if (played.length > 0) {
+        recentMatchesText = played.map(function(m) {
+          var h = teamMap[String(m.home_id)] || m.home_id;
+          var a = teamMap[String(m.away_id)] || m.away_id;
+          return '[H' + m.week + '] ' + h + ' ' + m.hs + ' - ' + m.aws + ' ' + a;
+        }).join('  |  ');
+      }
+      applyCombinedTicker();
+    } catch (e) {}
+  }
+
+  refreshRecentMatchesForTicker();
+  setInterval(applyCombinedTicker, 3000);
+  setInterval(refreshRecentMatchesForTicker, 30000);
 })();
