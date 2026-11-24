@@ -2183,36 +2183,6 @@
     return settings.match_deadline_note || localStorage.getItem('krd_match_deadline_note') || 'Haftalık Maç Teslim Süresi';
   }
 
-  function arrangeHeaderCleanly() {
-    var chatFab = document.getElementById('krdChatFab');
-    var themeBtn = document.getElementById('krdThemeBtn');
-    var leagueLabel = Array.from(document.querySelectorAll('span, div')).find(function(el) {
-      return (el.textContent || '').trim() === 'KRD LİGİ' && el.children.length === 0;
-    });
-
-    if (leagueLabel && leagueLabel.parentElement) {
-      var navRow = leagueLabel.parentElement;
-      navRow.style.display = 'flex';
-      navRow.style.alignItems = 'center';
-      navRow.style.justifyContent = 'space-between';
-      navRow.style.gap = '6px';
-      navRow.style.width = '100%';
-      navRow.style.boxSizing = 'border-box';
-
-      if (chatFab && chatFab.parentElement !== navRow) {
-        chatFab.classList.remove('krd-creator-chat');
-        chatFab.classList.add('krd-inline-chat');
-        navRow.insertBefore(chatFab, leagueLabel);
-      }
-    }
-
-    if (themeBtn) {
-      themeBtn.style.height = '28px';
-      themeBtn.style.padding = '0 8px';
-      themeBtn.style.fontSize = '11px';
-    }
-  }
-
   function renderGeneralCountdown() {
     var bar = document.getElementById('krdGeneralCountdownBar');
     if (!bar) {
@@ -2355,7 +2325,6 @@
   }
 
   setInterval(function() {
-    arrangeHeaderCleanly();
     renderGeneralCountdown();
     injectAdminDeadlineControl();
   }, 600);

@@ -1240,8 +1240,9 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
 
 
 
+
 <style id="krd-clean-addons">
-  /* 1. Bildirim zili: CANLI AKIS üzerinden alınıp sol alt köşeye sabitlenir */
+  /* 1. Bildirim zili: Sol alt kosede sabit, CANLI AKIS uzerine cikmaz */
   #krdPushBtn {
     position: fixed !important;
     top: auto !important;
@@ -1253,28 +1254,22 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
     z-index: 9990 !important;
   }
 
-  /* 2. Sohbet butonu: KRD LIGI satırının soluna kompakt yerleşir, alt satıra taşmaz */
-  #krdChatFab.krd-inline-chat {
-    position: static !important;
-    inset: auto !important;
-    height: 28px !important;
-    padding: 0 9px !important;
-    border-radius: 8px !important;
-    font-size: 11px !important;
+  /* 2. Sohbet butonu: Sag alt kosede kompakt veya teslim cubugunda tasmadan durur */
+  #krdChatFab {
+    position: fixed !important;
+    top: auto !important;
+    left: auto !important;
+    right: 14px !important;
+    bottom: 16px !important;
+    height: 38px !important;
+    padding: 0 12px !important;
+    border-radius: 999px !important;
+    font-size: 12px !important;
     font-weight: 800 !important;
-    background: rgba(16, 185, 129, 0.16) !important;
-    border: 1px solid rgba(16, 185, 129, 0.45) !important;
-    color: #6ee7b7 !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 4px !important;
-    margin: 0 !important;
-    box-shadow: none !important;
-    white-space: nowrap !important;
-    flex-shrink: 0 !important;
+    z-index: 9990 !important;
   }
 
-  /* 3. Sohbet penceresi: Altta değil ekranın ortasında açılır */
+  /* 3. Sohbet penceresi acildiginda ekranin ortasinda net gorunur */
   #krdChatPanel, #krdChatBox, .krd-chat-panel, .krd-chat-box, [id*="chatPanel" i], [id*="chatBox" i] {
     top: 84px !important;
     bottom: auto !important;
@@ -1286,7 +1281,7 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
     z-index: 100000 !important;
   }
 
-  /* 4. Genel & ayarlanabilir maç teslim geri sayım şeridi */
+  /* 4. Genel & ayarlanabilir mac teslim geri sayim seridi */
   #krdGeneralCountdownBar {
     margin: 8px auto 10px auto;
     padding: 8px 12px;
@@ -1311,24 +1306,11 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
     white-space: nowrap;
   }
 
-  /* 5. Yönetici paneli mobil uyumluluk düzeltmesi */
+  /* 5. Yonetici paneli mobil uyumluluk */
   @media (max-width: 640px) {
-    .tabs {
-      display: flex !important;
-      flex-wrap: wrap !important;
-      gap: 5px !important;
-    }
-    .tabs button {
-      font-size: 11px !important;
-      padding: 6px 8px !important;
-    }
-    form.card.row, .card.row {
-      flex-wrap: wrap !important;
-      gap: 6px !important;
-    }
-    form.card.row input, form.card.row select, form.card.row button {
-      min-width: 0 !important;
-    }
+    .tabs { display: flex !important; flex-wrap: wrap !important; gap: 5px !important; }
+    .tabs button { font-size: 11px !important; padding: 6px 8px !important; }
+    form.card.row, .card.row { flex-wrap: wrap !important; gap: 6px !important; }
   }
 </style>
 
@@ -3972,7 +3954,7 @@ events.onmessage = async () => {
 
 
 
-<script defer src="/krd-master.js?v=20261124_admin_fix"></script>
+<script defer src="/krd-master.js?v=20261124_nostretch"></script>
 
 <script id="krdSilentLiveSync">
 (function(){
