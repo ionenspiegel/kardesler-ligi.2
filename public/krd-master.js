@@ -2190,18 +2190,26 @@
 
     var quickBar = document.getElementById('krdTopQuickBar');
     if (!quickBar) {
-      var ticker = document.getElementById('krdLiveTickerBar') || Array.from(document.querySelectorAll('div')).find(function(el) {
-        return (el.textContent || '').indexOf('CANLI AKIŞ') !== -1 && el.offsetHeight > 24 && el.offsetHeight < 70;
+      // CANLI AKIŞ şeridini bul (en içteki kırmızı etiketli kutunun kapsayıcısı)
+      var liveBadge = Array.from(document.querySelectorAll('span, div')).find(function(el) {
+        return (el.textContent || '').trim() === 'CANLI AKIŞ';
       });
-      if (!ticker || !ticker.parentElement) return;
+      var tickerRow = liveBadge ? liveBadge.parentElement : null;
+      if (!tickerRow || !tickerRow.parentElement) return;
 
       quickBar = document.createElement('div');
       quickBar.id = 'krdTopQuickBar';
-      quickBar.innerHTML = '<span>⚽ Canlı Lig Sohbet Odası</span>';
-      ticker.parentElement.insertBefore(quickBar, ticker);
+      quickBar.innerHTML = '<span style="font-weight:700;color:#94a3b8">⚽ Canlı Lig Sohbeti</span>';
+      tickerRow.parentElement.insertBefore(quickBar, tickerRow);
     }
 
     if (chatFab.parentElement !== quickBar) {
+      chatFab.classList.add('krd-in-topbar');
+      chatFab.style.setProperty('position', 'static', 'important');
+      chatFab.style.setProperty('bottom', 'auto', 'important');
+      chatFab.style.setProperty('left', 'auto', 'important');
+      chatFab.style.setProperty('right', 'auto', 'important');
+      chatFab.style.setProperty('top', 'auto', 'important');
       quickBar.appendChild(chatFab);
     }
   }
