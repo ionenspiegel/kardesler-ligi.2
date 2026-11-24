@@ -579,7 +579,49 @@ function normNickTr(s) {
 }
 
 const server = http.createServer(async (req, res) => {
+  
+  if (req.url && req.url.split('?')[0] === '/api/settings') {
+    if (req.method === 'GET') {
+      let deadline = null;
+      try {
+        const r = await pool.query(`SELECT v FROM ${SETTINGS} WHERE k=if (req.url && req.url.split('?')[0] === '/api/ticker') {`, ['krd_deadline_cfg']);
+        if (r.rows && r.rows[0] && r.rows[0].v) deadline = JSON.parse(r.rows[0].v);
+      } catch {}
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      return res.end(JSON.stringify({ ok: true, deadline }));
+    }
+    if (req.method === 'POST') {
+      if (!isAdmin(req)) {
+        res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+        return res.end(JSON.stringify({ ok: false, error: 'Yönetici girişi gerekli' }));
+      }
+      let raw = '';
+      req.on('data', ch => { raw += ch; });
+      req.on('end', async () => {
+        try {
+          const b = JSON.parse(raw || '{}');
+          const val = JSON.stringify({
+            deadlineIso: String(b.deadlineIso || '').slice(0, 40),
+            deadlineLabel: String(b.deadlineLabel || '').slice(0, 80)
+          });
+          await pool.query(`DELETE FROM ${SETTINGS} WHERE k=if (req.url && req.url.split('?')[0] === '/api/ticker') {`, ['krd_deadline_cfg']);
+          await pool.query(`INSERT INTO ${SETTINGS}(k,v) VALUES(if (req.url && req.url.split('?')[0] === '/api/ticker') {,$2)`, ['krd_deadline_cfg', val]);
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ ok: true }));
+        } catch (e) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ ok: false, error: 'Geçersiz veri' }));
+        }
+      });
+      return;
+    }
+  }
+
   if (req.url && req.url.split('?')[0] === '/api/ticker') {
+    if (req.method !== 'GET' && !isAdmin(req)) {
+      res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
+      return res.end(JSON.stringify({ ok: false, error: 'Yönetici girişi gerekli' }));
+    }
     if (req.method === 'GET') {
       let text = '';
       try {
@@ -1029,6 +1071,14 @@ const u = new URL(req.url, 'http://x');
       return;
     }
     if (u.pathname === '/api/predictions' && req.method === 'POST') {
+      global.__predRate = global.__predRate || new Map();
+      const _pIp = (typeof krdGetIp === 'function' ? krdGetIp(req) : req.socket.remoteAddress) || 'unknown';
+      const _pNow = Date.now();
+      const _pRec = global.__predRate.get(_pIp) || { n: 0, t: _pNow };
+      if (_pNow - _pRec.t > 60000) { _pRec.n = 0; _pRec.t = _pNow; }
+      _pRec.n++;
+      global.__predRate.set(_pIp, _pRec);
+      if (_pRec.n > 15) throw E(429, 'Çok fazla tahmin gönderildi, 1 dakika bekleyin');
     global.__predRate = global.__predRate || new Map();
     const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
     const now = Date.now();
