@@ -2165,11 +2165,12 @@
 })();
 
 
+
+
 ;(function(){
   if (window.__krdGeneralDeadlineAndTopChat) return;
   window.__krdGeneralDeadlineAndTopChat = true;
 
-  // Varsayilan teslim tarihi: Yonetici degistirmedikce aktif hedefi tutar, admin panelinden tek tikla guncellenir
   var DEFAULT_DEADLINE = '2026-11-24T22:30';
 
   function getDeadlineIso() {
@@ -2182,36 +2183,36 @@
     return settings.match_deadline_note || localStorage.getItem('krd_match_deadline_note') || 'Haftalık Maç Teslim Süresi';
   }
 
-  // 1. Sohbet butonunu en ustteki "YAPIMCI: IONELSPIEGEL SUNAR" seridinin sagina al
-  function placeChatInTopStrip() {
+  function arrangeHeaderCleanly() {
     var chatFab = document.getElementById('krdChatFab');
-    if (!chatFab) return;
-
-    // KRD LIGI yazisinin bulundugu satiri bul ve sohbeti sol tarafa tek satirda yerlestir
+    var themeBtn = document.getElementById('krdThemeBtn');
     var leagueLabel = Array.from(document.querySelectorAll('span, div')).find(function(el) {
       return (el.textContent || '').trim() === 'KRD LİGİ' && el.children.length === 0;
     });
 
     if (leagueLabel && leagueLabel.parentElement) {
-      var bar = leagueLabel.parentElement;
-      if (chatFab.parentElement !== bar) {
-        chatFab.classList.add('krd-creator-chat');
-        bar.insertBefore(chatFab, leagueLabel);
+      var navRow = leagueLabel.parentElement;
+      navRow.style.display = 'flex';
+      navRow.style.alignItems = 'center';
+      navRow.style.justifyContent = 'space-between';
+      navRow.style.gap = '6px';
+      navRow.style.width = '100%';
+      navRow.style.boxSizing = 'border-box';
+
+      if (chatFab && chatFab.parentElement !== navRow) {
+        chatFab.classList.remove('krd-creator-chat');
+        chatFab.classList.add('krd-inline-chat');
+        navRow.insertBefore(chatFab, leagueLabel);
       }
     }
 
-    // Acilan sohbet kutusunu da her ihtimale karsi ust-ortaya hizala
-    var chatBox = document.getElementById('krdChatPanel') || document.getElementById('krdChatBox');
-    if (chatBox) {
-      chatBox.style.setProperty('top', '88px', 'important');
-      chatBox.style.setProperty('bottom', 'auto', 'important');
-      chatBox.style.setProperty('left', '50%', 'important');
-      chatBox.style.setProperty('right', 'auto', 'important');
-      chatBox.style.setProperty('transform', 'translateX(-50%)', 'important');
+    if (themeBtn) {
+      themeBtn.style.height = '28px';
+      themeBtn.style.padding = '0 8px';
+      themeBtn.style.fontSize = '11px';
     }
   }
 
-  // 2. Genel & ayarlanabilir geri sayim cubugu
   function renderGeneralCountdown() {
     var bar = document.getElementById('krdGeneralCountdownBar');
     if (!bar) {
@@ -2267,38 +2268,45 @@
     }
   }
 
-  // 3. Yonetici paneline Genel Geri Sayim Ayar Karti enjekte et
+  // Yönetici ekranındaki aktif sekme kartının içine doğrudan Maç Teslim Süresi ayar kutusu ekler
   function injectAdminDeadlineControl() {
-    var adminForms = Array.from(document.querySelectorAll('form.card, div.card'));
-    var settingsAnchor = adminForms.find(function(el) {
+    if (document.getElementById('krdAdminDeadlineBox')) return;
+
+    // Yönetici paneli açık mı kontrol et (⚽ Maçlar veya ⚙ Ayarlar sekme çubuğu varsa)
+    var adminTabBar = Array.from(document.querySelectorAll('.tabs')).find(function(el) {
       var t = el.textContent || '';
-      return (t.indexOf('Lig Adı') !== -1 || t.indexOf('Aktif Hafta') !== -1) && el.querySelector('input');
+      return t.indexOf('Maçlar') !== -1 && t.indexOf('Ayarlar') !== -1;
     });
-    if (!settingsAnchor || document.getElementById('krdAdminDeadlineBox')) return;
+    if (!adminTabBar || !adminTabBar.parentElement) return;
+
+    // Sadece ⚙ Ayarlar veya ✨ Eklemeler sekmesi aktifken göster
+    var activeTab = adminTabBar.querySelector('button.on');
+    var tabTxt = activeTab ? activeTab.textContent : '';
+    if (tabTxt.indexOf('Ayarlar') === -1 && tabTxt.indexOf('Eklemeler') === -1) return;
 
     var box = document.createElement('div');
     box.id = 'krdAdminDeadlineBox';
     box.className = 'card';
-    box.style.cssText = 'margin-top:12px;border:1px solid rgba(250,204,21,0.35);display:grid;gap:8px';
+    box.style.cssText = 'margin:10px 0;border:1px solid rgba(250,204,21,0.45);background:rgba(15,23,42,0.85);display:grid;gap:8px';
 
     var curIso = getDeadlineIso() === 'off' ? '' : getDeadlineIso();
     var curNote = getDeadlineNote();
 
     box.innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:center">' +
-        '<b style="color:#facc15">⏳ Genel Maç Teslim Sayacı Ayarı</b>' +
-        '<span class="tag">Tüm Haftalar</span>' +
+        '<b style="color:#facc15;font-size:13px">⏳ Haftalık Maç Teslim Süresi Ayarı</b>' +
+        '<span class="tag">Genel Sayaç</span>' +
       '</div>' +
-      '<input id="krdAdmDlNote" type="text" value="' + curNote.replace(/"/g, '&quot;') + '" placeholder="Sayaç başlığı (Örn: H6 Maç Teslim Süresi)">' +
+      '<input id="krdAdmDlNote" type="text" value="' + curNote.replace(/"/g, '&quot;') + '" placeholder="Başlık (Örn: H6 Maç Teslim Süresi)">' +
       '<input id="krdAdmDlTime" type="datetime-local" value="' + curIso + '">' +
       '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
-        '<button type="button" id="krdSaveDlBtn" class="pri">💾 Sayacı Kaydet</button>' +
-        '<button type="button" id="krdPlus24Btn">+24 Saat Ekle</button>' +
-        '<button type="button" id="krdPlus48Btn">+48 Saat Ekle</button>' +
-        '<button type="button" id="krdOffDlBtn" class="dng">Sayacı Gizle</button>' +
+        '<button type="button" id="krdSaveDlBtn" class="pri">💾 Kaydet</button>' +
+        '<button type="button" id="krdPlus24Btn">+24 Saat</button>' +
+        '<button type="button" id="krdPlus48Btn">+48 Saat</button>' +
+        '<button type="button" id="krdOffDlBtn" class="dng">Gizle</button>' +
       '</div>';
 
-    settingsAnchor.parentElement.insertBefore(box, settingsAnchor.nextSibling);
+    adminTabBar.parentElement.insertBefore(box, adminTabBar.nextSibling);
 
     async function saveDeadline(newIso, newNote) {
       localStorage.setItem('krd_match_deadline', newIso);
@@ -2309,13 +2317,19 @@
         try {
           await fetch('/api/settings', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-admin-token': localStorage.getItem('krd_admin_token') || '' },
-            body: JSON.stringify(Object.assign({}, window.S.settings, { match_deadline: newIso, match_deadline_note: newNote }))
+            headers: {
+              'Content-Type': 'application/json',
+              'x-admin-token': localStorage.getItem('krd_admin_token') || ''
+            },
+            body: JSON.stringify(Object.assign({}, window.S.settings, {
+              match_deadline: newIso,
+              match_deadline_note: newNote
+            }))
           });
         } catch (e) {}
       }
       renderGeneralCountdown();
-      if (typeof toast === 'function') toast('Maç teslim sayacı güncellendi!');
+      if (typeof toast === 'function') toast('Maç teslim süresi güncellendi!');
     }
 
     document.getElementById('krdSaveDlBtn').onclick = function() {
@@ -2341,8 +2355,8 @@
   }
 
   setInterval(function() {
-    placeChatInTopStrip();
+    arrangeHeaderCleanly();
     renderGeneralCountdown();
     injectAdminDeadlineControl();
-  }, 1000);
+  }, 600);
 })();
