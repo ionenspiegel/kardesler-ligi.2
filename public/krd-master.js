@@ -2163,3 +2163,177 @@
     hookAdminFinishTicker();
   }, 900);
 })();
+
+
+;(function(){
+  if (window.__krdGeneralDeadlineAndTopChat) return;
+  window.__krdGeneralDeadlineAndTopChat = true;
+
+  // Varsayilan teslim tarihi: Yonetici degistirmedikce aktif hedefi tutar, admin panelinden tek tikla guncellenir
+  var DEFAULT_DEADLINE = '2026-11-24T22:30';
+
+  function getDeadlineIso() {
+    var settings = (window.S && window.S.settings) ? window.S.settings : {};
+    return settings.match_deadline || localStorage.getItem('krd_match_deadline') || DEFAULT_DEADLINE;
+  }
+
+  function getDeadlineNote() {
+    var settings = (window.S && window.S.settings) ? window.S.settings : {};
+    return settings.match_deadline_note || localStorage.getItem('krd_match_deadline_note') || 'Haftalık Maç Teslim Süresi';
+  }
+
+  // 1. Sohbet butonunu en ustteki "YAPIMCI: IONELSPIEGEL SUNAR" seridinin sagina al
+  function placeChatInTopStrip() {
+    var chatFab = document.getElementById('krdChatFab');
+    if (!chatFab || chatFab.classList.contains('krd-creator-chat')) return;
+
+    var topStrip = Array.from(document.querySelectorAll('div, span, header')).find(function(el) {
+      var t = (el.textContent || '');
+      return t.indexOf('YAPIMCI:') !== -1 && t.indexOf('Resmi Lig Platformu') !== -1 && el.children.length <= 4;
+    });
+
+    if (topStrip) {
+      chatFab.classList.add('krd-creator-chat');
+      topStrip.style.display = 'flex';
+      topStrip.style.alignItems = 'center';
+      topStrip.style.justifyContent = 'center';
+      topStrip.style.flexWrap = 'wrap';
+      topStrip.appendChild(chatFab);
+    }
+  }
+
+  // 2. Genel & ayarlanabilir geri sayim cubugu
+  function renderGeneralCountdown() {
+    var bar = document.getElementById('krdGeneralCountdownBar');
+    if (!bar) {
+      var anchor = Array.from(document.querySelectorAll('div')).find(function(el) {
+        return (el.textContent || '').indexOf('Haftanın MVP Kulübü') !== -1 && el.offsetHeight > 24 && el.offsetHeight < 75;
+      });
+      if (!anchor || !anchor.parentElement) return;
+      bar = document.createElement('div');
+      bar.id = 'krdGeneralCountdownBar';
+      anchor.parentElement.insertBefore(bar, anchor.nextSibling);
+    }
+
+    var iso = getDeadlineIso();
+    var note = getDeadlineNote();
+    if (!iso || iso === 'off') {
+      bar.style.display = 'none';
+      return;
+    }
+    bar.style.display = 'flex';
+
+    var targetMs = new Date(iso).getTime();
+    if (isNaN(targetMs)) {
+      bar.style.display = 'none';
+      return;
+    }
+
+    var diff = targetMs - Date.now();
+    var dtObj = new Date(targetMs);
+    var dateLabel = dtObj.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' }) + ' ' +
+                    dtObj.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+    if (diff > 0) {
+      var d = Math.floor(diff / 86400000);
+      var h = Math.floor((diff % 86400000) / 3600000);
+      var m = Math.floor((diff % 3600000) / 60000);
+      var s = Math.floor((diff % 60000) / 1000);
+      var pad = function(n) { return n < 10 ? '0' + n : String(n); };
+      var timeStr = (d > 0 ? d + 'g ' : '') + pad(h) + ':' + pad(m) + ':' + pad(s);
+
+      bar.innerHTML =
+        '<div style="display:flex;flex-direction:column;gap:2px">' +
+          '<span style="color:#facc15;font-weight:800;font-size:11.5px">⏳ ' + note + '</span>' +
+          '<span style="color:#94a3b8;font-size:10.5px">Son Teslim: ' + dateLabel + '</span>' +
+        '</div>' +
+        '<span class="krd-cd-badge">' + timeStr + '</span>';
+    } else {
+      bar.innerHTML =
+        '<div style="display:flex;flex-direction:column;gap:2px">' +
+          '<span style="color:#f87171;font-weight:800;font-size:11.5px">⚠️ ' + note + ' Doldu</span>' +
+          '<span style="color:#cbd5e1;font-size:10.5px">Oynanmayan maçlar 0-0 / hükmen işleminde</span>' +
+        '</div>' +
+        '<span class="krd-cd-badge" style="background:rgba(239,68,68,0.3);color:#fff">SÜRE BİTTİ</span>';
+    }
+  }
+
+  // 3. Yonetici paneline Genel Geri Sayim Ayar Karti enjekte et
+  function injectAdminDeadlineControl() {
+    var adminForms = Array.from(document.querySelectorAll('form.card, div.card'));
+    var settingsAnchor = adminForms.find(function(el) {
+      var t = el.textContent || '';
+      return (t.indexOf('Lig Adı') !== -1 || t.indexOf('Aktif Hafta') !== -1) && el.querySelector('input');
+    });
+    if (!settingsAnchor || document.getElementById('krdAdminDeadlineBox')) return;
+
+    var box = document.createElement('div');
+    box.id = 'krdAdminDeadlineBox';
+    box.className = 'card';
+    box.style.cssText = 'margin-top:12px;border:1px solid rgba(250,204,21,0.35);display:grid;gap:8px';
+
+    var curIso = getDeadlineIso() === 'off' ? '' : getDeadlineIso();
+    var curNote = getDeadlineNote();
+
+    box.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<b style="color:#facc15">⏳ Genel Maç Teslim Sayacı Ayarı</b>' +
+        '<span class="tag">Tüm Haftalar</span>' +
+      '</div>' +
+      '<input id="krdAdmDlNote" type="text" value="' + curNote.replace(/"/g, '&quot;') + '" placeholder="Sayaç başlığı (Örn: H6 Maç Teslim Süresi)">' +
+      '<input id="krdAdmDlTime" type="datetime-local" value="' + curIso + '">' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+        '<button type="button" id="krdSaveDlBtn" class="pri">💾 Sayacı Kaydet</button>' +
+        '<button type="button" id="krdPlus24Btn">+24 Saat Ekle</button>' +
+        '<button type="button" id="krdPlus48Btn">+48 Saat Ekle</button>' +
+        '<button type="button" id="krdOffDlBtn" class="dng">Sayacı Gizle</button>' +
+      '</div>';
+
+    settingsAnchor.parentElement.insertBefore(box, settingsAnchor.nextSibling);
+
+    async function saveDeadline(newIso, newNote) {
+      localStorage.setItem('krd_match_deadline', newIso);
+      localStorage.setItem('krd_match_deadline_note', newNote);
+      if (window.S && window.S.settings) {
+        window.S.settings.match_deadline = newIso;
+        window.S.settings.match_deadline_note = newNote;
+        try {
+          await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-admin-token': localStorage.getItem('krd_admin_token') || '' },
+            body: JSON.stringify(Object.assign({}, window.S.settings, { match_deadline: newIso, match_deadline_note: newNote }))
+          });
+        } catch (e) {}
+      }
+      renderGeneralCountdown();
+      if (typeof toast === 'function') toast('Maç teslim sayacı güncellendi!');
+    }
+
+    document.getElementById('krdSaveDlBtn').onclick = function() {
+      var val = document.getElementById('krdAdmDlTime').value;
+      var noteVal = document.getElementById('krdAdmDlNote').value.trim() || 'Haftalık Maç Teslim Süresi';
+      if (val) saveDeadline(val, noteVal);
+    };
+
+    function addHours(hrs) {
+      var d = new Date(Date.now() + hrs * 3600000);
+      var pad = function(n) { return n < 10 ? '0' + n : String(n); };
+      var localIso = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+      document.getElementById('krdAdmDlTime').value = localIso;
+      var noteVal = document.getElementById('krdAdmDlNote').value.trim() || 'Haftalık Maç Teslim Süresi';
+      saveDeadline(localIso, noteVal);
+    }
+
+    document.getElementById('krdPlus24Btn').onclick = function() { addHours(24); };
+    document.getElementById('krdPlus48Btn').onclick = function() { addHours(48); };
+    document.getElementById('krdOffDlBtn').onclick = function() {
+      saveDeadline('off', getDeadlineNote());
+    };
+  }
+
+  setInterval(function() {
+    placeChatInTopStrip();
+    renderGeneralCountdown();
+    injectAdminDeadlineControl();
+  }, 1000);
+})();

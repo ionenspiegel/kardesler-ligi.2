@@ -1237,6 +1237,55 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
 </style>
 
   <link rel="icon" type="image/svg+xml" href="/krd-logo-2027.svg">
+
+<style id="krd-clean-addons">
+  /* Sohbet butonunu en ustteki yapimci seridinin sagina duzgunce yerlestir */
+  #krdChatFab.krd-creator-chat {
+    position: static !important;
+    inset: auto !important;
+    height: 22px !important;
+    padding: 0 8px !important;
+    border-radius: 6px !important;
+    font-size: 10.5px !important;
+    font-weight: 800 !important;
+    background: rgba(16, 185, 129, 0.18) !important;
+    border: 1px solid rgba(16, 185, 129, 0.45) !important;
+    color: #6ee7b7 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    margin-left: 8px !important;
+    box-shadow: none !important;
+    vertical-align: middle !important;
+    cursor: pointer !important;
+  }
+
+  /* Genel & ayarlanabilir mac teslim geri sayim seridi */
+  #krdGeneralCountdownBar {
+    margin: 8px auto 10px auto;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: linear-gradient(90deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.88));
+    border: 1px solid rgba(250, 204, 21, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+  }
+  #krdGeneralCountdownBar .krd-cd-badge {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 800;
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(239, 68, 68, 0.18);
+    border: 1px solid rgba(239, 68, 68, 0.45);
+    color: #fca5a5;
+    white-space: nowrap;
+  }
+</style>
+
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
@@ -3877,7 +3926,7 @@ events.onmessage = async () => {
 
 
 
-<script defer src="/krd-master.js?v=20261124_extras"></script>
+<script defer src="/krd-master.js?v=20261124_gen_cd"></script>
 
 <script id="krdSilentLiveSync">
 (function(){
