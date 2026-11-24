@@ -2292,36 +2292,51 @@
 
 
 ;(function(){
-  if (window.__krdMobileBellEnsure) return;
-  window.__krdMobileBellEnsure = true;
+  if (window.__krdSafeTopBarAndBell) return;
+  window.__krdSafeTopBarAndBell = true;
 
-  function ensureMobileHeaderAndBell() {
-    // 1. KRD LIGI basliginin bulundugu ust satiri ekran genisligine yay
-    var themeBtn = document.getElementById('krdThemeBtn');
-    if (themeBtn) {
-      var bar = themeBtn.closest('div');
-      if (bar && bar.parentElement) {
-        var row = bar.parentElement;
-        row.style.setProperty('width', '100%', 'important');
-        row.style.setProperty('display', 'flex', 'important');
-        row.style.setProperty('justify-content', 'space-between', 'important');
-        row.style.setProperty('align-items', 'center', 'important');
-        row.style.setProperty('padding', '6px 12px', 'important');
-        row.style.setProperty('box-sizing', 'border-box', 'important');
-      }
+  function arrangeTopAndBell() {
+    // 1. Bildirim zilini sol alt koseye sabitle
+    var bell = document.getElementById('krdPushBtn');
+    if (bell) {
+      bell.style.setProperty('display', 'flex', 'important');
+      bell.style.setProperty('position', 'fixed', 'important');
+      bell.style.setProperty('top', 'auto', 'important');
+      bell.style.setProperty('right', 'auto', 'important');
+      bell.style.setProperty('bottom', '16px', 'important');
+      bell.style.setProperty('left', '14px', 'important');
+      bell.style.setProperty('opacity', '1', 'important');
+      bell.style.setProperty('visibility', 'visible', 'important');
+      bell.style.setProperty('z-index', '9999', 'important');
     }
 
-    // 2. Bildirim zilini dogrudan body altina alip sol alt koseye kilitle
-    var bell = document.getElementById('krdPushBtn');
-    if (bell && bell.parentElement !== document.body) {
-      document.body.appendChild(bell);
+    // 2. Ust bari tam genislige yay ve Sohbet butonunu ust sag gruba tasi
+    var themeBtn = document.getElementById('krdThemeBtn');
+    var chatFab = document.getElementById('krdChatFab');
+    if (themeBtn && themeBtn.parentElement) {
+      var rightGroup = themeBtn.parentElement;
+      var topRow = rightGroup.parentElement;
+      if (topRow) {
+        topRow.style.setProperty('width', '100%', 'important');
+        topRow.style.setProperty('display', 'flex', 'important');
+        topRow.style.setProperty('justify-content', 'space-between', 'important');
+        topRow.style.setProperty('align-items', 'center', 'important');
+        topRow.style.setProperty('padding', '6px 12px', 'important');
+        topRow.style.setProperty('box-sizing', 'border-box', 'important');
+      }
+
+      if (chatFab && !chatFab.classList.contains('krd-top-chat')) {
+        chatFab.classList.add('krd-top-chat');
+        rightGroup.insertBefore(chatFab, rightGroup.firstChild);
+      }
     }
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', ensureMobileHeaderAndBell);
+    document.addEventListener('DOMContentLoaded', arrangeTopAndBell);
   } else {
-    ensureMobileHeaderAndBell();
+    arrangeTopAndBell();
   }
-  setTimeout(ensureMobileHeaderAndBell, 350);
+  setTimeout(arrangeTopAndBell, 300);
+  setTimeout(arrangeTopAndBell, 1000);
 })();

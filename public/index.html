@@ -1245,19 +1245,7 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
 
 
 <style id="krd-top-pill-fix">
-  /* 1. Mobil ve masaustunde ust bar tam genislikte sola-saga dengeli */
-  .krd-sticky-top, .top-nav-bar, .sticky-header, header > div:first-child {
-    width: 100% !important;
-    max-width: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    padding-left: 12px !important;
-    padding-right: 12px !important;
-    box-sizing: border-box !important;
-  }
-
-  /* 2. Bildirim zili (#krdPushBtn) her zaman sol alt kosede gorunur ve sabit */
+  /* Bildirim zili: Sol alt kose */
   #krdPushBtn {
     display: flex !important;
     align-items: center !important;
@@ -1274,16 +1262,33 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
     background: #131c2e !important;
     border: 1.5px solid rgba(250, 204, 21, 0.55) !important;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55) !important;
-    font-size: 19px !important;
+    font-size: 18px !important;
     opacity: 1 !important;
     visibility: visible !important;
-    pointer-events: auto !important;
-    z-index: 99999 !important;
+    z-index: 9999 !important;
   }
 
-  /* 3. Mobil ekranda ustteki 3 oge (KRD LIGI / Canli / Tema) tasma yapmasin */
+  /* Sohbet butonu: Alttan kaldirip ustte kompakt hap yap */
+  #krdChatFab.krd-top-chat {
+    position: static !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    height: 30px !important;
+    padding: 0 10px !important;
+    border-radius: 8px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    margin-right: 6px !important;
+    box-shadow: none !important;
+  }
+
   @media (max-width: 600px) {
-    #krdThemeBtn {
+    #krdThemeBtn, #krdChatFab.krd-top-chat {
       height: 28px !important;
       padding: 0 8px !important;
       font-size: 11px !important;
@@ -2510,7 +2515,7 @@ events.onmessage = async () => {
   async function updatePushBtnState() {
     if (!pushBtn) return;
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      // pushBtn her cihazda gorunur
+      pushBtn.style.display = 'none';
       return;
     }
     const savedOn = localStorage.getItem('krd_live_notify') === '1' || localStorage.getItem('krd_push_subscribed') === '1';
@@ -3931,7 +3936,7 @@ events.onmessage = async () => {
 
 
 
-<script defer src="/krd-master.js?v=20261124_mobilefix"></script>
+<script defer src="/krd-master.js?v=20261124_safeui"></script>
 
 <script id="krdSilentLiveSync">
 (function(){
