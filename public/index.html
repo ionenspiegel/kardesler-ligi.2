@@ -1238,7 +1238,22 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
 </style>
 
 
+<meta property="og:image" content="https://kardesler-ligi-2.onrender.com/krd-logo-2027.svg">
+
+
+<link rel="icon" type="image/svg+xml" href="/krd-logo-2027.svg">
 <style id="krd-top-pill-fix">
+  /* 1. Sari bildirim zilini her cihazda (mobil + masaustu) sol alt koseye al */
+  #pushBtn, #notifBtn, .push-btn, [id*="bell" i], [id*="notif" i],
+  button[title*="Bildirim" i], button[aria-label*="Bildirim" i] {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 16px !important;
+    left: 14px !important;
+    z-index: 9998 !important;
+  }
+
+  /* 2. Sag ustteki canli durum + tema kapsulunu tek duz hizaya sok */
   .krd-top-controls {
     display: inline-flex !important;
     align-items: center !important;
@@ -1256,17 +1271,12 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
     padding: 0 11px !important;
     border-radius: 10px !important;
     background: #131c2e !important;
-    border: 1px solid rgba(148, 163, 184, 0.22) !important;
+    border: 1px solid rgba(148, 163, 184, 0.25) !important;
     color: #f8fafc !important;
     font-size: 12px !important;
     font-weight: 700 !important;
     cursor: pointer !important;
-    transition: all 0.18s ease !important;
     white-space: nowrap !important;
-  }
-  .krd-pill-item:hover {
-    border-color: rgba(56, 189, 248, 0.55) !important;
-    background: #19253c !important;
   }
   .krd-live-dot {
     width: 8px;
@@ -1276,20 +1286,9 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
     box-shadow: 0 0 8px #10b981;
     display: inline-block;
   }
-  @keyframes krdSpin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  .krd-spinning {
-    display: inline-block;
-    animation: krdSpin 0.6s linear;
-  }
+  @keyframes krdSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .krd-spinning { display: inline-block; animation: krdSpin 0.6s linear; }
 </style>
-
-
-  <link rel="icon" type="image/svg+xml" href="/krd-logo-2027.svg">
-  <link rel="apple-touch-icon" href="/krd-logo-2027.svg">
-  <meta property="og:image" content="https://kardesler-ligi-2.onrender.com/krd-logo-2027.svg">
 
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
@@ -3931,7 +3930,7 @@ events.onmessage = async () => {
 
 
 
-<script defer src="/krd-master.js?v=20261124_ceremony"></script>
+<script defer src="/krd-master.js?v=20261124_exactfix"></script>
 
 <script id="krdSilentLiveSync">
 (function(){

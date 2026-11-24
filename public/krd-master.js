@@ -2166,64 +2166,6 @@
 
 
 ;(function(){
-  if (window.__krdTopPillFix) return;
-  window.__krdTopPillFix = true;
-
-  function fixTopRightPill() {
-    var stadiumEl = Array.from(document.querySelectorAll('button, span, div')).find(function(el) {
-      var t = (el.textContent || '').trim();
-      return (t === 'Stadyum' || t.indexOf('Stadyum') !== -1) && el.children.length <= 2 && el.offsetWidth > 0 && el.offsetWidth < 240;
-    });
-    if (!stadiumEl) return;
-
-    var outerBox = stadiumEl.closest('div');
-    if (!outerBox || outerBox.dataset.pillFixed === '1') return;
-    if (outerBox.textContent.indexOf('Stadyum') === -1 || outerBox.offsetWidth > 320) return;
-
-    outerBox.dataset.pillFixed = '1';
-    outerBox.classList.add('krd-top-controls');
-
-    // Ic kutulardaki gereksiz cerceveleri temizle
-    Array.from(outerBox.children).forEach(function(child) {
-      child.style.background = 'transparent';
-      child.style.border = 'none';
-      child.style.padding = '0';
-      child.style.margin = '0';
-      child.style.boxShadow = 'none';
-    });
-
-    // Sol tarafa temiz Canli + Yenile butonu ekle/duzenle
-    var statusBtn = outerBox.querySelector('button, div');
-    if (statusBtn && statusBtn !== stadiumEl) {
-      statusBtn.classList.add('krd-pill-item');
-      statusBtn.title = 'Canlı bağlantı aktif • Verileri yenilemek için dokun';
-      statusBtn.innerHTML = '<span class="krd-live-dot"></span><span style="color:#cbd5e1;font-size:11px">Canlı</span><span class="krd-refresh-ico" style="font-size:12px">↻</span>';
-      statusBtn.onclick = function(e) {
-        e.stopPropagation();
-        var ico = statusBtn.querySelector('.krd-refresh-ico');
-        if (ico) {
-          ico.classList.remove('krd-spinning');
-          void ico.offsetWidth;
-          ico.classList.add('krd-spinning');
-        }
-        if (typeof load === 'function') load();
-        else if (typeof fetchState === 'function') fetchState();
-        else location.reload();
-      };
-    }
-
-    // Sag tarafa Stadyum tema butonunu esit boyutta hizala
-    var themeTarget = stadiumEl.closest('button') || stadiumEl;
-    themeTarget.classList.add('krd-pill-item');
-    themeTarget.style.color = '#facc15';
-  }
-
-  fixTopRightPill();
-  setInterval(fixTopRightPill, 600);
-})();
-
-
-;(function(){
   if (window.__krdCeremonyPack) return;
   window.__krdCeremonyPack = true;
 
@@ -2297,4 +2239,77 @@
     updateDeadlineCountdown();
     checkChampionCeremony();
   }, 1000);
+})();
+
+
+;(function(){
+  if (window.__krdTopPillFix) return;
+  window.__krdTopPillFix = true;
+
+  function fixHeaderAndBell() {
+    // A. Sol ustteki sari zili (icinde 🔔 olan veya CANLI AKIS yanindaki kucuk yuvarlak dugmeyi) sol alta tasi
+    document.querySelectorAll('button, div, a').forEach(function(el) {
+      var txt = (el.textContent || '').trim();
+      if (txt.indexOf('Bildirim') !== -1 || txt.length > 3) return;
+      var htmlStr = el.innerHTML || '';
+      var rect = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+      if (!rect || rect.width === 0) return;
+
+      var hasBell = htmlStr.indexOf('🔔') !== -1 || htmlStr.indexOf('bell') !== -1;
+      var isTopLeftRound = (rect.top >= 70 && rect.top <= 185 && rect.left >= 0 && rect.left <= 65 &&
+                            rect.width >= 26 && rect.width <= 54 && rect.height >= 26 && rect.height <= 54);
+      if (hasBell || isTopLeftRound) {
+        el.style.setProperty('position', 'fixed', 'important');
+        el.style.setProperty('top', 'auto', 'important');
+        el.style.setProperty('bottom', '16px', 'important');
+        el.style.setProperty('left', '14px', 'important');
+        el.style.setProperty('z-index', '9998', 'important');
+      }
+    });
+
+    // B. Sag ustteki kapsulu (tema adi ne olursa olsun: Stadyum, Spor Basini, Gece, Neon vb.) duzenle
+    var themeWords = ['Stadyum', 'Spor Basını', 'Gece', 'Klasik', 'Neon', 'Tema'];
+    var themeBtn = Array.from(document.querySelectorAll('button, span, div')).find(function(el) {
+      var t = (el.textContent || '').trim();
+      var r = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+      if (!r || r.top > 110 || r.width === 0 || r.width > 220) return false;
+      return themeWords.some(function(w){ return t.indexOf(w) !== -1; }) && el.children.length <= 2;
+    });
+    if (!themeBtn) return;
+
+    var outerBox = themeBtn.parentElement;
+    if (!outerBox || outerBox.offsetWidth > 340) return;
+
+    outerBox.classList.add('krd-top-controls');
+    Array.from(outerBox.children).forEach(function(child) {
+      child.style.setProperty('background', 'transparent', 'important');
+      child.style.setProperty('border', 'none', 'important');
+      child.style.setProperty('padding', '0', 'important');
+      child.style.setProperty('margin', '0', 'important');
+      child.style.setProperty('box-shadow', 'none', 'important');
+    });
+
+    var statusEl = Array.from(outerBox.children).find(function(c){ return c !== themeBtn && !c.contains(themeBtn); });
+    if (statusEl && statusEl.dataset.wired !== '1') {
+      statusEl.dataset.wired = '1';
+      statusEl.classList.add('krd-pill-item');
+      statusEl.title = 'Canlı bağlantı aktif • Verileri yenile';
+      statusEl.innerHTML = '<span class="krd-live-dot"></span><span style="color:#cbd5e1;font-size:11px">Canlı</span><span class="krd-refresh-ico">↻</span>';
+      statusEl.onclick = function(e) {
+        e.stopPropagation();
+        var ico = statusEl.querySelector('.krd-refresh-ico');
+        if (ico) { ico.classList.remove('krd-spinning'); void ico.offsetWidth; ico.classList.add('krd-spinning'); }
+        if (typeof load === 'function') load();
+        else if (typeof fetchState === 'function') fetchState();
+        else location.reload();
+      };
+    }
+
+    var actualThemeBtn = themeBtn.closest('button') || themeBtn;
+    actualThemeBtn.classList.add('krd-pill-item');
+    actualThemeBtn.style.setProperty('color', '#facc15', 'important');
+  }
+
+  fixHeaderAndBell();
+  setInterval(fixHeaderAndBell, 500);
 })();
