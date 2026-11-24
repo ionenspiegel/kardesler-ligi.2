@@ -913,7 +913,7 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
 
 <style id="krd-cls-fix">
   #app.wrap { min-height: 85vh; contain: layout style; }
-  #krdChatFab { position: fixed !important; right: 16px; bottom: 16px; z-index: 999; transform: translateZ(0); }
+  
   #krdChatMsgs { max-height: 280px; overflow-y: auto; contain: content; }
 </style>
 
@@ -934,7 +934,7 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
 <style id="krd-cls-stable">
   #main-content, #app { overflow-anchor: none; }
   .announcement, .ticker, .news-bar, .mvp-bar, .tabs, .nav-tabs { min-height: 44px; contain: layout style; }
-  #krdChatFab { position: fixed !important; right: 16px; bottom: 16px; width: auto; min-height: 44px; }
+  
 </style>
 
 
@@ -1037,8 +1037,8 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   #app.wrap { min-height: 100vh; }
   main#main-content { min-height: 92vh; contain: layout style; }
   #krdLiveTickerBar { height: 44px !important; min-height: 44px !important; max-height: 44px !important; }
-  #krdChatFab { position: fixed !important; right: 14px !important; bottom: 14px !important; z-index: 998 !important; }
-  #krdPushBtn { position: fixed !important; top: 42px !important; left: 12px !important; width: 42px !important; height: 42px !important; z-index: 1100 !important; }
+  
+  #krdPushBtn { position: fixed !important; bottom: 16px !important; left: 14px !important; top: auto !important; right: auto !important; width: 42px !important; height: 42px !important; z-index: 9990 !important; }
 
   /* Tum acik/parlak armalarda (FSM turuncu, AMO yesil dahil) koyu metinle 100 kontrast */
   .krd-crest, span.b { color: #ffffff !important; font-weight: 800 !important; text-shadow: 0 1px 2px rgba(0,0,0,0.65) !important; }
@@ -2796,18 +2796,24 @@ events.onmessage = async () => {
 
 <style>
   #krdChatFab {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.22);
-    border-radius: 999px;
-    padding: 9px 14px;
-    font-size: 13px;
-    font-weight: 700;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+    position: static !important;
+    inset: auto !important;
+    transform: none !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    padding: 0 11px !important;
+    border-radius: 999px !important;
+    font-size: 11.5px !important;
+    font-weight: 800 !important;
+    background: rgba(16, 185, 129, 0.18) !important;
+    border: 1px solid rgba(16, 185, 129, 0.5) !important;
+    color: #6ee7b7 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    cursor: pointer !important;
   }
   .krd-online-dot {
     width: 8px;
@@ -2820,7 +2826,7 @@ events.onmessage = async () => {
   #krdChatBox {
     position: fixed;
     right: 14px;
-    bottom: 66px;
+    top: 94px !important; bottom: auto !important; left: 50% !important; right: auto !important; transform: translateX(-50%) !important;
     width: calc(100vw - 28px);
     max-width: 350px;
     height: 410px;
