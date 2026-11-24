@@ -2227,43 +2227,42 @@
 
 
 
+
+
 ;(function(){
   if (window.__krdTopPillFix) return;
   window.__krdTopPillFix = true;
 
-  function organizeTopRightPill() {
-    var themeLabels = ['Gece Mavisi', 'Stadyum', 'Spor Basını'];
-    var themeBtn = Array.from(document.querySelectorAll('button')).find(function(b) {
+  function fixPillOnce() {
+    var btns = Array.from(document.querySelectorAll('button'));
+    var themeBtn = btns.find(function(b) {
       var t = (b.textContent || '').trim();
-      return themeLabels.some(function(lbl){ return t.indexOf(lbl) !== -1; });
+      return t.indexOf('Stadyum') !== -1 || t.indexOf('Gece Mavisi') !== -1 || t.indexOf('Spor Basını') !== -1;
     });
     if (!themeBtn || !themeBtn.parentElement) return;
 
-    var wrap = themeBtn.parentElement;
-    if (wrap.dataset.pillClean === '1') return;
-    wrap.dataset.pillClean = '1';
-    wrap.classList.add('krd-top-controls');
+    var box = themeBtn.parentElement;
+    if (box.dataset.krdFixed === '1') return;
+    box.dataset.krdFixed = '1';
 
-    // Sol taraftaki canli nokta + yenileme kapsulunu sadeleştir
-    var leftItem = Array.from(wrap.children).find(function(el){ return el !== themeBtn; });
-    if (leftItem) {
-      leftItem.innerHTML = '<span class="krd-live-dot"></span><span style="color:#cbd5e1;font-size:11px">Canlı</span><span style="font-size:12px">↻</span>';
-      leftItem.style.cursor = 'pointer';
-      leftItem.title = 'Canlı bağlantı aktif • Yenilemek için dokun';
-      leftItem.onclick = function(e) {
-        e.stopPropagation();
-        if (typeof load === 'function') load();
-        else if (typeof fetchState === 'function') fetchState();
-        else location.reload();
-      };
-    }
-    themeBtn.style.color = '#facc15';
+    box.style.cssText = 'display:inline-flex;align-items:center;gap:6px;background:transparent;border:none;padding:0;box-shadow:none';
+
+    // Sol taraftaki yesil nokta + yenile kutusunu ayir ve sadeleştir
+    Array.from(box.children).forEach(function(ch) {
+      if (ch === themeBtn) {
+        ch.style.cssText = 'height:32px;padding:0 10px;border-radius:9px;background:#131c2e;border:1px solid rgba(148,163,184,0.28);color:#facc15;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:5px;margin:0';
+      } else {
+        ch.style.cssText = 'height:32px;padding:0 9px;border-radius:9px;background:#131c2e;border:1px solid rgba(148,163,184,0.28);color:#cbd5e1;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:5px;margin:0;cursor:pointer';
+        ch.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 6px #10b981;display:inline-block"></span><span>Canlı</span><span>↻</span>';
+        ch.onclick = function(e) {
+          e.stopPropagation();
+          if (typeof load === 'function') load();
+          else location.reload();
+        };
+      }
+    });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', organizeTopRightPill);
-  } else {
-    organizeTopRightPill();
-  }
-  setTimeout(organizeTopRightPill, 400);
+  setTimeout(fixPillOnce, 200);
+  setTimeout(fixPillOnce, 900);
 })();

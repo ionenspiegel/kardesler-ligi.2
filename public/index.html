@@ -36,7 +36,6 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="__OG_TITLE__">
 <meta name="twitter:description" content="__OG_DESC__">
-<text y='.9em' font-size='90'>🏆</text></svg>">
 <style>
 :root{--bg:#070b16;--card:#111a2e;--card2:#16223c;--line:#24345a;--tx:#eaf0ff;--mut:#8fa0c8;--g:#22e08a;--y:#ffd23f;--r:#ff4d6d;--b:#4da3ff}
 *{box-sizing:border-box}body{margin:0;font:16px/1.4 system-ui,Segoe UI,Roboto,sans-serif;color:var(--tx);background:radial-gradient(1200px 600px at 80% -10%,#1b3a8a55,transparent),radial-gradient(900px 500px at -10% 10%,#0e8f5a44,transparent),var(--bg);min-height:100vh}
@@ -1243,6 +1242,7 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
 
 <link rel="icon" type="image/svg+xml" href="/krd-logo-2027.svg">
 
+
 <style id="krd-top-pill-fix">
   #krdPushBtn {
     position: fixed !important;
@@ -1251,39 +1251,15 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
     left: 14px !important;
     right: auto !important;
     z-index: 9998 !important;
-    animation: none !important;
-    transition: transform 0.15s ease !important;
   }
-  .krd-top-controls {
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-  }
-  .krd-top-controls > * {
-    background: #131c2e !important;
-    border: 1px solid rgba(148, 163, 184, 0.28) !important;
-    border-radius: 10px !important;
-    height: 34px !important;
-    padding: 0 11px !important;
+  /* Sag ustteki canli durum + tema kapsulunu ic ice olmaktan kurtar */
+  .krd-hdr-right, #krdThemeWrap, [class*="theme-wrap"] {
     display: inline-flex !important;
     align-items: center !important;
     gap: 6px !important;
-    font-size: 12px !important;
-    font-weight: 700 !important;
-    box-shadow: none !important;
-    margin: 0 !important;
-  }
-  .krd-live-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #10b981;
-    box-shadow: 0 0 8px #10b981;
-    display: inline-block;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
   }
 </style>
 
@@ -3927,7 +3903,7 @@ events.onmessage = async () => {
 
 
 
-<script defer src="/krd-master.js?v=20261124_noblink"></script>
+<script defer src="/krd-master.js?v=20261124_finalfix"></script>
 
 <script id="krdSilentLiveSync">
 (function(){
