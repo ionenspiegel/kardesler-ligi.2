@@ -1029,6 +1029,17 @@ const u = new URL(req.url, 'http://x');
       return;
     }
     if (u.pathname === '/api/predictions' && req.method === 'POST') {
+    global.__predRate = global.__predRate || new Map();
+    const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+    const now = Date.now();
+    const rec = global.__predRate.get(ip) || { count: 0, ts: now };
+    if (now - rec.ts > 60000) { rec.count = 0; rec.ts = now; }
+    rec.count++;
+    global.__predRate.set(ip, rec);
+    if (rec.count > 15) {
+      res.writeHead(429, { 'Content-Type': 'application/json; charset=utf-8' });
+      return res.end(JSON.stringify({ ok: false, error: 'Cok fazla tahmin istegi, 1 dakika bekleyin.' }));
+    }
       const raw = await new Promise((resolve, reject) => {
         let d = '';
         req.on('data', ch => { d += ch; if (d.length > 32768) reject(E(413, 'Veri çok büyük')); });
