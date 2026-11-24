@@ -2183,6 +2183,29 @@
     return settings.match_deadline_note || localStorage.getItem('krd_match_deadline_note') || 'Haftalık Maç Teslim Süresi';
   }
 
+  
+  function mountTopQuickChatBar() {
+    var chatFab = document.getElementById('krdChatFab');
+    if (!chatFab) return;
+
+    var quickBar = document.getElementById('krdTopQuickBar');
+    if (!quickBar) {
+      var ticker = document.getElementById('krdLiveTickerBar') || Array.from(document.querySelectorAll('div')).find(function(el) {
+        return (el.textContent || '').indexOf('CANLI AKIŞ') !== -1 && el.offsetHeight > 24 && el.offsetHeight < 70;
+      });
+      if (!ticker || !ticker.parentElement) return;
+
+      quickBar = document.createElement('div');
+      quickBar.id = 'krdTopQuickBar';
+      quickBar.innerHTML = '<span>⚽ Canlı Lig Sohbet Odası</span>';
+      ticker.parentElement.insertBefore(quickBar, ticker);
+    }
+
+    if (chatFab.parentElement !== quickBar) {
+      quickBar.appendChild(chatFab);
+    }
+  }
+
   function renderGeneralCountdown() {
     var bar = document.getElementById('krdGeneralCountdownBar');
     if (!bar) {
@@ -2298,7 +2321,8 @@
           });
         } catch (e) {}
       }
-      renderGeneralCountdown();
+      mountTopQuickChatBar();
+    renderGeneralCountdown();
       if (typeof toast === 'function') toast('Maç teslim süresi güncellendi!');
     }
 

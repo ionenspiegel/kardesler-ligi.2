@@ -1241,8 +1241,9 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
 
 
 
+
 <style id="krd-clean-addons">
-  /* 1. Bildirim zili: Sol alt kosede sabit, CANLI AKIS uzerine cikmaz */
+  /* 1. Bildirim zili: Sol alt kosede sabit */
   #krdPushBtn {
     position: fixed !important;
     top: auto !important;
@@ -1254,24 +1255,42 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
     z-index: 9990 !important;
   }
 
-  /* 2. Sohbet butonu: Sag alt kosede kompakt veya teslim cubugunda tasmadan durur */
+  /* 2. Sohbet butonu: En altta degil, ustte kendi duzenli seridinde */
   #krdChatFab {
-    position: fixed !important;
-    top: auto !important;
-    left: auto !important;
-    right: 14px !important;
-    bottom: 16px !important;
-    height: 38px !important;
-    padding: 0 12px !important;
+    position: static !important;
+    inset: auto !important;
+    height: 28px !important;
+    padding: 0 11px !important;
     border-radius: 999px !important;
-    font-size: 12px !important;
+    font-size: 11.5px !important;
     font-weight: 800 !important;
-    z-index: 9990 !important;
+    background: rgba(16, 185, 129, 0.16) !important;
+    border: 1px solid rgba(16, 185, 129, 0.45) !important;
+    color: #6ee7b7 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    cursor: pointer !important;
   }
 
-  /* 3. Sohbet penceresi acildiginda ekranin ortasinda net gorunur */
+  #krdTopQuickBar {
+    width: 100%;
+    padding: 5px 12px;
+    background: rgba(15, 23, 42, 0.72);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+    font-size: 11px;
+    color: #94a3b8;
+  }
+
+  /* 3. Sohbet penceresi acildiginda ekranin ust-ortasinda acilir */
   #krdChatPanel, #krdChatBox, .krd-chat-panel, .krd-chat-box, [id*="chatPanel" i], [id*="chatBox" i] {
-    top: 84px !important;
+    top: 96px !important;
     bottom: auto !important;
     left: 50% !important;
     right: auto !important;
@@ -3954,7 +3973,7 @@ events.onmessage = async () => {
 
 
 
-<script defer src="/krd-master.js?v=20261124_nostretch"></script>
+<script defer src="/krd-master.js?v=20261124_topquickbar"></script>
 
 <script id="krdSilentLiveSync">
 (function(){
