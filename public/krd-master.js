@@ -1589,23 +1589,6 @@
     }
     document.body.classList.remove('krd-admin-active');
 
-    // A. Ustteki sari bildirim zili butonunu CANLI AKIS uzerinden alip sol alta sabitle
-    document.querySelectorAll('button, a, div').forEach(function(el) {
-      var txt = (el.textContent || '').trim();
-      if (txt.length > 3) return;
-      var rect = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
-      if (!rect) return;
-      var isTopLeftBell = (rect.top >= 65 && rect.top <= 175 && rect.left >= 0 && rect.left <= 55 &&
-                           rect.width >= 26 && rect.width <= 56 && rect.height >= 26 && rect.height <= 56);
-      if (isTopLeftBell || (el.id && (el.id.toLowerCase().indexOf('bell') !== -1 || el.id.toLowerCase().indexOf('push') !== -1) && rect.width < 60)) {
-        el.style.position = 'fixed';
-        el.style.top = 'auto';
-        el.style.bottom = '16px';
-        el.style.left = '14px';
-        el.style.zIndex = '9998';
-      }
-    });
-
     // B. Istatistik kartlarini (En Golcu Takim & Altin Ayakkabi gruplari) 2'li izgaraya al, tek kalan son karti tam genislik yap
     var groups = ['En Golcü Takım', 'Altın Ayakkabı'];
     document.querySelectorAll('div, section').forEach(function(parent) {
@@ -2242,74 +2225,45 @@
 })();
 
 
+
+
 ;(function(){
   if (window.__krdTopPillFix) return;
   window.__krdTopPillFix = true;
 
-  function fixHeaderAndBell() {
-    // A. Sol ustteki sari zili (icinde 🔔 olan veya CANLI AKIS yanindaki kucuk yuvarlak dugmeyi) sol alta tasi
-    document.querySelectorAll('button, div, a').forEach(function(el) {
-      var txt = (el.textContent || '').trim();
-      if (txt.indexOf('Bildirim') !== -1 || txt.length > 3) return;
-      var htmlStr = el.innerHTML || '';
-      var rect = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
-      if (!rect || rect.width === 0) return;
-
-      var hasBell = htmlStr.indexOf('🔔') !== -1 || htmlStr.indexOf('bell') !== -1;
-      var isTopLeftRound = (rect.top >= 70 && rect.top <= 185 && rect.left >= 0 && rect.left <= 65 &&
-                            rect.width >= 26 && rect.width <= 54 && rect.height >= 26 && rect.height <= 54);
-      if (hasBell || isTopLeftRound) {
-        el.style.setProperty('position', 'fixed', 'important');
-        el.style.setProperty('top', 'auto', 'important');
-        el.style.setProperty('bottom', '16px', 'important');
-        el.style.setProperty('left', '14px', 'important');
-        el.style.setProperty('z-index', '9998', 'important');
-      }
+  function organizeTopRightPill() {
+    var themeLabels = ['Gece Mavisi', 'Stadyum', 'Spor Basını'];
+    var themeBtn = Array.from(document.querySelectorAll('button')).find(function(b) {
+      var t = (b.textContent || '').trim();
+      return themeLabels.some(function(lbl){ return t.indexOf(lbl) !== -1; });
     });
+    if (!themeBtn || !themeBtn.parentElement) return;
 
-    // B. Sag ustteki kapsulu (tema adi ne olursa olsun: Stadyum, Spor Basini, Gece, Neon vb.) duzenle
-    var themeWords = ['Stadyum', 'Spor Basını', 'Gece', 'Klasik', 'Neon', 'Tema'];
-    var themeBtn = Array.from(document.querySelectorAll('button, span, div')).find(function(el) {
-      var t = (el.textContent || '').trim();
-      var r = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
-      if (!r || r.top > 110 || r.width === 0 || r.width > 220) return false;
-      return themeWords.some(function(w){ return t.indexOf(w) !== -1; }) && el.children.length <= 2;
-    });
-    if (!themeBtn) return;
+    var wrap = themeBtn.parentElement;
+    if (wrap.dataset.pillClean === '1') return;
+    wrap.dataset.pillClean = '1';
+    wrap.classList.add('krd-top-controls');
 
-    var outerBox = themeBtn.parentElement;
-    if (!outerBox || outerBox.offsetWidth > 340) return;
-
-    outerBox.classList.add('krd-top-controls');
-    Array.from(outerBox.children).forEach(function(child) {
-      child.style.setProperty('background', 'transparent', 'important');
-      child.style.setProperty('border', 'none', 'important');
-      child.style.setProperty('padding', '0', 'important');
-      child.style.setProperty('margin', '0', 'important');
-      child.style.setProperty('box-shadow', 'none', 'important');
-    });
-
-    var statusEl = Array.from(outerBox.children).find(function(c){ return c !== themeBtn && !c.contains(themeBtn); });
-    if (statusEl && statusEl.dataset.wired !== '1') {
-      statusEl.dataset.wired = '1';
-      statusEl.classList.add('krd-pill-item');
-      statusEl.title = 'Canlı bağlantı aktif • Verileri yenile';
-      statusEl.innerHTML = '<span class="krd-live-dot"></span><span style="color:#cbd5e1;font-size:11px">Canlı</span><span class="krd-refresh-ico">↻</span>';
-      statusEl.onclick = function(e) {
+    // Sol taraftaki canli nokta + yenileme kapsulunu sadeleştir
+    var leftItem = Array.from(wrap.children).find(function(el){ return el !== themeBtn; });
+    if (leftItem) {
+      leftItem.innerHTML = '<span class="krd-live-dot"></span><span style="color:#cbd5e1;font-size:11px">Canlı</span><span style="font-size:12px">↻</span>';
+      leftItem.style.cursor = 'pointer';
+      leftItem.title = 'Canlı bağlantı aktif • Yenilemek için dokun';
+      leftItem.onclick = function(e) {
         e.stopPropagation();
-        var ico = statusEl.querySelector('.krd-refresh-ico');
-        if (ico) { ico.classList.remove('krd-spinning'); void ico.offsetWidth; ico.classList.add('krd-spinning'); }
         if (typeof load === 'function') load();
         else if (typeof fetchState === 'function') fetchState();
         else location.reload();
       };
     }
-
-    var actualThemeBtn = themeBtn.closest('button') || themeBtn;
-    actualThemeBtn.classList.add('krd-pill-item');
-    actualThemeBtn.style.setProperty('color', '#facc15', 'important');
+    themeBtn.style.color = '#facc15';
   }
 
-  fixHeaderAndBell();
-  setInterval(fixHeaderAndBell, 500);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', organizeTopRightPill);
+  } else {
+    organizeTopRightPill();
+  }
+  setTimeout(organizeTopRightPill, 400);
 })();

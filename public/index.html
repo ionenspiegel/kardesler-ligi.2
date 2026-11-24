@@ -1039,7 +1039,7 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   main#main-content { min-height: 92vh; contain: layout style; }
   #krdLiveTickerBar { height: 44px !important; min-height: 44px !important; max-height: 44px !important; }
   #krdChatFab { position: fixed !important; right: 14px !important; bottom: 14px !important; z-index: 998 !important; }
-  #krdPushBtn { position: fixed !important; top: 42px !important; left: 12px !important; width: 42px !important; height: 42px !important; z-index: 1100 !important; }
+  #krdPushBtn { position: fixed !important; top: auto !important; bottom: 16px !important; left: 14px !important; right: auto !important; width: 42px !important; height: 42px !important; z-index: 9998 !important; }
 
   /* Tum acik/parlak armalarda (FSM turuncu, AMO yesil dahil) koyu metinle 100 kontrast */
   .krd-crest, span.b { color: #ffffff !important; font-weight: 800 !important; text-shadow: 0 1px 2px rgba(0,0,0,0.65) !important; }
@@ -1242,18 +1242,18 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
 
 
 <link rel="icon" type="image/svg+xml" href="/krd-logo-2027.svg">
+
 <style id="krd-top-pill-fix">
-  /* 1. Sari bildirim zilini her cihazda (mobil + masaustu) sol alt koseye al */
-  #pushBtn, #notifBtn, .push-btn, [id*="bell" i], [id*="notif" i],
-  button[title*="Bildirim" i], button[aria-label*="Bildirim" i] {
+  #krdPushBtn {
     position: fixed !important;
     top: auto !important;
     bottom: 16px !important;
     left: 14px !important;
+    right: auto !important;
     z-index: 9998 !important;
+    animation: none !important;
+    transition: transform 0.15s ease !important;
   }
-
-  /* 2. Sag ustteki canli durum + tema kapsulunu tek duz hizaya sok */
   .krd-top-controls {
     display: inline-flex !important;
     align-items: center !important;
@@ -1263,20 +1263,19 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
     padding: 0 !important;
     box-shadow: none !important;
   }
-  .krd-pill-item {
+  .krd-top-controls > * {
+    background: #131c2e !important;
+    border: 1px solid rgba(148, 163, 184, 0.28) !important;
+    border-radius: 10px !important;
+    height: 34px !important;
+    padding: 0 11px !important;
     display: inline-flex !important;
     align-items: center !important;
     gap: 6px !important;
-    height: 34px !important;
-    padding: 0 11px !important;
-    border-radius: 10px !important;
-    background: #131c2e !important;
-    border: 1px solid rgba(148, 163, 184, 0.25) !important;
-    color: #f8fafc !important;
     font-size: 12px !important;
     font-weight: 700 !important;
-    cursor: pointer !important;
-    white-space: nowrap !important;
+    box-shadow: none !important;
+    margin: 0 !important;
   }
   .krd-live-dot {
     width: 8px;
@@ -1286,8 +1285,6 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
     box-shadow: 0 0 8px #10b981;
     display: inline-block;
   }
-  @keyframes krdSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-  .krd-spinning { display: inline-block; animation: krdSpin 0.6s linear; }
 </style>
 
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
@@ -2487,7 +2484,7 @@ events.onmessage = async () => {
   .krd-form-M { background: #dc2626; color: #fff; }
 </style>
 
-<button id="krdPushBtn" class="krd-push-btn" title="Bildirimleri Aç" aria-label="Bildirimler" style="position:fixed;left:14px;top:14px;right:auto;bottom:auto;width:42px;height:42px;padding:0;border-radius:50%;justify-content:center;font-size:18px;z-index:9995;">🔔</button>
+<button id="krdPushBtn" class="krd-push-btn" title="Bildirimleri Aç" aria-label="Bildirimler" style="position:fixed !important;left:14px !important;bottom:16px !important;top:auto !important;right:auto !important;width:42px;height:42px;padding:0;border-radius:50%;justify-content:center;font-size:18px;z-index:9998;">🔔</button>
 
 <div id="krdTeamStatsModal" role="dialog" aria-modal="true">
   <div class="krd-stat-card" id="krdTeamStatsBody"></div>
@@ -3930,7 +3927,7 @@ events.onmessage = async () => {
 
 
 
-<script defer src="/krd-master.js?v=20261124_exactfix"></script>
+<script defer src="/krd-master.js?v=20261124_noblink"></script>
 
 <script id="krdSilentLiveSync">
 (function(){
