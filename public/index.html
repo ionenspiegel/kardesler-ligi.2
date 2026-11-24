@@ -2960,7 +2960,17 @@ events.onmessage = async () => {
   fab.id = 'krdChatFab';
   fab.type = 'button';
   fab.innerHTML = '<span class="krd-online-dot"></span> 💬 Sohbet (<span id="krdFabCount">1</span>)';
-  if (pushBtn && pushBtn.parentElement) {
+  const tickerEl = document.getElementById('krdLiveTickerBar') || document.querySelector('.ticker');
+  let topChatStrip = document.getElementById('krdTopQuickBar');
+  if (!topChatStrip && tickerEl && tickerEl.parentElement) {
+    topChatStrip = document.createElement('div');
+    topChatStrip.id = 'krdTopQuickBar';
+    topChatStrip.innerHTML = '<span style="font-weight:700;color:#94a3b8">⚽ Canlı Lig Sohbeti</span>';
+    tickerEl.parentElement.insertBefore(topChatStrip, tickerEl);
+  }
+  if (topChatStrip) {
+    topChatStrip.appendChild(fab);
+  } else if (pushBtn && pushBtn.parentElement) {
     pushBtn.parentElement.insertBefore(fab, pushBtn);
   } else {
     fab.style.cssText = 'position:fixed;right:14px;bottom:16px;z-index:9990;';
@@ -2985,6 +2995,18 @@ events.onmessage = async () => {
   }
 
   fab.addEventListener('click', () => {
+    setTimeout(() => {
+      const box = document.getElementById('krdChatBox') || document.getElementById('krdChatPanel');
+      if (box) {
+        const r = fab.getBoundingClientRect();
+        box.style.setProperty('position', 'fixed', 'important');
+        box.style.setProperty('top', Math.max(50, Math.round(r.bottom + 6)) + 'px', 'important');
+        box.style.setProperty('bottom', 'auto', 'important');
+        box.style.setProperty('left', '50%', 'important');
+        box.style.setProperty('right', 'auto', 'important');
+        box.style.setProperty('transform', 'translateX(-50%)', 'important');
+      }
+    }, 10);
     if (!box.classList.contains('open')) {
       if (!askName(false)) return;
       box.classList.add('open');
