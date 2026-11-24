@@ -1337,6 +1337,28 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   }
 </style>
 
+
+<style id="krd-final-polish">
+  /* Yönetici panelindeki sayaç ayar kutusu mobilde taşmaz */
+  #krdAdminDeadlineBox input,
+  #krdAdminDeadlineBox button {
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+  }
+  #krdAdminDeadlineBox input[type="text"],
+  #krdAdminDeadlineBox input[type="datetime-local"] {
+    width: 100% !important;
+    padding: 8px 10px !important;
+    border-radius: 8px !important;
+  }
+
+  /* PNG Bülten ve Puan Tablosu çıktılarında yatay kesilme önleyici */
+  #standingsTable, .standings-wrap, #weeklyBulletinCard {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+</style>
+
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
@@ -4005,7 +4027,7 @@ events.onmessage = async () => {
 
 
 
-<script defer src="/krd-master.js?v=20261124_chat_top_final"></script>
+<script defer src="/krd-master.js?v=20261124_all_ready"></script>
 
 <script id="krdSilentLiveSync">
 (function(){

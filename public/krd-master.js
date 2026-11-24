@@ -2361,3 +2361,26 @@
     injectAdminDeadlineControl();
   }, 600);
 })();
+
+
+;(function(){
+  if (window.__krdAutoTickerAndExportFix) return;
+  window.__krdAutoTickerAndExportFix = true;
+
+  var DEADLINE_MS = new Date('2026-11-24T22:30:00+03:00').getTime();
+  var switched = false;
+
+  function checkAutoTickerUpdate() {
+    if (switched || Date.now() < DEADLINE_MS) return;
+    var tickerBar = document.getElementById('krdLiveTickerBar') || document.querySelector('.ticker');
+    if (!tickerBar) return;
+
+    var marquee = tickerBar.querySelector('marquee, .marquee, span:last-child, div:last-child');
+    if (marquee && (marquee.textContent || '').indexOf('24 kasım salı 22:30') !== -1) {
+      marquee.textContent = '📢 H6 Teslim Süresi Tamamlandı • H7 ve Kalan Fikstür Maçları Başladı • Güncel Puan Durumu ve İonenSpiegel Hafta Bülteni Yayında!';
+      switched = true;
+    }
+  }
+
+  setInterval(checkAutoTickerUpdate, 5000);
+})();
