@@ -1589,6 +1589,23 @@
     }
     document.body.classList.remove('krd-admin-active');
 
+    // A. Ustteki sari bildirim zili butonunu CANLI AKIS uzerinden alip sol alta sabitle
+    document.querySelectorAll('button, a, div').forEach(function(el) {
+      var txt = (el.textContent || '').trim();
+      if (txt.length > 3) return;
+      var rect = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+      if (!rect) return;
+      var isTopLeftBell = (rect.top >= 65 && rect.top <= 175 && rect.left >= 0 && rect.left <= 55 &&
+                           rect.width >= 26 && rect.width <= 56 && rect.height >= 26 && rect.height <= 56);
+      if (isTopLeftBell || (el.id && (el.id.toLowerCase().indexOf('bell') !== -1 || el.id.toLowerCase().indexOf('push') !== -1) && rect.width < 60)) {
+        el.style.position = 'fixed';
+        el.style.top = 'auto';
+        el.style.bottom = '16px';
+        el.style.left = '14px';
+        el.style.zIndex = '9998';
+      }
+    });
+
     // B. Istatistik kartlarini (En Golcu Takim & Altin Ayakkabi gruplari) 2'li izgaraya al, tek kalan son karti tam genislik yap
     var groups = ['En Golcü Takım', 'Altın Ayakkabı'];
     document.querySelectorAll('div, section').forEach(function(parent) {
@@ -2145,215 +2162,4 @@
     renderRemainingSummaryBar();
     hookAdminFinishTicker();
   }, 900);
-})();
-
-
-;(function(){
-  if (window.__krdCeremonyPack) return;
-  window.__krdCeremonyPack = true;
-
-  // A. CANLI MAC TESLIM GERI SAYIM SAYACI (24 Kasim 2026 22:30 hedefi)
-  function updateDeadlineCountdown() {
-    var remBar = document.getElementById('krdRemainingBar');
-    if (!remBar) return;
-
-    var badge = document.getElementById('krdDeadlineTimer');
-    if (!badge) {
-      badge = document.createElement('div');
-      badge.id = 'krdDeadlineTimer';
-      badge.style.cssText = 'margin-top:8px;padding-top:8px;border-top:1px dashed rgba(148,163,184,0.22);display:flex;justify-content:space-between;align-items:center;font-size:11px';
-      remBar.appendChild(badge);
-    }
-
-    var target = new Date('2026-11-24T22:30:00+03:00').getTime();
-    var now = Date.now();
-    var diff = target - now;
-
-    if (diff > 0) {
-      var h = Math.floor(diff / 3600000);
-      var m = Math.floor((diff % 3600000) / 60000);
-      var s = Math.floor((diff % 60000) / 1000);
-      var pad = function(n){ return n < 10 ? '0' + n : String(n); };
-      badge.innerHTML =
-        '<span style="color:#facc15;font-weight:700">⏳ Maç Teslim Süresi (22:30)</span>' +
-        '<span style="background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.5);color:#fca5a5;padding:2px 8px;border-radius:6px;font-family:monospace;font-weight:800">' +
-          pad(h) + ':' + pad(m) + ':' + pad(s) +
-        '</span>';
-    } else {
-      badge.innerHTML =
-        '<span style="color:#f87171;font-weight:800">⚠️ MAÇ TESLİM SÜRESİ DOLDU!</span>' +
-        '<span style="color:#cbd5e1">Oynanmayan maçlar hakem kararında</span>';
-    }
-  }
-
-  // B. SEZON SONU SAMPIYONLUK SEREMONISI (Tum maclar bittiginde otomatik kutlama karti)
-  function checkChampionCeremony() {
-    if (document.getElementById('krdChampionBanner')) return;
-    var data = window.__lastLeagueData || window.DATA || {};
-    var matches = Array.isArray(data.matches) ? data.matches : [];
-    if (matches.length < 6) return;
-
-    var unplayed = matches.filter(function(m){ return m && !m.played; });
-    if (unplayed.length > 0) return; // Hala oynanmamis mac varsa bekle
-
-    var rows = Array.from(document.querySelectorAll('table tbody tr')).filter(function(r){ return r.querySelectorAll('td').length >= 6; });
-    if (!rows.length) return;
-
-    var firstTds = rows[0].querySelectorAll('td');
-    var champName = (firstTds[1].textContent || '').replace(/^[A-ZÇĞİÖŞÜ]{2,4}\s+/, '').replace(/▲\d+|▼\d+|\d+G Seri/g, '').trim().split(/\s+/)[0];
-    var champPts = (firstTds[firstTds.length - 1].textContent || '').trim();
-    if (!champName) return;
-
-    var tbl = rows[0].closest('table');
-    if (!tbl || !tbl.parentElement) return;
-
-    var banner = document.createElement('div');
-    banner.id = 'krdChampionBanner';
-    banner.style.cssText = 'margin:12px 0;padding:16px;border-radius:16px;background:linear-gradient(135deg,rgba(250,204,21,0.22),rgba(16,185,129,0.2),#0f172a);border:1.5px solid rgba(250,204,21,0.7);text-align:center;box-shadow:0 12px 35px rgba(250,204,21,0.18)';
-    banner.innerHTML =
-      '<div style="font-size:12px;font-weight:900;color:#facc15;letter-spacing:1.2px">🏆 KRD PES LİGİ • SEZON 2027 ŞAMPİYONU 🏆</div>' +
-      '<div style="font-size:26px;font-weight:900;color:#ffffff;margin:6px 0">' + champName + '</div>' +
-      '<div style="font-size:13px;color:#34d399;font-weight:700">' + champPts + ' Puan ile Sezonu Zirvede Tamamladı!</div>';
-
-    tbl.parentElement.insertBefore(banner, tbl);
-  }
-
-  setInterval(function() {
-    updateDeadlineCountdown();
-    checkChampionCeremony();
-  }, 1000);
-})();
-
-
-
-
-
-
-
-
-;(function(){
-  if (window.__krdTopPillFix) return;
-  window.__krdTopPillFix = true;
-
-  function fixHeaderCleanly() {
-    var btns = Array.from(document.querySelectorAll('button'));
-    var themeBtn = btns.find(function(b) {
-      var t = (b.textContent || '').trim();
-      return t.indexOf('Stadyum') !== -1 || t.indexOf('Gece Mavisi') !== -1 || t.indexOf('Spor Basını') !== -1;
-    });
-    if (!themeBtn) return;
-
-    // 1. Eger KRD LIGI basligi yanlislikla "Canlı ↻" olduysa geri getir
-    var hdr = themeBtn.closest('header') || themeBtn.parentElement.parentElement;
-    if (hdr) {
-      Array.from(hdr.querySelectorAll('*')).forEach(function(el) {
-        if (el.textContent.trim() === 'Canlı↻' || el.textContent.trim() === 'Canlı ↻') {
-          el.innerHTML = 'KRD LİGİ';
-          el.style.cssText = 'font-weight:900;font-size:15px;letter-spacing:0.5px;color:#f8fafc;background:transparent;border:none;padding:0';
-        }
-      });
-    }
-
-    // 2. Tema butonunun icindeki veya hemen yanindaki ic ice kutuyu duzelt
-    var wrap = themeBtn.parentElement;
-    if (wrap && wrap.dataset.cleanDone !== '1') {
-      wrap.dataset.cleanDone = '1';
-      wrap.style.cssText = 'display:inline-flex;align-items:center;gap:6px;background:transparent;border:none;padding:0;box-shadow:none';
-
-      // Wrap icindeki diger eleman (yesil nokta + yenileme butonu)
-      Array.from(wrap.children).forEach(function(child) {
-        if (child === themeBtn) {
-          child.style.cssText = 'height:32px;padding:0 10px;border-radius:9px;background:#131c2e;border:1px solid rgba(148,163,184,0.28);color:#facc15;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:5px;margin:0;box-shadow:none';
-        } else {
-          // Ic ice kutu cercevesini kaldirip tek hap buton yap
-          child.style.cssText = 'height:32px;padding:0 9px;border-radius:9px;background:#131c2e;border:1px solid rgba(148,163,184,0.28);color:#cbd5e1;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:5px;margin:0;box-shadow:none;cursor:pointer';
-          Array.from(child.children).forEach(function(sub) {
-            sub.style.background = 'transparent';
-            sub.style.border = 'none';
-            sub.style.padding = '0';
-            sub.style.boxShadow = 'none';
-          });
-        }
-      });
-    }
-
-    // 3. Istatistik kartlarinda tek kalan son karti (Gol Ortalamasi) tam genislik yap
-    document.querySelectorAll('div').forEach(function(grid) {
-      var st = window.getComputedStyle(grid);
-      if (st.display === 'grid' && grid.children.length === 5 && grid.textContent.indexOf('Gol Ortalaması') !== -1) {
-        grid.lastElementChild.style.gridColumn = '1 / -1';
-      }
-    });
-  }
-
-  setTimeout(fixHeaderCleanly, 250);
-  setTimeout(fixHeaderCleanly, 1000);
-})();
-
-
-
-
-;(function(){
-  if (window.__krdSafeTopBarAndBell) return;
-  window.__krdSafeTopBarAndBell = true;
-
-  function syncTopAndBell() {
-    // 1. Bildirim zili: Body icinde ve sol alt kosede
-    var bell = document.getElementById('krdPushBtn');
-    if (bell) {
-      if (bell.parentElement !== document.body) document.body.appendChild(bell);
-      bell.style.setProperty('display', 'flex', 'important');
-      bell.style.setProperty('position', 'fixed', 'important');
-      bell.style.setProperty('top', 'auto', 'important');
-      bell.style.setProperty('right', 'auto', 'important');
-      bell.style.setProperty('bottom', '16px', 'important');
-      bell.style.setProperty('left', '14px', 'important');
-      bell.style.setProperty('opacity', '1', 'important');
-      bell.style.setProperty('visibility', 'visible', 'important');
-      bell.style.setProperty('z-index', '99999', 'important');
-    }
-
-    // 2. Ust bar: KRD LIGI solda; Sohbet + Canli + Tema sagda, saga kayma sifir
-    var themeBtn = document.getElementById('krdThemeBtn');
-    var chatFab = document.getElementById('krdChatFab');
-    var connDot = document.getElementById('krdConnDot');
-    var connBtn = connDot ? connDot.closest('button') : null;
-
-    if (themeBtn && themeBtn.parentElement) {
-      var rightGroup = themeBtn.parentElement;
-      rightGroup.classList.add('krd-fixed-rightgroup');
-
-      if (connBtn) {
-        connBtn.classList.add('krd-conn-pill');
-        connBtn.innerHTML = '<span id="krdConnDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e;"></span><span>↻</span>';
-      }
-
-      if (chatFab) {
-        chatFab.classList.add('krd-top-chat');
-        if (chatFab.parentElement !== rightGroup) {
-          rightGroup.insertBefore(chatFab, rightGroup.firstChild);
-        }
-      }
-
-      var topRow = rightGroup.parentElement;
-      if (topRow) {
-        topRow.classList.add('krd-fixed-topbar');
-        // Ust satiri kapsayan dis kutu varsa saga itilmesini engelle
-        if (topRow.parentElement && topRow.parentElement !== document.body) {
-          topRow.parentElement.style.setProperty('width', '100%', 'important');
-          topRow.parentElement.style.setProperty('max-width', '100%', 'important');
-          topRow.parentElement.style.setProperty('margin-left', '0', 'important');
-          topRow.parentElement.style.setProperty('margin-right', '0', 'important');
-        }
-      }
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', syncTopAndBell);
-  } else {
-    syncTopAndBell();
-  }
-  setTimeout(syncTopAndBell, 250);
-  setTimeout(syncTopAndBell, 850);
 })();
