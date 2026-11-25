@@ -4849,6 +4849,74 @@ events.onmessage = async () => {
 })();
 </script>
 
+
+<script id="krd-universal-x-fix">
+(function(){
+  function forceCloseEverywhere(e) {
+    var t = e.target;
+    if (!t) return;
+    var btn = t.closest('button, [role="button"], .close, .modal-close');
+    var isBackdrop = t.classList && t.classList.contains('modal');
+    if (!btn && !isBackdrop) return;
+
+    var txt = btn ? (btn.textContent || '').replace(/s+/g, ' ').trim() : '';
+    var id = btn ? (btn.id || '') : '';
+    var oc = btn ? (btn.getAttribute('onclick') || '') : '';
+
+    var isCloseBtn = btn && (
+      id === 'krdChatCloseBtn' ||
+      txt === '✕' || txt === '×' || txt === 'X' || txt === '✕ Kapat' || txt === 'Kapat' ||
+      oc.indexOf('story=null') !== -1 ||
+      oc.indexOf('selTeam=null') !== -1 ||
+      oc.indexOf('archView=null') !== -1 ||
+      oc.indexOf('goalMatch=null') !== -1 ||
+      oc.indexOf('krdTeamModal') !== -1 ||
+      oc.indexOf('krdTeamStatsModal') !== -1
+    );
+
+    if (!isCloseBtn && !isBackdrop) return;
+
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
+    // 1. Sohbet penceresini kapat
+    var cb = document.getElementById('krdChatBox');
+    if (cb) { cb.classList.remove('open'); cb.style.display = 'none'; }
+
+    // 2. Takim ve Istatistik modallarini kapat
+    var tm = document.getElementById('krdTeamModal');
+    var tsm = document.getElementById('krdTeamStatsModal');
+    if (tm) { tm.classList.remove('open'); tm.style.display = ''; }
+    if (tsm) { tsm.classList.remove('open'); tsm.style.display = ''; }
+    document.body.classList.remove('krd-modal-open');
+
+    // 3. Hikaye Karti, Arsiv, Gol ve diger modallari kapat
+    var host = document.getElementById('krdStoryHost');
+    if (host) host.innerHTML = '';
+    var changed = false;
+    try {
+      if (typeof story !== 'undefined' && story) { story = null; changed = true; }
+      if (typeof selTeam !== 'undefined' && selTeam) { selTeam = null; changed = true; }
+      if (typeof archView !== 'undefined' && archView) { archView = null; changed = true; }
+      if (typeof goalMatch !== 'undefined' && goalMatch) { goalMatch = null; changed = true; }
+    } catch (err) {}
+    if (changed && typeof render === 'function') render();
+  }
+
+  document.addEventListener('pointerdown', forceCloseEverywhere, true);
+  document.addEventListener('click', forceCloseEverywhere, true);
+
+  // Sohbet tekrar acildiginda inline display:none kalmasin
+  document.addEventListener('click', function(e) {
+    var fab = e.target && e.target.closest('#krdChatFab');
+    if (fab) {
+      var cb = document.getElementById('krdChatBox');
+      if (cb && cb.classList.contains('open')) cb.style.display = 'flex';
+    }
+  }, false);
+})();
+</script>
+
 </body></html>
 
 

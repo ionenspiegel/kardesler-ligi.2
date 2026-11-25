@@ -238,7 +238,7 @@ async function restoreBackup(b) {
   });
 }
 
-const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav', '.m4a': 'audio/mp4' };
 const send = (res, code, obj, h = {}) => { res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...h }); res.end(JSON.stringify(obj)); };
 const body = req => new Promise((ok, no) => { let d = ''; req.on('data', c => { d += c; if (d.length > 2e6) { no(E(413, 'Çok büyük')); req.destroy(); } }); req.on('end', () => { try { ok(d ? JSON.parse(d) : {}); } catch { no(E(400, 'Geçersiz JSON')); } }); });
 const cookie = (v, age) => `kl_s=${v}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${age}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
@@ -246,6 +246,11 @@ const cookie = (v, age) => `kl_s=${v}; HttpOnly; SameSite=Strict; Path=/; Max-Ag
 async function api(req, res, u) {
   const M = req.method, P = u.pathname, ip = (typeof krdGetIp === 'function' ? krdGetIp(req) : req.socket.remoteAddress);
   if (M === 'GET' && P === '/api/league') return send(res, 200, await league());
+  if (M === 'GET' && P === '/api/music-list') {
+    const dir = path.join(__dirname, 'public', 'music');
+    const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => /.(mp3|ogg|wav|m4a)$/i.test(f)).map(f => ({ name: f.replace(/.[^.]+$/, ''), url: '/music/' + encodeURIComponent(f) })) : [];
+    return send(res, 200, { tracks: files });
+  }
   if (M === 'GET' && P === '/api/me') return send(res, 200, { admin: isAdmin(req), needsSetup: await needsSetup() });
   if (M !== 'GET' && req.headers['x-kl'] !== '1') throw E(403, 'Geçersiz istek');
   if (M === 'POST' && P === '/api/admin/setup') {
