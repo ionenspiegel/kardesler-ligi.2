@@ -2438,3 +2438,20 @@
   setInterval(applyCombinedTicker, 3000);
   setInterval(refreshRecentMatchesForTicker, 30000);
 })();
+
+
+;(function(){
+  if (window.__krdModalEscapeFix) return;
+  window.__krdModalEscapeFix = true;
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      try {
+        if (typeof story !== 'undefined' && story) { story = null; if (typeof render === 'function') render(); }
+        if (typeof selTeam !== 'undefined' && selTeam) { selTeam = null; if (typeof render === 'function') render(); }
+        if (typeof archView !== 'undefined' && archView) { archView = null; if (typeof render === 'function') render(); }
+        if (typeof goalMatch !== 'undefined' && goalMatch) { goalMatch = null; if (typeof render === 'function') render(); }
+      } catch (err) {}
+    }
+  });
+})();
