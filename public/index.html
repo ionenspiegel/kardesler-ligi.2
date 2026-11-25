@@ -3307,7 +3307,7 @@ events.onmessage = async () => {
         <div class="krd-msg ${isMe ? 'me' : 'other'}">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:2px;">
             <strong style="font-size:11px;color:${m.admin ? '#fbbf24' : '#38bdf8'};">${esc(m.user)}${m.admin ? ' 👑' : ''}</strong>
-            <span style="font-size:10px;color:#94a3b8;">${t}${delBtn}</span>
+            <span style="font-size:10px;color:#94a3b8;">${t}${delBtn}${banBtn}</span>
           </div>
           <div>${esc(m.text)}</div>
         </div>
@@ -4793,7 +4793,7 @@ events.onmessage = async () => {
     idx = (newIdx + tracks.length) % tracks.length;
     audio.src = tracks[idx].url;
     if (autoPlay) {
-      audio.play().then(updateUi).catch(updateUi);
+      audio.play().then(updateUi).catch(function(){ titleEl.textContent = "Oynatılamadı (Tekrar Bas)"; playBtn.textContent = "▶️ Çal"; });
     } else {
       updateUi();
     }

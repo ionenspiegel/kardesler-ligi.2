@@ -978,7 +978,8 @@ const u = new URL(req.url, 'http://x');
       const row = await one(`SELECT v FROM ${SETTINGS} WHERE k='chat_msgs'`);
       let msgs = [];
       try { msgs = JSON.parse((row && row.v) || '[]'); } catch { msgs = []; }
-      return send(res, 200, { messages: Array.isArray(msgs) ? msgs : [], online: getActiveChatUsers() });
+      const safeMsgs = (Array.isArray(msgs) ? msgs : []).map(({ ip, ...rest }) => rest);
+      return send(res, 200, { messages: safeMsgs, online: getActiveChatUsers() });
     }
     if (u.pathname === '/api/chat' && req.method === 'POST') {
       const raw = await new Promise((resolve, reject) => {
@@ -1143,7 +1144,36 @@ const u = new URL(req.url, 'http://x');
       res.end(html);
       return;
     }
-    res.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream' }); fs.createReadStream(f).on('error', () => res.destroy()).pipe(res);
+    const ext = path.extname(f).toLowerCase();
+    const mimeType = MIME[ext] || 'application/octet-stream';
+    if (ext === '.mp3' || ext === '.ogg' || ext === '.wav' || ext === '.m4a') {
+      const stat = fs.statSync(f);
+      const total = stat.size;
+      const range = req.headers.range;
+      if (range) {
+        const parts = range.replace(/bytes=/, '').split('-');
+        const start = parseInt(parts[0], 10) || 0;
+        const end = parts[1] ? Math.min(parseInt(parts[1], 10), total - 1) : total - 1;
+        res.writeHead(206, {
+          'Content-Range': 'bytes ' + start + '-' + end + '/' + total,
+          'Accept-Ranges': 'bytes',
+          'Content-Length': (end - start) + 1,
+          'Content-Type': mimeType,
+          'Cache-Control': 'public, max-age=3600'
+        });
+        fs.createReadStream(f, { start, end }).on('error', () => res.destroy()).pipe(res);
+      } else {
+        res.writeHead(200, {
+          'Content-Length': total,
+          'Accept-Ranges': 'bytes',
+          'Content-Type': mimeType,
+          'Cache-Control': 'public, max-age=3600'
+        });
+        fs.createReadStream(f).on('error', () => res.destroy()).pipe(res);
+      }
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': mimeType }); fs.createReadStream(f).on('error', () => res.destroy()).pipe(res);
   } catch (e) { const mine = Number.isInteger(e.code); if (!mine) console.error(e); if (!res.headersSent) send(res, mine ? e.code : 500, { error: mine ? e.message : 'Sunucu hatası' }); }
 });
 
