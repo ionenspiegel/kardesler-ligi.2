@@ -1519,6 +1519,93 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   }
 </style>
 
+
+<style id="krd-story-music-css">
+  /* Hikaye Karti mobil tasmasini ve kesilmesini tamamen duzelt */
+  .modal:not(#krdTeamModal):not(#krdTeamStatsModal) {
+    align-items: center !important;
+    justify-content: flex-start !important;
+    padding: 58px 10px 30px !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .modal:not(#krdTeamModal):not(#krdTeamStatsModal) > div {
+    margin: 0 auto !important;
+    width: 100%;
+    max-width: 400px;
+  }
+  .story-topbar {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(7, 11, 22, 0.92);
+    backdrop-filter: blur(8px);
+    padding: 8px 10px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+  }
+  .story-tools {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    justify-content: flex-start !important;
+    max-width: 92vw !important;
+    width: 100% !important;
+    padding: 4px 2px !important;
+    gap: 6px !important;
+    scrollbar-width: none;
+  }
+  .story-tools::-webkit-scrollbar { display: none; }
+  .story-tools button { flex: 0 0 auto !important; }
+  .story {
+    min-height: auto !important;
+    padding: 16px 14px !important;
+  }
+
+  /* Mini Muzik Calar */
+  #krdMusicDock {
+    position: fixed;
+    left: 14px;
+    bottom: 14px;
+    z-index: 9990;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(11, 18, 36, 0.92);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    backdrop-filter: blur(12px);
+    padding: 6px 10px;
+    border-radius: 999px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+    max-width: calc(100vw - 28px);
+  }
+  body.krd-modal-open #krdMusicDock {
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+  #krdMusicDock button {
+    padding: 5px 9px;
+    font-size: 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+  }
+  #krdMusicTitle {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #e2e8f0;
+    max-width: 135px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+</style>
+
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
@@ -2227,7 +2314,7 @@ function storyModal(){
 
  return `<div class="modal" onclick="if(event.target===this){story=null;render()}">
   <div style="display:grid;gap:10px;justify-items:center">
-   <div style="display:flex;gap:8px;justify-content:center;width:100%;margin-bottom:2px;">
+   <div class="story-topbar">
     <button type="button" class="sm pri" onclick="downloadStoryPng()">📥 PNG İndir</button>
     <button type="button" class="sm dng" onclick="story=null;render()">✕ Kapat</button>
    </div>
@@ -2239,7 +2326,7 @@ function storyModal(){
     <button class="xs ${story.type==='remaining'?'pri':''}" onclick="story={type:'remaining'};render()">Kalan Maçlar</button>
    </div>
    <div class="story">${inner}<div class="story-foot">${esc(S.settings.name)} · EKRAN GÖRÜNTÜSÜ AL</div></div>
-   <button class="sm pri" onclick="downloadStoryPng()">📥 PNG İndir</button><button class="sm" onclick="story=null;render()">✕ Kapat</button>
+   
   </div>
  </div>`;
 }
@@ -4662,6 +4749,103 @@ events.onmessage = async () => {
       closeAllModals();
     }
   }, true);
+})();
+</script>
+
+
+<script id="krd-story-music-js">
+(function() {
+  if (document.getElementById('krdMusicDock')) return;
+
+  var audio = new Audio();
+  audio.loop = false;
+  audio.volume = Number(localStorage.getItem('krd_music_vol') || 0.65);
+
+  var tracks = [];
+  var idx = 0;
+
+  var dock = document.createElement('div');
+  dock.id = 'krdMusicDock';
+  dock.innerHTML =
+    '<button type="button" id="krdMusPrev" title="Önceki Parça">⏮</button>' +
+    '<button type="button" id="krdMusPlay" title="Oynat / Duraklat">🎵 Çal</button>' +
+    '<button type="button" id="krdMusNext" title="Sonraki Parça">⏭</button>' +
+    '<span id="krdMusicTitle">Müzik Seç / Ekle</span>' +
+    '<label title="Cihazdan MP3 Seç" style="cursor:pointer;padding:4px 8px;border-radius:999px;background:rgba(34,224,138,0.18);border:1px solid rgba(34,224,138,0.4);font-size:11px;font-weight:700;color:#4ade80;display:inline-flex;align-items:center;">+ MP3<input type="file" id="krdMusFile" accept="audio/*" multiple style="display:none"></label>';
+  document.body.appendChild(dock);
+
+  var playBtn = document.getElementById('krdMusPlay');
+  var titleEl = document.getElementById('krdMusicTitle');
+  var fileIn = document.getElementById('krdMusFile');
+
+  function updateUi() {
+    if (!tracks.length) {
+      titleEl.textContent = 'Müzik Yok (+ MP3)';
+      playBtn.textContent = '🎵 Çal';
+      return;
+    }
+    titleEl.textContent = tracks[idx].name;
+    playBtn.textContent = audio.paused ? '▶️ Çal' : '⏸ Dur';
+  }
+
+  function loadAndPlay(newIdx, autoPlay) {
+    if (!tracks.length) return;
+    idx = (newIdx + tracks.length) % tracks.length;
+    audio.src = tracks[idx].url;
+    if (autoPlay) {
+      audio.play().then(updateUi).catch(updateUi);
+    } else {
+      updateUi();
+    }
+  }
+
+  playBtn.addEventListener('click', function() {
+    if (!tracks.length) {
+      fileIn.click();
+      return;
+    }
+    if (!audio.src) {
+      loadAndPlay(idx, true);
+      return;
+    }
+    if (audio.paused) audio.play().then(updateUi).catch(updateUi);
+    else { audio.pause(); updateUi(); }
+  });
+
+  document.getElementById('krdMusPrev').addEventListener('click', function() {
+    loadAndPlay(idx - 1, true);
+  });
+  document.getElementById('krdMusNext').addEventListener('click', function() {
+    loadAndPlay(idx + 1, true);
+  });
+
+  audio.addEventListener('ended', function() {
+    loadAndPlay(idx + 1, true);
+  });
+
+  fileIn.addEventListener('change', function(e) {
+    var files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    files.forEach(function(f) {
+      tracks.push({
+        name: f.name.replace(/.[^.]+$/, ''),
+        url: URL.createObjectURL(f)
+      });
+    });
+    loadAndPlay(tracks.length - files.length, true);
+  });
+
+  fetch('/api/music-list')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d && Array.isArray(d.tracks) && d.tracks.length) {
+        tracks = d.tracks;
+        loadAndPlay(0, false);
+      } else {
+        updateUi();
+      }
+    })
+    .catch(updateUi);
 })();
 </script>
 
