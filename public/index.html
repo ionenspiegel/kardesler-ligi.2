@@ -1649,7 +1649,7 @@ function remainingSection(){
   const pills=x.items.map(it=>`<span class="rem-pill"><b>H${it.week}</b> ${esc(it.opp.name)} <span class="mut">(${it.isHome?'E':'D'})</span></span>`).join('');
   return `<div class="rem-card">
    <div class="rem-top">
-    <span class="tlink" onclick="selTeam=${x.team.id};render()">${badgePure(x.team,30)}<span style="margin-left:7px">${esc(x.team.name)}</span></span>
+    <span class="tlink" onclick="event.stopPropagation();if(window.openKrdTeamProfile){window.openKrdTeamProfile(${x.team.id});}else{selTeam=${x.team.id};render();}">${badgePure(x.team,30)}<span style="margin-left:7px">${esc(x.team.name)}</span></span>
     <span class="tag">${x.rem.length} maç kaldı</span>
    </div>
    <div class="rem-list">${pills||'<span class="mut">Kalan maçı yok</span>'}</div>
@@ -1672,7 +1672,7 @@ function disciplineSection(){
   const badgeCol=pts<0?'#f87171':pts>0?'#4ade80':'#fbbf24';
   return `<div class="disc-card ${cls}">
    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-    <span class="tlink" onclick="selTeam=${tm.id};render()">${badgePure(tm,26)}<span style="margin-left:6px">${esc(tm.name)}</span></span>
+    <span class="tlink" onclick="event.stopPropagation();if(window.openKrdTeamProfile){window.openKrdTeamProfile(${tm.id});}else{selTeam=${tm.id};render();}">${badgePure(tm,26)}<span style="margin-left:6px">${esc(tm.name)}</span></span>
     <span style="font-weight:900;font-size:13px;color:${badgeCol};white-space:nowrap">${badgeTxt}</span>
    </div>
    <div style="font-size:13px;font-weight:700">${esc(x.reason)}</div>
@@ -2266,7 +2266,7 @@ function home(){const s=S.settings,pl=S.matches.filter(m=>m.played).sort((a,b)=>
  ${statsBar()}${headlinesSection()}
  <div class="sh"><h2>Puan Durumu</h2>${S.table.length?'<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="sm" onclick="story={type:\'table\'};render()">📱 Hikâye Kartı</button><button class="sm" onclick="copyTable()">📋 Kopyala</button></div>':''}</div>
  ${st.hasLive?'<div class="live-banner"><span class="tag live">CANLI</span> Devam eden maçların anlık skoruna göre canlı puan durumu gösteriliyor.</div>':''}
- <div class="card tw">${st.rows.length?`<table><thead><tr><th>#<th class="n">Takım<th>O<th>G<th>B<th>M<th>AG<th>YG<th>Av<th>P<th>Son 5</tr></thead><tbody>${st.rows.map((t,i)=>{const fm=formOf(t.id),mv=t.diff>0?`<span class="mv up">▲${t.diff}</span>`:t.diff<0?`<span class="mv dn">▼${Math.abs(t.diff)}</span>`:'';return `<tr style="animation-delay:${i*60}ms"><td><span class="pos">${i+1}</span>${mv}<td class="n"><span class="tlink" onclick="selTeam=${t.id};render()">${badge(t)}${esc(t.name)}</span><td>${t.p}<td>${t.w}<td>${t.d}<td>${t.l}<td>${t.gf}<td>${t.ga}<td>${t.gd>0?'+':''}${t.gd}<td class="pts">${t.pts}<td><span class="form">${fm.length?fm.map(x=>`<span class="fb ${x}">${x}</span>`).join(''):'<span class="mut">—</span>'}</span></tr>`}).join('')}</tbody></table>`:'<div class="empty">Henüz takım yok.</div>'}</div>
+ <div class="card tw">${st.rows.length?`<table><thead><tr><th>#<th class="n">Takım<th>O<th>G<th>B<th>M<th>AG<th>YG<th>Av<th>P<th>Son 5</tr></thead><tbody>${st.rows.map((t,i)=>{const fm=formOf(t.id),mv=t.diff>0?`<span class="mv up">▲${t.diff}</span>`:t.diff<0?`<span class="mv dn">▼${Math.abs(t.diff)}</span>`:'';return `<tr style="animation-delay:${i*60}ms"><td><span class="pos">${i+1}</span>${mv}<td class="n"><span class="tlink" onclick="event.stopPropagation();if(window.openKrdTeamProfile){window.openKrdTeamProfile(${t.id});}else{selTeam=${t.id};render();}">${badge(t)}${esc(t.name)}</span><td>${t.p}<td>${t.w}<td>${t.d}<td>${t.l}<td>${t.gf}<td>${t.ga}<td>${t.gd>0?'+':''}${t.gd}<td class="pts">${t.pts}<td><span class="form">${fm.length?fm.map(x=>`<span class="fb ${x}">${x}</span>`).join(''):'<span class="mut">—</span>'}</span></tr>`}).join('')}</tbody></table>`:'<div class="empty">Henüz takım yok.</div>'}</div>
  ${sb.length?`<div class="sh"><h2>Gol & Asist Krallığı</h2></div><div class="card tw"><table><thead><tr><th>#<th class="n">Oyuncu<th class="n">Takım<th>Gol<th>Asist<th>Katkı</tr></thead><tbody>${sb.map((x,i)=>{const tm=T(x.team_id);return `<tr><td><span class="pos">${i+1}</span><td class="n"><b>${esc(x.player)}</b><td class="n">${badge(tm,24)}${esc(tm.name)}<td class="pts">${x.goals}<td>${x.assists}<td><b>${x.goals+x.assists}</b></tr>`}).join('')}</tbody></table></div>`:''}
  ${h2hSection()}${predictionLeaderboard()}${playoffSection()}
  
@@ -2833,7 +2833,7 @@ events.onmessage = async () => {
     return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
-  async function openTeamCard(teamName) {
+  async function openTeamCard(teamName) { return;
     try {
       const res = await fetch('/api/league');
       const data = await res.json();
@@ -4601,29 +4601,49 @@ events.onmessage = async () => {
 </script>
 
 
+
 <script id="krd-modal-force-close">
 (function() {
-  function closeAllKrdModals() {
+  function closeEveryModal() {
     var tm = document.getElementById('krdTeamModal');
     var tsm = document.getElementById('krdTeamStatsModal');
     if (tm) tm.classList.remove('open');
     if (tsm) tsm.classList.remove('open');
     document.body.classList.remove('krd-modal-open');
+
+    var changed = false;
+    try {
+      if (typeof story !== 'undefined' && story) { story = null; changed = true; }
+      if (typeof selTeam !== 'undefined' && selTeam) { selTeam = null; changed = true; }
+      if (typeof archView !== 'undefined' && archView) { archView = null; changed = true; }
+      if (typeof goalMatch !== 'undefined' && goalMatch) { goalMatch = null; changed = true; }
+      if (changed && typeof render === 'function') render();
+    } catch (e) {}
   }
 
-  // Capture fazinda (en erken asamada) X butonuna veya arka plana dokunmayi yakala
-  document.addEventListener('pointerdown', function(e) {
-    var target = e.target;
-    if (!target) return;
-    var btn = target.closest('button');
-    if (btn && (btn.textContent.trim() === '✕' || (btn.getAttribute('onclick') || '').indexOf('krdTeamModal') !== -1)) {
+  // En erken fazda (capture) tiklama ve dokunmayi yakala
+  document.addEventListener('click', function(e) {
+    var t = e.target;
+    if (!t) return;
+
+    // 1) Herhangi bir kapatma butonuna (✕ veya ✕ Kapat) basildiysa
+    var btn = t.closest('button');
+    if (btn) {
+      var txt = (btn.textContent || '').trim();
+      var oc = btn.getAttribute('onclick') || '';
+      if (txt === '✕' || txt === '✕ Kapat' || oc.indexOf('story=null') !== -1 || oc.indexOf('selTeam=null') !== -1 || oc.indexOf('krdTeamModal') !== -1) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeEveryModal();
+        return;
+      }
+    }
+
+    // 2) Modal siyah arka planina (bosluga) tiklandiysa
+    if (t.classList && t.classList.contains('modal')) {
       e.preventDefault();
       e.stopPropagation();
-      closeAllKrdModals();
-      return;
-    }
-    if (target.id === 'krdTeamModal' || target.id === 'krdTeamStatsModal') {
-      closeAllKrdModals();
+      closeEveryModal();
     }
   }, true);
 })();
