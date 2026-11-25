@@ -1384,6 +1384,141 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   }
 </style>
 
+
+<style id="krd-nextgen-ui">
+  /* --- MODAL & HIKAYE KARTI KESIN KATMAN DUZELTMESI --- */
+  #krdTeamModal:not(.open),
+  #krdTeamStatsModal:not(.open) {
+    display: none !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+  }
+  #krdTeamModal.open,
+  #krdTeamStatsModal.open {
+    display: flex !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+    z-index: 100000 !important;
+  }
+  #krdTeamModal .krd-tm-card,
+  #krdTeamStatsModal .krd-stat-card {
+    position: relative !important;
+    z-index: 100001 !important;
+    pointer-events: auto !important;
+  }
+  .modal:not(#krdTeamModal):not(#krdTeamStatsModal) {
+    z-index: 99990 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    padding: 66px 14px 28px !important;
+    overflow-y: auto !important;
+  }
+  .modal:not(#krdTeamModal):not(#krdTeamStatsModal) > div {
+    position: relative !important;
+    z-index: 99995 !important;
+    margin: auto !important;
+  }
+
+  /* --- MODERN EA FC / UEFA YAYIN GRAFIKLERI & CAM EFEKTI --- */
+  @keyframes krdAurora {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  @keyframes krdPulseGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34, 224, 138, 0.25); }
+    50% { box-shadow: 0 0 18px 2px rgba(34, 224, 138, 0.35); }
+  }
+  @keyframes krdCardFloat {
+    from { opacity: 0; transform: translateY(12px) scale(0.985); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .hero {
+    background: linear-gradient(125deg, #0b6e46, #163ea8, #4f1d9e, #0d7a5f) !important;
+    background-size: 260% 260% !important;
+    animation: krdAurora 12s ease infinite, krdCardFloat .55s cubic-bezier(.2,.8,.2,1) both !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    box-shadow: 0 18px 45px rgba(4, 10, 28, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+  }
+  .hero h1 {
+    text-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+    letter-spacing: 0.6px;
+  }
+  .chip {
+    background: rgba(15, 23, 42, 0.42) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    backdrop-filter: blur(10px) !important;
+    font-weight: 600;
+  }
+
+  .card, .st, .rem-card, .disc-card {
+    background: linear-gradient(160deg, rgba(19, 30, 54, 0.86), rgba(11, 18, 36, 0.92)) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(148, 163, 184, 0.16) !important;
+    box-shadow: 0 10px 30px rgba(2, 6, 23, 0.42) !important;
+    animation: krdCardFloat .45s cubic-bezier(.2,.8,.2,1) both;
+  }
+  .st:hover {
+    border-color: rgba(56, 189, 248, 0.38) !important;
+    transform: translateY(-2px);
+    transition: all .2s ease;
+  }
+
+  /* Puan Durumu Satir Vurgulari */
+  tbody tr {
+    transition: background .18s ease, transform .18s ease;
+  }
+  tbody tr:hover {
+    background: rgba(56, 189, 248, 0.09) !important;
+  }
+  tbody tr:nth-child(1) td:first-child {
+    box-shadow: inset 4px 0 0 #ffd23f;
+  }
+  tbody tr:nth-child(2) td:first-child,
+  tbody tr:nth-child(3) td:first-child,
+  tbody tr:nth-child(4) td:first-child {
+    box-shadow: inset 4px 0 0 #22e08a;
+  }
+
+  /* Modern Mac Kartlari & Skor Kutusu */
+  .m {
+    background: linear-gradient(145deg, rgba(22, 34, 62, 0.9), rgba(13, 21, 40, 0.95)) !important;
+    border: 1px solid rgba(148, 163, 184, 0.16) !important;
+    box-shadow: 0 8px 22px rgba(2, 6, 23, 0.35);
+    transition: transform .22s cubic-bezier(.2,.8,.2,1), border-color .22s ease, box-shadow .22s ease !important;
+  }
+  .m:hover {
+    transform: translateY(-3px) !important;
+    border-color: rgba(34, 224, 138, 0.42) !important;
+    box-shadow: 0 14px 28px rgba(2, 6, 23, 0.55) !important;
+  }
+  .m .sc span {
+    display: inline-block;
+    background: rgba(7, 11, 22, 0.68);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-variant-numeric: tabular-nums;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+  .pri {
+    background: linear-gradient(135deg, #16b970, #1d6ce0) !important;
+    box-shadow: 0 6px 18px rgba(22, 185, 112, 0.28);
+    animation: krdPulseGlow 3.2s infinite;
+  }
+  .tabs button {
+    border-radius: 999px !important;
+    padding: 6px 14px !important;
+    font-weight: 600;
+  }
+  .tabs .on {
+    box-shadow: 0 4px 14px rgba(34, 224, 138, 0.35);
+  }
+</style>
+
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
@@ -4380,6 +4515,88 @@ events.onmessage = async () => {
 })();
 </script>
 </main>
+
+<script id="krd-nextgen-logic">
+(function() {
+  // ESC tusu ile acik kalan herhangi bir modali kapat
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      var tm = document.getElementById('krdTeamModal');
+      var tsm = document.getElementById('krdTeamStatsModal');
+      if (tm) tm.classList.remove('open');
+      if (tsm) tsm.classList.remove('open');
+      document.body.classList.remove('krd-modal-open');
+      try {
+        if (typeof story !== 'undefined' && story) { story = null; if (typeof render === 'function') render(); }
+        if (typeof selTeam !== 'undefined' && selTeam) { selTeam = null; if (typeof render === 'function') render(); }
+        if (typeof archView !== 'undefined' && archView) { archView = null; if (typeof render === 'function') render(); }
+      } catch (err) {}
+    }
+  });
+
+  function mountTitleOddsPanel() {
+    if (typeof S === 'undefined' || !Array.isArray(S.teams) || S.teams.length < 2) return;
+    var slug = (S.settings && S.settings.admin_slug) ? S.settings.admin_slug : 'krd-kontrol';
+    if (location.hash.startsWith('#/yonetici') || location.hash.startsWith('#/' + slug)) return;
+
+    var h2hBox = document.getElementById('krdH2hBox');
+    if (!h2hBox || document.getElementById('krdOddsPanel')) return;
+
+    var totalPerTeam = (S.teams.length - 1) * 2;
+    var st = (typeof liveStandings === 'function') ? liveStandings().rows : [];
+    if (!st.length) return;
+
+    var leaderPts = st[0].pts;
+    var fourthPts = st[Math.min(3, st.length - 1)].pts;
+
+    var rowsHtml = st.map(function(t, i) {
+      var rem = Math.max(0, totalPerTeam - (t.p || 0));
+      var maxPts = t.pts + (rem * 3);
+      var diffLeader = leaderPts - t.pts;
+      var tagText = '';
+      var tagColor = '#94a3b8';
+
+      if (i === 0 && rem === 0) {
+        tagText = '🏆 ŞAMPİYON'; tagColor = '#ffd23f';
+      } else if (i === 0) {
+        tagText = '👑 LİDER • Kontrol Elinde'; tagColor = '#22e08a';
+      } else if (maxPts >= leaderPts) {
+        tagText = '🔥 Şampiyonluk Potasında (-' + diffLeader + 'P)'; tagColor = '#38bdf8';
+      } else if (maxPts >= fourthPts) {
+        tagText = '⚔️ İlk 4 / Play-Off Yarışı'; tagColor = '#c084fc';
+      } else {
+        tagText = '🎯 Sıralama Mücadelesi'; tagColor = '#94a3b8';
+      }
+
+      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);flex-wrap:wrap;">' +
+        '<div style="display:flex;align-items:center;gap:8px;">' +
+          '<span style="font-weight:800;color:#94a3b8;min-width:22px;">#' + (i + 1) + '</span>' +
+          '<b style="font-size:13.5px;">' + String(t.name).replace(/[<>&]/g, '') + '</b>' +
+          '<span style="font-size:11.5px;color:#8fa0c8;">(' + t.pts + 'P • Kalan ' + rem + 'M • Tavan ' + maxPts + 'P)</span>' +
+        '</div>' +
+        '<span style="font-size:11.5px;font-weight:800;color:' + tagColor + ';">' + tagText + '</span>' +
+      '</div>';
+    }).join('');
+
+    var panel = document.createElement('details');
+    panel.id = 'krdOddsPanel';
+    panel.className = 'card';
+    panel.open = true;
+    panel.style.marginTop = '12px';
+    panel.innerHTML =
+      '<summary style="cursor:pointer;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
+        '<span>🎯 Canlı Şampiyonluk & Puan Tavanı Analizi</span>' +
+        '<span class="tag" style="color:#22e08a;border:1px solid rgba(34,224,138,0.35);">CANLI HESAPLAMA</span>' +
+      '</summary>' +
+      '<div style="display:grid;gap:6px;margin-top:12px;">' + rowsHtml + '</div>';
+
+    h2hBox.insertAdjacentElement('beforebegin', panel);
+  }
+
+  setInterval(mountTitleOddsPanel, 1300);
+})();
+</script>
+
 </body></html>
 
 
