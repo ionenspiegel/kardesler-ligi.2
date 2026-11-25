@@ -4460,10 +4460,13 @@ events.onmessage = async () => {
     box.className = 'card';
     box.style.marginTop = '12px';
     box.innerHTML = `
-      <summary style="cursor:pointer;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+      <summary style="cursor:pointer;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
         <span>⚔️ Kafa Kafaya (H2H) Rekabet & PNG Tablo İndir</span>
-        <button type="button" class="sm pri" onclick="event.preventDefault();downloadKrdStandingsPng()">📸 Puan Tablosunu PNG İndir</button>
+        <span class="tag">AÇ / KAPAT</span>
       </summary>
+      <div style="margin-top:10px;display:flex;justify-content:flex-end;">
+        <button type="button" class="sm pri" onclick="downloadKrdStandingsPng()">📸 Puan Tablosunu PNG İndir</button>
+      </div>
       <div style="display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap;">
         <select aria-label="Secim listesi" id="krdH2hA" style="flex:1;min-width:120px;padding:7px;border-radius:8px;">${opts}</select>
         <span style="font-weight:900;opacity:.7;">VS</span>
@@ -4594,6 +4597,35 @@ events.onmessage = async () => {
   }
 
   setInterval(mountTitleOddsPanel, 1300);
+})();
+</script>
+
+
+<script id="krd-modal-force-close">
+(function() {
+  function closeAllKrdModals() {
+    var tm = document.getElementById('krdTeamModal');
+    var tsm = document.getElementById('krdTeamStatsModal');
+    if (tm) tm.classList.remove('open');
+    if (tsm) tsm.classList.remove('open');
+    document.body.classList.remove('krd-modal-open');
+  }
+
+  // Capture fazinda (en erken asamada) X butonuna veya arka plana dokunmayi yakala
+  document.addEventListener('pointerdown', function(e) {
+    var target = e.target;
+    if (!target) return;
+    var btn = target.closest('button');
+    if (btn && (btn.textContent.trim() === '✕' || (btn.getAttribute('onclick') || '').indexOf('krdTeamModal') !== -1)) {
+      e.preventDefault();
+      e.stopPropagation();
+      closeAllKrdModals();
+      return;
+    }
+    if (target.id === 'krdTeamModal' || target.id === 'krdTeamStatsModal') {
+      closeAllKrdModals();
+    }
+  }, true);
 })();
 </script>
 
