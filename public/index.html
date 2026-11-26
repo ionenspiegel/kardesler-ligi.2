@@ -1617,24 +1617,20 @@ html, body {
   overflow-anchor: none !important;
   scroll-behavior: auto !important;
 }
-#main-content {
-  display: block !important;
-  width: 100% !important;
-  max-width: 1060px !important;
-  margin: 0 auto !important;
-  padding: 0 12px 130px 12px !important;
-  box-sizing: border-box !important;
-}
-#app {
+.wrap#app, #app {
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
   width: 100% !important;
+  max-width: 1060px !important;
+  margin: 0 auto !important;
+  padding: 0 12px 140px 12px !important;
+  box-sizing: border-box !important;
 }
 #krdTopQuickBar, #krdChatFab, #krdChatCloseBtn {
   display: none !important;
 }
-/* Sabit, tam ortali ve kaymasiz Canli Sohbet Bolumu */
+/* Canli Lig Sohbeti - Tam ortali, kompakt ve mesaj yazma alani muzik barinin ustunde */
 #krdChatBox {
   position: relative !important;
   left: auto !important;
@@ -1644,11 +1640,11 @@ html, body {
   transform: none !important;
   display: flex !important;
   flex-direction: column !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  height: 280px !important;
-  max-height: 280px !important;
-  margin: 12px 0 16px 0 !important;
+  width: calc(100% - 24px) !important;
+  max-width: 1036px !important;
+  height: 255px !important;
+  max-height: 255px !important;
+  margin: 8px auto 12px auto !important;
   border-radius: 16px !important;
   background: #0f172a !important;
   border: 1px solid rgba(148, 163, 184, 0.25) !important;
@@ -1679,7 +1675,6 @@ html, body {
   border-radius: 10px !important;
   padding: 8px 11px !important;
 }
-/* Bildirim ve Yukari Cik ikonlari muzik barinin ustunde */
 #krdPushBtn {
   bottom: 84px !important;
   left: 12px !important;
@@ -1689,32 +1684,6 @@ html, body {
   bottom: 84px !important;
   right: 12px !important;
   z-index: 99920 !important;
-}
-/* Telefon Hikaye Karti (.modal) tam gorunum */
-.modal:not(#krdTeamModal):not(#krdTeamStatsModal) {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-  padding: 18px 12px 40px !important;
-  overflow-y: auto !important;
-  z-index: 999990 !important;
-}
-.modal:not(#krdTeamModal):not(#krdTeamStatsModal) > div {
-  width: 100% !important;
-  max-width: 420px !important;
-  margin: auto !important;
-  display: grid !important;
-  justify-items: center !important;
-  gap: 10px !important;
-}
-.modal .story {
-  width: 100% !important;
-  max-width: 380px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  opacity: 1 !important;
-  visibility: visible !important;
 }
 </style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
@@ -5117,10 +5086,10 @@ if (document.hidden) return;
 </script>
 <script id="krd-unified-master-js">
 (function() {
-  function ensureAllVisible() {
+  async function bootAll() {
     var app = document.getElementById('app');
     var cb = document.getElementById('krdChatBox');
-    if (cb && app && app.parentElement && !app.contains(cb) && cb.nextElementSibling !== app) {
+    if (cb && app && app.parentElement && cb.nextElementSibling !== app) {
       app.parentElement.insertBefore(cb, app);
     }
     if (cb && !document.getElementById('krdPinnedBar')) {
@@ -5132,16 +5101,18 @@ if (document.hidden) return;
         head.insertAdjacentElement('afterend', pinDiv);
       }
     }
-    // Eger #app bos kaldiysa veriyi ve arayuzu hemen cizdir
-    if (app && app.innerHTML.trim() === '') {
-      if (typeof window.render === 'function') window.render();
-      if (typeof window.load === 'function') window.load();
+    if (app && (!app.innerHTML || app.innerHTML.trim().length < 40)) {
+      if (typeof window.load === 'function') {
+        try { await window.load(); } catch (e) {}
+      }
+      if (typeof window.render === 'function' && (!app.innerHTML || app.innerHTML.trim().length < 40)) {
+        try { window.render(); } catch (e) {}
+      }
     }
   }
-
-  ensureAllVisible();
-  setTimeout(ensureAllVisible, 300);
-  setTimeout(ensureAllVisible, 1200);
+  bootAll();
+  setTimeout(bootAll, 500);
+  setTimeout(bootAll, 1500);
 })();
 </script>
 </body></html>
