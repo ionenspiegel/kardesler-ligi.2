@@ -1639,6 +1639,39 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   visibility: visible !important;
 }
 </style>
+<style id="krd-chat-fab-restore-css">
+#krdTopQuickBar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  padding: 6px 12px !important;
+  background: rgba(15, 23, 42, 0.9) !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16) !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+#krdChatFab {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+  height: 30px !important;
+  padding: 0 12px !important;
+  border-radius: 999px !important;
+  background: rgba(34, 224, 138, 0.16) !important;
+  border: 1px solid rgba(34, 224, 138, 0.45) !important;
+  color: #e2e8f0 !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+</style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
@@ -5083,6 +5116,45 @@ events.onmessage = async () => {
   }
 
   setInterval(mountAdminChatPanel, 1200);
+})();
+</script>
+<script id="krd-chat-fab-restore-js">
+(function() {
+  function ensureMainMenuChatBtn() {
+    var topBar = document.getElementById('krdTopQuickBar');
+    var ticker = document.getElementById('krdLiveTickerBar') || document.querySelector('.ticker');
+    if (!topBar && ticker && ticker.parentElement) {
+      topBar = document.createElement('div');
+      topBar.id = 'krdTopQuickBar';
+      topBar.innerHTML = '<span style="font-weight:700;color:#94a3b8;font-size:12px;">⚽ Canlı Lig Sohbeti</span>';
+      ticker.parentElement.insertBefore(topBar, ticker);
+    }
+    var fab = document.getElementById('krdChatFab');
+    if (!fab) {
+      fab = document.createElement('button');
+      fab.id = 'krdChatFab';
+      fab.type = 'button';
+      fab.innerHTML = '<span class="krd-online-dot"></span> 💬 Sohbet (<span id="krdFabCount">1</span>)';
+      fab.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var cb = document.getElementById('krdChatBox');
+        if (!cb) return;
+        var willOpen = !cb.classList.contains('open');
+        if (willOpen) {
+          cb.classList.add('open');
+          cb.style.setProperty('display', 'flex', 'important');
+        } else {
+          cb.classList.remove('open');
+          cb.style.setProperty('display', 'none', 'important');
+        }
+      });
+    }
+    if (topBar && fab.parentElement !== topBar) {
+      topBar.appendChild(fab);
+    }
+  }
+  ensureMainMenuChatBtn();
+  setInterval(ensureMainMenuChatBtn, 1000);
 })();
 </script>
 </body></html>
