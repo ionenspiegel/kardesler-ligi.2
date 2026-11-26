@@ -1639,76 +1639,9 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   visibility: visible !important;
 }
 </style>
-<style id="krd-inline-chat-css">
-#krdTopQuickBar {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  width: 100% !important;
-  padding: 6px 12px !important;
-  background: rgba(15, 23, 42, 0.9) !important;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.16) !important;
-}
-#krdChatFab {
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-  height: 28px !important;
-  padding: 0 11px !important;
-  border-radius: 999px !important;
-  background: rgba(34, 224, 138, 0.16) !important;
-  border: 1px solid rgba(34, 224, 138, 0.45) !important;
-  color: #e2e8f0 !important;
-  font-size: 12px !important;
-  font-weight: 800 !important;
-  cursor: pointer !important;
-}
-#krdChatBox {
-  position: static !important;
-  inset: auto !important;
-  transform: none !important;
-  display: flex !important;
-  flex-direction: column !important;
-  width: min(1100px, calc(100% - 24px)) !important;
-  max-width: 100% !important;
-  height: 410px !important;
-  max-height: 410px !important;
-  margin: 18px auto 96px auto !important;
-  border-radius: 16px !important;
-  background: #0f172a !important;
-  border: 1px solid rgba(148, 163, 184, 0.22) !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
-  z-index: 5 !important;
-}
-#krdChatCloseBtn {
+<style id="krd-only-chatbox-css">
+#krdTopQuickBar, #krdChatFab, #krdChatCloseBtn {
   display: none !important;
-}
-#krdChatMsgs {
-  flex: 1 1 auto !important;
-  overflow-y: auto !important;
-  padding: 10px 12px !important;
-}
-.krd-chat-form {
-  display: flex !important;
-  gap: 8px !important;
-  padding: 10px 12px !important;
-  background: #090f1e !important;
-  border-top: 1px solid rgba(148, 163, 184, 0.18) !important;
-  border-radius: 0 0 16px 16px !important;
-}
-#krdChatInput {
-  flex: 1 !important;
-  color: #fff !important;
-  background: #1e293b !important;
-  border: 1px solid rgba(148, 163, 184, 0.25) !important;
-  border-radius: 10px !important;
-  padding: 9px 12px !important;
-}
-</style>
-<style id="krd-chat-center-fix">
-#main-content {
-  width: 100% !important;
-  box-sizing: border-box !important;
 }
 #krdChatBox {
   position: relative !important;
@@ -1717,14 +1650,41 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   top: auto !important;
   bottom: auto !important;
   transform: none !important;
+  display: flex !important;
+  flex-direction: column !important;
   box-sizing: border-box !important;
   width: calc(100% - 24px) !important;
   max-width: 1060px !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
-  margin-top: 16px !important;
-  margin-bottom: 96px !important;
-  align-self: center !important;
+  height: 410px !important;
+  max-height: 410px !important;
+  margin: 18px auto 96px auto !important;
+  border-radius: 16px !important;
+  background: #0f172a !important;
+  border: 1px solid rgba(148, 163, 184, 0.22) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
+  z-index: 5 !important;
+  overflow: hidden !important;
+}
+#krdChatMsgs {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  padding: 10px 12px !important;
+}
+.krd-chat-form {
+  display: flex !important;
+  gap: 8px !important;
+  padding: 10px 12px !important;
+  background: #090f1e !important;
+  border-top: 1px solid rgba(148, 163, 184, 0.18) !important;
+}
+#krdChatInput {
+  flex: 1 !important;
+  color: #fff !important;
+  background: #1e293b !important;
+  border: 1px solid rgba(148, 163, 184, 0.25) !important;
+  border-radius: 10px !important;
+  padding: 9px 12px !important;
 }
 </style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
@@ -5099,31 +5059,67 @@ events.onmessage = async () => {
   setInterval(mountAdminChatPanel, 1200);
 })();
 </script>
-<script id="krd-inline-chat-js">
+<script id="krd-only-chatbox-js">
 (function() {
-  function placeChatSectionAtBottom() {
+  function setupCleanStaticChat() {
+    var topBar = document.getElementById('krdTopQuickBar');
+    if (topBar) topBar.remove();
+    var fab = document.getElementById('krdChatFab');
+    if (fab) fab.remove();
+
     var mainEl = document.getElementById('main-content') || document.body;
     var cb = document.getElementById('krdChatBox');
     if (cb && cb.parentElement !== mainEl) {
       mainEl.appendChild(cb);
     }
-    var fab = document.getElementById('krdChatFab');
-    if (fab && !fab.dataset.scrollBound) {
-      fab.dataset.scrollBound = '1';
-      fab.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        var target = document.getElementById('krdChatBox');
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          var inp = document.getElementById('krdChatInput');
-          if (inp) setTimeout(function() { inp.focus(); }, 350);
-        }
+
+    // Sabit mesaj kutusu yoksa sohbet basliginin altina ekle
+    if (cb && !document.getElementById('krdPinnedBar')) {
+      var head = cb.querySelector('.krd-chat-head') || cb.firstElementChild;
+      if (head) {
+        var pinDiv = document.createElement('div');
+        pinDiv.id = 'krdPinnedBar';
+        pinDiv.style.cssText = 'display:none;margin:6px 12px 0 12px;padding:7px 10px;border-radius:8px;background:rgba(251,191,36,0.16);border:1px solid rgba(251,191,36,0.4);color:#fde68a;font-size:12px;font-weight:700;';
+        head.insertAdjacentElement('afterend', pinDiv);
+      }
+    }
+
+    // Mesaj gonderirken sayfa scroll pozisyonunu koru (yukari kaymayi engelle)
+    var form = document.getElementById('krdChatForm');
+    if (form && !form.dataset.noJumpBound) {
+      form.dataset.noJumpBound = '1';
+      form.addEventListener('submit', function() {
+        var keepY = window.scrollY;
+        requestAnimationFrame(function() { window.scrollTo(0, keepY); });
+        setTimeout(function() { window.scrollTo(0, keepY); }, 60);
+        setTimeout(function() { window.scrollTo(0, keepY); }, 220);
       }, true);
     }
   }
-  placeChatSectionAtBottom();
-  setInterval(placeChatSectionAtBottom, 1200);
+
+  // Sabit mesaji periyodik olarak da senkronla
+  async function syncPinnedOnly() {
+    try {
+      var r = await fetch('/api/chat?cid=pin_check');
+      if (!r.ok) return;
+      var d = await r.json();
+      var pinEl = document.getElementById('krdPinnedBar');
+      if (pinEl) {
+        if (d.pinned && String(d.pinned).trim()) {
+          pinEl.style.display = 'block';
+          pinEl.textContent = '📌 Sabit Mesaj: ' + d.pinned;
+        } else {
+          pinEl.style.display = 'none';
+          pinEl.textContent = '';
+        }
+      }
+    } catch (e) {}
+  }
+
+  setupCleanStaticChat();
+  syncPinnedOnly();
+  setInterval(setupCleanStaticChat, 1200);
+  setInterval(syncPinnedOnly, 5000);
 })();
 </script>
 </body></html>
