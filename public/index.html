@@ -1705,6 +1705,125 @@ html, body {
   box-sizing: border-box !important;
 }
 </style>
+<style id="krd-visual-fx-pack">
+@keyframes krdAuroraPulse {
+  0%, 100% { opacity: 0.72; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
+@keyframes krdShineSweep {
+  0% { transform: translateX(-120%) skewX(-18deg); }
+  55%, 100% { transform: translateX(260%) skewX(-18deg); }
+}
+@keyframes krdCardEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes krdLiveDotGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.65); }
+  50% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+}
+
+/* 1. Atmosferik Stadyum Gece Arka Plani */
+body {
+  background-color: #060b19 !important;
+  background-image:
+    radial-gradient(circle at 15% 10%, rgba(16, 185, 129, 0.13) 0%, transparent 42%),
+    radial-gradient(circle at 85% 18%, rgba(245, 158, 11, 0.13) 0%, transparent 45%),
+    radial-gradient(circle at 50% 85%, rgba(56, 189, 248, 0.10) 0%, transparent 50%) !important;
+  background-attachment: fixed !important;
+}
+
+/* 2. Hero Karti: Gomulu KRD Kupa & Stadyum Gorseli + Akan Isik Pariltisi */
+#app .hero {
+  position: relative !important;
+  overflow: hidden !important;
+  background-image:
+    url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20320%20200%22%20fill%3D%22none%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22g1%22%20cx%3D%2275%25%22%20cy%3D%2235%25%22%20r%3D%2265%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fbbf24%22%20stop-opacity%3D%220.34%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2255%25%22%20stop-color%3D%22%2310b981%22%20stop-opacity%3D%220.14%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%230f172a%22%20stop-opacity%3D%220%22%2F%3E%0A%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22cup%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fde68a%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2250%25%22%20stop-color%3D%22%23f59e0b%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23b45309%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22320%22%20height%3D%22200%22%20fill%3D%22url(%23g1)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22245%22%20cy%3D%2295%22%20r%3D%2278%22%20stroke%3D%22%23fbbf24%22%20stroke-opacity%3D%220.16%22%20stroke-width%3D%221.5%22%20stroke-dasharray%3D%225%205%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22245%22%20cy%3D%2295%22%20r%3D%2254%22%20stroke%3D%22%2334d399%22%20stroke-opacity%3D%220.22%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M120%20175%20Q245%20120%20320%20155%22%20stroke%3D%22%2338bdf8%22%20stroke-opacity%3D%220.18%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M150%20190%20Q245%20140%20320%20172%22%20stroke%3D%22%23fbbf24%22%20stroke-opacity%3D%220.15%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%3Cg%20transform%3D%22translate(212%2C%2042)%22%20opacity%3D%220.88%22%3E%0A%20%20%20%20%3Cpath%20d%3D%22M14%2014%20H52%20V34%20C52%2047%2043%2056%2033%2056%20C23%2056%2014%2047%2014%2034%20Z%22%20fill%3D%22url(%23cup)%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M14%2020%20H6%20C4%2020%203%2022%203%2025%20C3%2033%208%2039%2014%2040%22%20stroke%3D%22%23fbbf24%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M52%2020%20H60%20C62%2020%2063%2022%2063%2025%20C63%2033%2058%2039%2052%2040%22%20stroke%3D%22%23fbbf24%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2229%22%20y%3D%2256%22%20width%3D%228%22%20height%3D%2214%22%20rx%3D%222%22%20fill%3D%22%23f59e0b%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%2220%22%20y%3D%2270%22%20width%3D%2226%22%20height%3D%227%22%20rx%3D%223%22%20fill%3D%22%23fde68a%22%2F%3E%0A%20%20%20%20%3Cpolygon%20points%3D%2233%2C23%2035.5%2C29%2042%2C29.5%2037%2C33.8%2038.5%2C40%2033%2C36.6%2027.5%2C40%2029%2C33.8%2024%2C29.5%2030.5%2C29%22%20fill%3D%22%23fffbeb%22%20opacity%3D%220.9%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E"),
+    linear-gradient(135deg, rgba(16, 185, 129, 0.28) 0%, rgba(15, 23, 42, 0.92) 55%, rgba(30, 58, 138, 0.45) 100%) !important;
+  background-size: cover, cover !important;
+  background-position: right center, center !important;
+  border: 1px solid rgba(251, 191, 36, 0.32) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+}
+#app .hero::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 38%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+  animation: krdShineSweep 6.5s ease-in-out infinite;
+  pointer-events: none;
+}
+#app .hero h1 {
+  background: linear-gradient(90deg, #ffffff 0%, #fde68a 55%, #34d399 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none !important;
+}
+#app .hero .chip {
+  background: rgba(15, 23, 42, 0.72) !important;
+  border: 1px solid rgba(251, 191, 36, 0.32) !important;
+  backdrop-filter: blur(8px);
+}
+
+/* 3. Cam Yuzeyli Kartlar & 3D Dokunus Tepkisi (Yerlesime dokunmadan) */
+#app .card {
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.88) 0%, rgba(11, 18, 34, 0.94) 100%) !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: blur(10px);
+  animation: krdCardEnter 0.35s ease-out both;
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+}
+#app .grid > div {
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+  border: 1px solid rgba(148, 163, 184, 0.16) !important;
+  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.35);
+}
+#app .grid > div:hover,
+#app .grid > div:active {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.42) !important;
+  box-shadow: 0 12px 26px rgba(14, 165, 233, 0.16);
+}
+
+/* 4. Puan Tablosu 1. Sira Sampiyon Pariltisi & Podyum Renkleri */
+#app .card.tw tbody tr:nth-child(1) {
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.18) 0%, rgba(245, 158, 11, 0.05) 65%, transparent 100%) !important;
+}
+#app .card.tw tbody tr:nth-child(1) .pos {
+  background: linear-gradient(135deg, #fde68a, #f59e0b) !important;
+  color: #1e1b08 !important;
+  font-weight: 900 !important;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.55);
+}
+#app .card.tw tbody tr:nth-child(2) .pos {
+  background: linear-gradient(135deg, #e2e8f0, #94a3b8) !important;
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+#app .card.tw tbody tr:nth-child(3) .pos {
+  background: linear-gradient(135deg, #fdba74, #c2410c) !important;
+  color: #fff7ed !important;
+  font-weight: 800 !important;
+}
+
+/* 5. Sekme Butonlari & Sohbet Kutusu Neon Cerceve */
+#app .tabs button.on {
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%) !important;
+  border-color: rgba(125, 211, 252, 0.5) !important;
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.35) !important;
+}
+#krdChatBox {
+  border: 1px solid rgba(56, 189, 248, 0.28) !important;
+  box-shadow: 0 12px 32px rgba(2, 6, 23, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+#krdChatBox .krd-online-dot {
+  animation: krdLiveDotGlow 2s infinite;
+}
+</style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
