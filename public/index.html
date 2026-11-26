@@ -1980,6 +1980,63 @@ body, button, input, select, textarea {
 #krdEqBars.playing span:nth-child(3) { animation: krdEqBounce3 0.74s ease-in-out infinite; }
 #krdEqBars.playing span:nth-child(4) { animation: krdEqBounce4 0.58s ease-in-out infinite; }
 </style>
+<style id="krd-ultimate-fx-css">
+@keyframes krdTickerGlow {
+  0%, 100% { box-shadow: 0 4px 18px rgba(239, 68, 68, 0.22); }
+  50% { box-shadow: 0 6px 24px rgba(239, 68, 68, 0.42); }
+}
+@keyframes krdMvpShimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes krdWinnerAura {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.35); }
+  50% { box-shadow: 0 0 14px 2px rgba(52, 211, 153, 0.55); }
+}
+@keyframes krdSmoothReveal {
+  from { opacity: 0; transform: translateY(6px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Canli Akis & MVP Seridi Animasyonu */
+#krdLiveTickerBar {
+  animation: krdTickerGlow 3.2s ease-in-out infinite !important;
+  border: 1px solid rgba(248, 113, 113, 0.35) !important;
+}
+#krdMvpBar, .krd-mvp-bar {
+  background: linear-gradient(110deg, rgba(120, 53, 15, 0.55) 25%, rgba(251, 191, 36, 0.28) 50%, rgba(120, 53, 15, 0.55) 75%) !important;
+  background-size: 200% 100% !important;
+  animation: krdMvpShimmer 4.5s linear infinite !important;
+  border: 1px solid rgba(251, 191, 36, 0.45) !important;
+}
+
+/* Mac Kartlari & Kazanan Logo Halesi */
+#app .grid > div {
+  animation: krdSmoothReveal 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.24s ease, box-shadow 0.24s ease !important;
+}
+#app .grid > div:hover,
+#app .grid > div:active {
+  transform: translateY(-3px) scale(1.008) !important;
+}
+.krd-winner-badge {
+  animation: krdWinnerAura 2.6s ease-in-out infinite !important;
+}
+.krd-historic-score {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.22), rgba(245, 158, 11, 0.08)) !important;
+  border: 1px solid rgba(251, 191, 36, 0.5) !important;
+  color: #fde68a !important;
+  box-shadow: 0 0 14px rgba(251, 191, 36, 0.25) !important;
+}
+
+/* Sekme gecisleri */
+#app .tabs button {
+  transition: transform 0.18s ease, background 0.22s ease, box-shadow 0.22s ease !important;
+}
+#app .tabs button:active {
+  transform: scale(0.95) !important;
+}
+</style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
@@ -5517,6 +5574,120 @@ events.onmessage = async () => {
 
   enhanceLiveUi();
   setInterval(enhanceLiveUi, 1000);
+})();
+</script>
+<script id="krd-ultimate-fx-js">
+(function() {
+  // Tek tusla takimi ligden cekip kalan maclarini 3-0 hukmen yapma fonksiyonu
+  window.krdWithdrawTeamForfeit = async function() {
+    var sel = document.getElementById('krdWithdrawTeamSel');
+    if (!sel || !sel.value) { alert('Lütfen ligden çekilecek takımı seçin.'); return; }
+    var tid = Number(sel.value);
+    var team = (window.S && Array.isArray(S.teams)) ? S.teams.find(function(t) { return Number(t.id) === tid; }) : null;
+    if (!team) return;
+    var unplayed = (S.matches || []).filter(function(m) {
+      return !m.played && (Number(m.home_id) === tid || Number(m.away_id) === tid);
+    });
+    if (!unplayed.length) {
+      alert(team.name + ' takımının oynanmamış maçı kalmamış.');
+      return;
+    }
+    if (!confirm(team.name + ' ligden çekilecek ve kalan ' + unplayed.length + ' maçı rakipleri lehine otomatik 3-0 HÜKMEN yazılacak. Onaylıyor musunuz?')) return;
+
+    var btn = document.getElementById('krdWithdrawBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'İşleniyor (' + unplayed.length + ' maç)...'; }
+
+    try {
+      for (var i = 0; i < unplayed.length; i++) {
+        var m = unplayed[i];
+        var isHome = Number(m.home_id) === tid;
+        var hg = isHome ? 0 : 3;
+        var ag = isHome ? 3 : 0;
+        if (typeof window.api === 'function') {
+          await window.api('POST', '/api/matches/' + m.id, {
+            home_goals: hg,
+            away_goals: ag,
+            played: true,
+            note: 'Hükmen 3-0 (' + team.name + ' ligden çekildi)'
+          });
+        }
+      }
+      if (typeof window.load === 'function') await window.load();
+      if (typeof window.render === 'function') window.render();
+      alert('Tamamlandı: ' + team.name + ' için ' + unplayed.length + ' maç 3-0 hükmen işlendi.');
+    } catch (err) {
+      alert('Hükmen işleminde hata oluştu: ' + (err && err.message ? err.message : err));
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '🚫 Kalan Maçları 3-0 Hükmen Yap'; }
+    }
+  };
+
+  function runVisualAndAdminEnhancements() {
+    // A. Yonetim Paneli aciksa en uste Tek Tusla Ligden Cekme kartini yerlestir
+    var isAdminHash = location.hash.indexOf('krd-kontrol') !== -1 || location.hash.indexOf('yonetici') !== -1;
+    var app = document.getElementById('app');
+    if (isAdminHash && app && window.S && Array.isArray(S.teams) && S.teams.length && !document.getElementById('krdWithdrawCard')) {
+      var opts = S.teams.map(function(t) {
+        var rem = (S.matches || []).filter(function(m) { return !m.played && (Number(m.home_id) === Number(t.id) || Number(m.away_id) === Number(t.id)); }).length;
+        return '<option value="' + t.id + '">' + t.name + ' (Kalan: ' + rem + ' maç)</option>';
+      }).join('');
+      var box = document.createElement('div');
+      box.id = 'krdWithdrawCard';
+      box.className = 'card';
+      box.style.cssText = 'border:1px solid rgba(244,63,94,0.45)!important;background:linear-gradient(135deg,rgba(136,19,55,0.28),rgba(15,23,42,0.94))!important;margin-bottom:14px;';
+      box.innerHTML = '<h3 style="margin:0 0 6px 0;color:#fda4af;">🚫 Tek Tuşla Ligden Çekme (Otomatik 3-0 Hükmen)</h3>' +
+        '<p class="mut" style="font-size:12.5px;margin:0 0 10px 0;">Takımı silmeden geçmiş maç ve gollerini korur; kalan tüm maçlarını rakiplerine otomatik <b>3-0 hükmen</b> yazar.</p>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
+        '<select id="krdWithdrawTeamSel" style="flex:1;min-width:180px;">' + opts + '</select>' +
+        '<button type="button" id="krdWithdrawBtn" onclick="window.krdWithdrawTeamForfeit()" style="background:linear-gradient(135deg,#e11d48,#be123c);color:#fff;border:none;padding:9px 14px;border-radius:10px;font-weight:700;cursor:pointer;">🚫 Kalan Maçları 3-0 Hükmen Yap</button>' +
+        '</div>';
+      app.insertBefore(box, app.firstChild);
+    }
+
+    // B. En altta tekrarlanan ikinci H2H Ac/Kapat kutusunu kesin gizle
+    document.querySelectorAll('div, section, details').forEach(function(el) {
+      var txt = (el.textContent || '').trim();
+      if (txt.indexOf('Kafa Kafaya (H2H) Rekabet & PNG Tablo İndir') !== -1 && el.offsetHeight > 0 && el.offsetHeight < 140) {
+        el.style.display = 'none';
+      }
+    });
+
+    // C. Tarihi farkli skor kutularini (5+ fark) altin parilti ile vurgula
+    document.querySelectorAll('#app .grid > div').forEach(function(card) {
+      var m = (card.textContent || '').match(/(d+)s*-s*(d+)/);
+      if (m) {
+        var diff = Math.abs(Number(m[1]) - Number(m[2]));
+        if (diff >= 5) {
+          card.querySelectorAll('div, span').forEach(function(el) {
+            if (/^s*d+s*-s*d+s*$/.test(el.textContent || '')) {
+              el.classList.add('krd-historic-score');
+            }
+          });
+        }
+      }
+    });
+
+    // D. Tahmin Krali tablosunda mobilde Puan sutununu gorunur kil
+    document.querySelectorAll('#app table').forEach(function(tbl) {
+      var ths = tbl.querySelectorAll('thead th');
+      if (ths.length >= 6 && (tbl.querySelector('thead').textContent || '').indexOf('Tahminci') !== -1) {
+        if (window.innerWidth < 540) {
+          tbl.querySelectorAll('tr').forEach(function(tr) {
+            if (tr.children[3]) tr.children[3].style.display = 'none';
+            if (tr.children[4]) tr.children[4].style.display = 'none';
+            if (tr.children[5]) {
+              tr.children[5].style.display = 'table-cell';
+              tr.children[5].style.color = '#fde68a';
+              tr.children[5].style.fontWeight = '800';
+            }
+          });
+        }
+      }
+    });
+  }
+
+  runVisualAndAdminEnhancements();
+  setInterval(runVisualAndAdminEnhancements, 900);
 })();
 </script>
 </body></html>
