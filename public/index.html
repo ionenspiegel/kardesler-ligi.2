@@ -2840,8 +2840,7 @@ boot();
 const events = new EventSource('/api/events');
 events.onmessage = async () => {
   const __keepScrollY = window.scrollY;
-  const __keepScrollY = window.scrollY;
-  if (document.hidden) return;
+if (document.hidden) return;
   try {
     await load();
     if (!location.hash.startsWith('#/yonetici')) render();
