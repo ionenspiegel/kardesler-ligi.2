@@ -1128,8 +1128,13 @@ const u = new URL(req.url, 'http://x');
       if (req.method !== 'GET') notifyClients();
       return;
     }
-    let f = path.normalize(path.join(PUB, u.pathname === '/' ? 'index.html' : u.pathname));
-    if (!f.startsWith(PUB) || !fs.existsSync(f) || !fs.statSync(f).isFile()) f = path.join(PUB, 'index.html');
+    let reqPath = '/';
+    try { reqPath = decodeURIComponent(u.pathname); } catch { reqPath = u.pathname; }
+    let f = path.normalize(path.join(PUB, reqPath === '/' ? 'index.html' : reqPath));
+    if (!f.startsWith(PUB) || !fs.existsSync(f) || !fs.statSync(f).isFile()) {
+      if (reqPath.startsWith('/music/')) { res.writeHead(404); return res.end('Muzik bulunamadi'); }
+      f = path.join(PUB, 'index.html');
+    }
     if (path.basename(f) === 'index.html') {
       let html = fs.readFileSync(f, 'utf8');
       try {

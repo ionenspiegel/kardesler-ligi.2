@@ -1606,6 +1606,12 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   }
 </style>
 
+<style id="krd-ux-patch-css">
+#krdChatBox{z-index:100050!important;pointer-events:auto!important}
+#krdChatBox *{pointer-events:auto!important}
+#krdChatInput{user-select:text!important;-webkit-user-select:text!important;color:#fff!important;background:#0f172a!important}
+.modal,.mbox,#krdTeamModal,#krdTeamStatsModal{pointer-events:auto!important}
+</style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
@@ -4917,6 +4923,50 @@ events.onmessage = async () => {
 })();
 </script>
 
+<script id="krd-ux-patch-js">
+(function(){
+  function closeAllMenus(){
+    const cb=document.getElementById('krdChatBox');
+    if(cb){cb.classList.remove('open');cb.style.display='none';}
+    const tm=document.getElementById('krdTeamModal');
+    const tsm=document.getElementById('krdTeamStatsModal');
+    if(tm){tm.classList.remove('open');tm.style.display='';}
+    if(tsm){tsm.classList.remove('open');tsm.style.display='';}
+    document.body.classList.remove('krd-modal-open');
+    const sh=document.getElementById('krdStoryHost');
+    if(sh)sh.innerHTML='';
+    let changed=false;
+    try{
+      if(typeof story!=='undefined'&&story){story=null;changed=true;}
+      if(typeof selTeam!=='undefined'&&selTeam){selTeam=null;changed=true;}
+      if(typeof archView!=='undefined'&&archView){archView=null;changed=true;}
+      if(typeof goalMatch!=='undefined'&&goalMatch){goalMatch=null;changed=true;}
+    }catch(e){}
+    if(changed&&typeof render==='function')render();
+  }
+
+  document.addEventListener('click',function(e){
+    const t=e.target;
+    if(!t)return;
+    if(t.classList&&(t.classList.contains('modal')||t.id==='krdTeamModal'||t.id==='krdTeamStatsModal')){
+      closeAllMenus();
+      return;
+    }
+    const cb=document.getElementById('krdChatBox');
+    const fab=document.getElementById('krdChatFab');
+    if(cb&&cb.classList.contains('open')&&!cb.contains(t)&&(!fab||!fab.contains(t))){
+      closeAllMenus();
+    }
+  },true);
+
+  document.addEventListener('click',function(e){
+    if(e.target&&e.target.closest('#krdChatFab')){
+      const cb=document.getElementById('krdChatBox');
+      if(cb&&cb.classList.contains('open'))cb.style.display='flex';
+    }
+  },false);
+})();
+</script>
 </body></html>
 
 
