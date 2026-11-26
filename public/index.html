@@ -3018,8 +3018,12 @@ addEventListener('hashchange', boot);
 boot();
 const events = new EventSource('/api/events');
 events.onmessage = async () => {
+  if (document.hidden) return;
+  const cb = document.getElementById('krdChatBox');
+  const inp = document.getElementById('krdChatInput');
+  const inChat = (inp && document.activeElement === inp) || (cb && cb.getBoundingClientRect().top < window.innerHeight + 120);
+  if (inChat) return;
   const __keepScrollY = window.scrollY;
-if (document.hidden) return;
   try {
     await load();
     if (!location.hash.startsWith('#/yonetici')) render();
@@ -3503,7 +3507,7 @@ if (document.hidden) return;
 
     <form class="krd-chat-form" id="krdChatForm">
       <input id="krdChatInput" type="text" maxlength="240" placeholder="Mesaj yaz..." autocomplete="off" />
-      <button type="submit" onmousedown="event.preventDefault()" ontouchstart="event.preventDefault();document.getElementById('krdChatForm').requestSubmit()">Gönder</button>
+      <button type="submit">Gönder</button>
     </form>
   </div>
 </div>
@@ -3669,7 +3673,6 @@ if (document.hidden) return;
     const text = inp.value.trim();
     if (!text) return;
     inp.value = '';
-    try { inp.focus({ preventScroll: true }); } catch {}
 
     // 1. Sunucuyu beklemeden mesaji aninda sohbet kutusuna ekle (sifir bekleme/yenilenme)
     const emptyEl = msgsEl.querySelector('div[style*="Henüz mesaj yok"], div[style*="text-align:center"]');
