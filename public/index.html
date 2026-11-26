@@ -3521,7 +3521,7 @@ events.onmessage = async () => {
   if (typeof EventSource !== 'undefined') {
     try {
       const es = new EventSource('/api/events');
-      es.onmessage = () => syncChat(false);
+      es.onmessage = () => { if (typeof syncChat === "function") syncChat(false); };
     } catch {}
   }
   syncChat(false);
@@ -5169,47 +5169,83 @@ events.onmessage = async () => {
   setInterval(syncPinnedOnly, 5000);
 })();
 </script>
-<script id="krd-chat-final-fix-js">
+<script id="krd-hard-scroll-anchor">
 (function() {
-  var lockUntil = 0;
-  var lockedY = 0;
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 
-  // render() calisirken #app yuksekligi sifirlanip sayfa yukari atmasin
-  if (typeof window.render === 'function' && !window.render._krdHeightGuarded) {
-    var origRender = window.render;
-    window.render = function() {
-      var appEl = document.getElementById('app');
-      var prevH = appEl ? appEl.offsetHeight : 0;
-      var prevY = window.scrollY;
-      if (appEl && prevH > 100) appEl.style.minHeight = prevH + 'px';
-      var res = origRender.apply(this, arguments);
-      if (Date.now() < lockUntil) {
-        window.scrollTo({ top: lockedY, behavior: 'instant' });
-      } else if (Math.abs(window.scrollY - prevY) > 40) {
-        window.scrollTo({ top: prevY, behavior: 'instant' });
-      }
-      if (appEl) setTimeout(function() { appEl.style.minHeight = ''; }, 300);
-      return res;
-    };
-    window.render._krdHeightGuarded = true;
+  // Sayfa yukari firlatilmaya calisilirsa (0'a dusme) ve kullanici sohbet bolgesindeyse geri tut
+  var lastUserY = 0;
+  var inChatZone = false;
+
+  window.addEventListener('touchmove', function() {
+    lastUserY = window.scrollY;
+    var cb = document.getElementById('krdChatBox');
+    if (cb) {
+      var r = cb.getBoundingClientRect();
+      inChatZone = r.top < window.innerHeight && r.bottom > 0;
+    }
+  }, { passive: true });
+
+  window.addEventListener('wheel', function() {
+    lastUserY = window.scrollY;
+    var cb = document.getElementById('krdChatBox');
+    if (cb) {
+      var r = cb.getBoundingClientRect();
+      inChatZone = r.top < window.innerHeight && r.bottom > 0;
+    }
+  }, { passive: true });
+
+  // Input odaklaninca veya form gonderilince mevcut konumu dondur
+  var inp = document.getElementById('krdChatInput');
+  var form = document.getElementById('krdChatForm');
+
+  function pinViewportToChat() {
+    var cb = document.getElementById('krdChatBox');
+    if (!cb) return;
+    var targetY = cb.getBoundingClientRect().top + window.scrollY - 68;
+    if (targetY < 0) targetY = 0;
+    lastUserY = targetY;
+    inChatZone = true;
+    window.scrollTo(0, targetY);
   }
 
-  var form = document.getElementById('krdChatForm');
+  if (inp) {
+    inp.addEventListener('focus', function() {
+      lastUserY = window.scrollY;
+      inChatZone = true;
+    });
+  }
+
   if (form) {
     form.addEventListener('submit', function() {
-      lockedY = window.scrollY;
-      lockUntil = Date.now() + 2500;
-      requestAnimationFrame(function() {
-        window.scrollTo({ top: lockedY, behavior: 'instant' });
+      var keep = window.scrollY;
+      inChatZone = true;
+      lastUserY = keep;
+      [0, 30, 100, 250, 500, 900].forEach(function(ms) {
+        setTimeout(function() {
+          if (Math.abs(window.scrollY - keep) > 25) {
+            window.scrollTo(0, keep);
+          }
+        }, ms);
       });
     }, true);
   }
 
-  window.addEventListener('scroll', function() {
-    if (Date.now() < lockUntil && Math.abs(window.scrollY - lockedY) > 15) {
-      window.scrollTo({ top: lockedY, behavior: 'instant' });
+  // Arka planda biri window.scrollTo(0, 0) cagirirsa veya DOM yenilenince sayfa 0'a duserse engelle
+  var origScrollTo = window.scrollTo.bind(window);
+  window.scrollTo = function(x, y) {
+    var topVal = (typeof x === 'object' && x !== null) ? x.top : y;
+    if (inChatZone && topVal === 0 && lastUserY > 200) {
+      return origScrollTo(0, lastUserY);
     }
-  }, { passive: true });
+    return origScrollTo.apply(window, arguments);
+  };
+
+  setInterval(function() {
+    if (inChatZone && window.scrollY < 100 && lastUserY > 250) {
+      origScrollTo(0, lastUserY);
+    }
+  }, 150);
 })();
 </script>
 </body></html>
