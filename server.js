@@ -1000,6 +1000,12 @@ const u = new URL(req.url, 'http://x');
 
       const adm = isAdmin(req);
       if (!adm) {
+        const muteRow = await one(`SELECT v FROM ${SETTINGS} WHERE k='chat_mutes'`);
+        let mutes = [];
+        try { mutes = JSON.parse((muteRow && muteRow.v) || '[]'); } catch { mutes = []; }
+        if (Array.isArray(mutes) && mutes.some(x => (cid && x.cid === cid) || (clientIp && x.ip === clientIp))) {
+          throw E(403, 'Sohbette sessize alındınız. Mesaj gönderemezsiniz.');
+        }
         const banRow = await one(`SELECT v FROM ${SETTINGS} WHERE k='chat_bans'`);
         let bans = [];
         try { bans = JSON.parse((banRow && banRow.v) || '[]'); } catch { bans = []; }
