@@ -993,14 +993,41 @@ const u = new URL(req.url, 'http://x');
       const user = clean(String(b.user || '')).slice(0, 24);
       const text = clean(String(b.text || '')).slice(0, 240);
       const cid = clean(String(b.cid || '')).slice(0, 40);
+      const clientIp = (typeof krdGetIp === 'function' ? krdGetIp(req) : req.socket.remoteAddress) || '';
       if (!user || !text) throw E(400, 'İsim ve mesaj gerekli');
+      if (text.length > 220) throw E(400, 'Mesaj en fazla 220 karakter olabilir');
+      if (/(.)\1{9,}/.test(text)) throw E(400, 'Spam karakter tekrarı engellendi');
+
+      const adm = isAdmin(req);
+      if (!adm) {
+        const banRow = await one(`SELECT v FROM ${SETTINGS} WHERE k='chat_bans'`);
+        let bans = [];
+        try { bans = JSON.parse((banRow && banRow.v) || '[]'); } catch { bans = []; }
+        if (Array.isArray(bans) && bans.some(x => (cid && x.cid === cid) || (clientIp && x.ip === clientIp))) {
+          throw E(403, 'Sohbetten engellendiniz.');
+        }
+      }
+
       if (cid) chatOnline.set(cid, { name: user, lastSeen: Date.now() });
 
       const row = await one(`SELECT v FROM ${SETTINGS} WHERE k='chat_msgs'`);
       let msgs = [];
       try { msgs = JSON.parse((row && row.v) || '[]'); } catch { msgs = []; }
       if (!Array.isArray(msgs)) msgs = [];
-      msgs.push({ id: Date.now() + '_' + Math.random().toString(36).slice(2, 6), user, text, time: new Date().toISOString(), admin: isAdmin(req) });
+
+      if (!adm && msgs.length) {
+        const myRec = msgs.filter(m => (cid && m.cid === cid) || (!m.cid && m.user.toLowerCase() === user.toLowerCase()));
+        const lastM = myRec[myRec.length - 1];
+        if (lastM) {
+          const diff = Date.now() - new Date(lastM.time || 0).getTime();
+          if (diff < 3000) throw E(429, 'Çok hızlı mesaj gönderiyorsunuz (3 sn bekleyin).');
+          if (lastM.text.trim().toLowerCase() === text.trim().toLowerCase() && diff < 60000) {
+            throw E(429, 'Aynı mesajı art arda gönderemezsiniz.');
+          }
+        }
+      }
+
+      msgs.push({ id: Date.now() + '_' + Math.random().toString(36).slice(2, 6), cid, ip: clientIp, user, text, time: new Date().toISOString(), admin: adm });
       if (msgs.length > 60) msgs = msgs.slice(-60);
 
       await tx(async t => {
