@@ -3380,7 +3380,10 @@ events.onmessage = async () => {
     fabCountEl.textContent = list.length;
     onlineNamesEl.innerHTML = list.map(n => `<span class="krd-online-pill">● ${esc(n)}</span>`).join('');
 
-    const wasBottom = msgsEl.scrollHeight - msgsEl.scrollTop - msgsEl.clientHeight < 60;
+    const sig = JSON.stringify((messages || []).map(m => [m.id, m.text]));
+    if (msgsEl.dataset.lastSig === sig) return;
+    msgsEl.dataset.lastSig = sig;
+    const wasBottom = msgsEl.scrollHeight - msgsEl.scrollTop - msgsEl.clientHeight < 80;
     msgsEl.innerHTML = (messages || []).map(m => {
       const isMe = (m.cid && m.cid === cid) || (!m.cid && myName && m.user.toLowerCase() === myName.toLowerCase());
       const canDel = isAdminChat || (m.cid && m.cid === cid);
@@ -3450,11 +3453,29 @@ events.onmessage = async () => {
 
   document.getElementById('krdChatForm').addEventListener('submit', async e => {
     e.preventDefault();
+    e.stopImmediatePropagation();
     if (!askName(false)) return;
     const inp = document.getElementById('krdChatInput');
     const text = inp.value.trim();
     if (!text) return;
     inp.value = '';
+
+    // 1. Sunucuyu beklemeden mesaji aninda sohbet kutusuna ekle (sifir bekleme/yenilenme)
+    const emptyEl = msgsEl.querySelector('div[style*="Henüz mesaj yok"], div[style*="text-align:center"]');
+    if (emptyEl && msgsEl.children.length === 1) emptyEl.remove();
+    const nowStr = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    const tempDiv = document.createElement('div');
+    tempDiv.className = 'krd-msg me';
+    tempDiv.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:2px;">' +
+        '<strong style="font-size:11px;color:' + (isAdminChat ? '#fbbf24' : '#38bdf8') + ';">' + esc(myName) + (isAdminChat ? ' 👑' : '') + '</strong>' +
+        '<span style="font-size:10px;color:#94a3b8;">' + nowStr + '</span>' +
+      '</div>' +
+      '<div>' + esc(text) + '</div>';
+    msgsEl.appendChild(tempDiv);
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+
+    // 2. Arka planda sunucuya kaydet, sayfa/kutu yenilenmeden sessizce esitle
     try {
       const r = await fetch('/api/chat', {
         method: 'POST',
@@ -3462,12 +3483,15 @@ events.onmessage = async () => {
         body: JSON.stringify({ user: myName, text, cid })
       });
       const d = await r.json().catch(() => ({}));
-      if (r.ok) {
-        renderMessages(d.messages, d.online);
-      } else if (d.error) {
-        alert(d.error);
+      if (r.ok && Array.isArray(d.messages)) {
+        msgsEl.dataset.lastSig = JSON.stringify(d.messages.map(m => [m.id, m.text]));
+      } else if (!r.ok) {
+        tempDiv.remove();
+        if (d.error) alert(d.error);
       }
-    } catch {}
+    } catch {
+      tempDiv.remove();
+    }
   });
 
   // Sunucu SSE canli yayini geldiginde sohbeti aninda guncelle + 12 sn kalp atisi
