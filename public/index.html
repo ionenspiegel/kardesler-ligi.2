@@ -1712,12 +1712,40 @@ html, body {
   z-index: 99920 !important;
 }
 </style>
-<style id="krd-restore-app-css">
-#main-content, #app {
+<style id="krd-fix-all-layout">
+#main-content {
+  display: block !important;
+  width: 100% !important;
+  max-width: 1060px !important;
+  margin: 0 auto !important;
+  padding: 0 12px 120px 12px !important;
+  box-sizing: border-box !important;
+}
+#app {
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
+  min-height: 200px !important;
+}
+#krdChatBox {
+  position: relative !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  display: flex !important;
+  flex-direction: column !important;
   width: 100% !important;
+  max-width: 100% !important;
+  height: 290px !important;
+  max-height: 290px !important;
+  margin: 12px auto 16px auto !important;
+  border-radius: 16px !important;
+  background: #0f172a !important;
+  border: 1px solid rgba(148, 163, 184, 0.25) !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
 }
 </style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
@@ -5119,20 +5147,22 @@ events.onmessage = async () => {
   setInterval(mountAdminChatPanel, 1200);
 })();
 </script>
-<script id="krd-safe-top-chat">
+<script id="krd-fix-all-js">
 (function() {
-  function placeOnce() {
+  function syncLayoutAndRender() {
     var cb = document.getElementById('krdChatBox');
     var app = document.getElementById('app');
-    if (cb && app && app.parentElement && !app.contains(cb) && cb.nextElementSibling !== app) {
+    if (cb && app && app.parentElement && cb.nextElementSibling !== app) {
       app.parentElement.insertBefore(cb, app);
     }
-    if (typeof window.render === 'function' && app && !app.innerHTML.trim()) {
-      window.render();
+    if (app && app.children.length === 0) {
+      if (typeof window.load === 'function') window.load();
+      else if (typeof window.render === 'function') window.render();
     }
   }
-  placeOnce();
-  setTimeout(placeOnce, 400);
+  syncLayoutAndRender();
+  setTimeout(syncLayoutAndRender, 500);
+  setTimeout(syncLayoutAndRender, 1500);
 })();
 </script>
 </body></html>
