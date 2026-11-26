@@ -3370,13 +3370,13 @@ events.onmessage = async () => {
       const isMe = (m.cid && m.cid === cid) || (!m.cid && myName && m.user.toLowerCase() === myName.toLowerCase());
       const canDel = isAdminChat || (m.cid && m.cid === cid);
       const t = m.time ? new Date(m.time).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '';
-      const delBtn = '';border:none;color:#f87171;font-size:11px;margin-left:6px;cursor:pointer;">🗑️ Sil</button>` : '';
-      const banBtn = '';border:none;color:#fb923c;font-size:10px;margin-left:4px;cursor:pointer;">🚫 Engelle</button>` : '';
+            const delBtn = '';
+            const banBtn = '';
       return `
         <div class="krd-msg ${isMe ? 'me' : 'other'}">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:2px;">
             <strong style="font-size:11px;color:${m.admin ? '#fbbf24' : '#38bdf8'};">${esc(m.user)}${m.admin ? ' 👑' : ''}</strong>
-            <span style="font-size:10px;color:#94a3b8;">${t}${delBtn}${banBtn}${banBtn}</span>
+            <span style="font-size:10px;color:#94a3b8;">${t}</span>
           </div>
           <div>${esc(m.text)}</div>
         </div>
