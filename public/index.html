@@ -1687,7 +1687,17 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   padding: 9px 12px !important;
 }
 </style>
-<style id="krd-chat-lock-css">
+<style id="krd-chat-final-fix-css">
+#main-content {
+  padding-bottom: 155px !important;
+}
+#krdChatBox {
+  margin-top: 16px !important;
+  margin-bottom: 24px !important;
+  height: 390px !important;
+  max-height: 390px !important;
+  overflow-anchor: none !important;
+}
 #krdPushBtn {
   bottom: 84px !important;
   left: 12px !important;
@@ -1697,9 +1707,6 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   bottom: 84px !important;
   right: 12px !important;
   z-index: 99920 !important;
-}
-#krdChatBox {
-  overflow-anchor: auto !important;
 }
 </style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
@@ -5162,22 +5169,45 @@ events.onmessage = async () => {
   setInterval(syncPinnedOnly, 5000);
 })();
 </script>
-<script id="krd-chat-lock-js">
+<script id="krd-chat-final-fix-js">
 (function() {
   var lockUntil = 0;
   var lockedY = 0;
+
+  // render() calisirken #app yuksekligi sifirlanip sayfa yukari atmasin
+  if (typeof window.render === 'function' && !window.render._krdHeightGuarded) {
+    var origRender = window.render;
+    window.render = function() {
+      var appEl = document.getElementById('app');
+      var prevH = appEl ? appEl.offsetHeight : 0;
+      var prevY = window.scrollY;
+      if (appEl && prevH > 100) appEl.style.minHeight = prevH + 'px';
+      var res = origRender.apply(this, arguments);
+      if (Date.now() < lockUntil) {
+        window.scrollTo({ top: lockedY, behavior: 'instant' });
+      } else if (Math.abs(window.scrollY - prevY) > 40) {
+        window.scrollTo({ top: prevY, behavior: 'instant' });
+      }
+      if (appEl) setTimeout(function() { appEl.style.minHeight = ''; }, 300);
+      return res;
+    };
+    window.render._krdHeightGuarded = true;
+  }
 
   var form = document.getElementById('krdChatForm');
   if (form) {
     form.addEventListener('submit', function() {
       lockedY = window.scrollY;
-      lockUntil = Date.now() + 1600;
+      lockUntil = Date.now() + 2500;
+      requestAnimationFrame(function() {
+        window.scrollTo({ top: lockedY, behavior: 'instant' });
+      });
     }, true);
   }
 
   window.addEventListener('scroll', function() {
-    if (Date.now() < lockUntil && Math.abs(window.scrollY - lockedY) > 40) {
-      window.scrollTo(0, lockedY);
+    if (Date.now() < lockUntil && Math.abs(window.scrollY - lockedY) > 15) {
+      window.scrollTo({ top: lockedY, behavior: 'instant' });
     }
   }, { passive: true });
 })();
