@@ -1687,6 +1687,21 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   padding: 9px 12px !important;
 }
 </style>
+<style id="krd-chat-lock-css">
+#krdPushBtn {
+  bottom: 84px !important;
+  left: 12px !important;
+  z-index: 99920 !important;
+}
+#krdScrollTop, #scrollTopBtn {
+  bottom: 84px !important;
+  right: 12px !important;
+  z-index: 99920 !important;
+}
+#krdChatBox {
+  overflow-anchor: auto !important;
+}
+</style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
@@ -5145,6 +5160,26 @@ events.onmessage = async () => {
   syncPinnedOnly();
   setInterval(setupCleanStaticChat, 1200);
   setInterval(syncPinnedOnly, 5000);
+})();
+</script>
+<script id="krd-chat-lock-js">
+(function() {
+  var lockUntil = 0;
+  var lockedY = 0;
+
+  var form = document.getElementById('krdChatForm');
+  if (form) {
+    form.addEventListener('submit', function() {
+      lockedY = window.scrollY;
+      lockUntil = Date.now() + 1600;
+    }, true);
+  }
+
+  window.addEventListener('scroll', function() {
+    if (Date.now() < lockUntil && Math.abs(window.scrollY - lockedY) > 40) {
+      window.scrollTo(0, lockedY);
+    }
+  }, { passive: true });
 })();
 </script>
 </body></html>
