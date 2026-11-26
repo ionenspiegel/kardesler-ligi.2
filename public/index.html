@@ -1612,6 +1612,33 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
 #krdChatInput{user-select:text!important;-webkit-user-select:text!important;color:#fff!important;background:#0f172a!important}
 .modal,.mbox,#krdTeamModal,#krdTeamStatsModal{pointer-events:auto!important}
 </style>
+<style id="krd-story-modal-fix">
+.modal:not(#krdTeamModal):not(#krdTeamStatsModal) {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: 18px 12px 40px !important;
+  overflow-y: auto !important;
+  z-index: 999990 !important;
+}
+.modal:not(#krdTeamModal):not(#krdTeamStatsModal) > div {
+  width: 100% !important;
+  max-width: 420px !important;
+  margin: auto !important;
+  display: grid !important;
+  justify-items: center !important;
+  gap: 10px !important;
+}
+.modal .story {
+  width: 100% !important;
+  max-width: 380px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+</style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
@@ -3211,6 +3238,7 @@ events.onmessage = async () => {
         </div>
       </div>
       <div class="krd-chat-online-list" id="krdOnlineNames"></div>
+      <div id="krdPinnedBar" style="display:none;margin-top:6px;padding:6px 8px;border-radius:8px;background:rgba(251,191,36,0.14);border:1px solid rgba(251,191,36,0.35);color:#fde68a;font-size:11px;font-weight:700;"></div>
     </div>
 
     <div class="krd-chat-msgs" id="krdChatMsgs"></div>
@@ -3362,6 +3390,11 @@ events.onmessage = async () => {
       const r = await fetch('/api/chat' + q);
       if (!r.ok) return;
       const d = await r.json();
+      const pinEl = document.getElementById('krdPinnedBar');
+      if (pinEl) {
+        if (d.pinned) { pinEl.style.display = 'block'; pinEl.textContent = '📌 Sabit: ' + d.pinned; }
+        else { pinEl.style.display = 'none'; pinEl.textContent = ''; }
+      }
       renderMessages(d.messages, d.online);
       if (scrollDown) msgsEl.scrollTop = msgsEl.scrollHeight;
     } catch {}
@@ -4870,6 +4903,140 @@ events.onmessage = async () => {
       if (cb && cb.classList.contains('open')) cb.style.display = 'flex';
     }
   }, false);
+})();
+</script>
+<script id="krd-admin-chat-panel-js">
+(function() {
+  async function refreshAdminChatPanel() {
+    const box = document.getElementById('krdAdminChatMgr');
+    if (!box) return;
+    try {
+      const r = await fetch('/api/chat?cid=admin_panel&name=Yonetici');
+      if (!r.ok) return;
+      const d = await r.json();
+      const pinInp = document.getElementById('admChatPinInput');
+      if (pinInp && document.activeElement !== pinInp) pinInp.value = d.pinned || '';
+
+      const listEl = document.getElementById('admChatMsgList');
+      if (listEl) {
+        const msgs = Array.isArray(d.messages) ? d.messages.slice().reverse() : [];
+        listEl.innerHTML = msgs.length ? msgs.map(m => {
+          const safeUser = String(m.user || '').replace(/[<>&"]/g, '');
+          const safeText = String(m.text || '').replace(/[<>&"]/g, '');
+          return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);">' +
+            '<div style="min-width:0;flex:1;"><b style="color:' + (m.admin ? '#fbbf24' : '#38bdf8') + ';font-size:12px;">' + safeUser + ':</b> <span style="font-size:12px;color:#e2e8f0;word-break:break-word;">' + safeText + '</span></div>' +
+            '<div style="display:flex;gap:4px;flex-shrink:0;">' +
+              '<button type="button" data-adm-pin-txt="' + safeText + '" title="Sabitle" style="padding:3px 6px;font-size:11px;border-radius:6px;background:#334155;color:#fde68a;border:none;cursor:pointer;">📌</button>' +
+              '<button type="button" data-adm-edit="' + m.id + '" data-adm-old="' + safeText + '" title="Düzenle" style="padding:3px 6px;font-size:11px;border-radius:6px;background:#1e3a8a;color:#93c5fd;border:none;cursor:pointer;">✏️</button>' +
+              '<button type="button" data-adm-del="' + m.id + '" title="Sil" style="padding:3px 6px;font-size:11px;border-radius:6px;background:#7f1d1d;color:#fca5a5;border:none;cursor:pointer;">🗑️</button>' +
+              (!m.admin ? '<button type="button" data-adm-ban="' + m.id + '" title="Engelle" style="padding:3px 6px;font-size:11px;border-radius:6px;background:#7c2d12;color:#fdba74;border:none;cursor:pointer;">🚫</button>' : '') +
+            '</div>' +
+          '</div>';
+        }).join('') : '<div style="color:#94a3b8;font-size:12px;">Sohbette henüz mesaj yok.</div>';
+      }
+
+      const banEl = document.getElementById('admChatBanList');
+      if (banEl) {
+        const bans = Array.isArray(d.bans) ? d.bans : [];
+        banEl.innerHTML = bans.length ? bans.map((b, i) => {
+          const u = String(b.user || 'Kullanıcı').replace(/[<>&"]/g, '');
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-radius:7px;background:rgba(239,68,68,0.12);font-size:12px;">' +
+            '<span>🚫 <b>' + u + '</b></span>' +
+            '<button type="button" data-adm-unban="' + i + '" style="padding:2px 8px;font-size:11px;border-radius:6px;background:#166534;color:#bbf7d0;border:none;cursor:pointer;">Engeli Kaldır</button>' +
+          '</div>';
+        }).join('') : '<div style="color:#94a3b8;font-size:11.5px;">Engelli kullanıcı yok.</div>';
+      }
+    } catch (e) {}
+  }
+
+  function mountAdminChatPanel() {
+    if (typeof ME === 'undefined' || !ME.admin) return;
+    const slug = (typeof S !== 'undefined' && S.settings && S.settings.admin_slug) ? S.settings.admin_slug : 'krd-kontrol';
+    if (!location.hash.startsWith('#/yonetici') && !location.hash.startsWith('#/' + slug)) return;
+    if (document.getElementById('krdAdminChatMgr')) return;
+
+    const app = document.getElementById('app');
+    if (!app) return;
+
+    const card = document.createElement('div');
+    card.id = 'krdAdminChatMgr';
+    card.className = 'card';
+    card.style.marginTop = '14px';
+    card.innerHTML =
+      '<div class="sh"><h2>💬 Canlı Sohbet Yönetimi (Sabitle • Ekle • Düzenle • Engelle)</h2></div>' +
+      '<div style="display:grid;gap:10px;">' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+          '<input id="admChatPinInput" type="text" maxlength="220" placeholder="Sohbet üstüne sabitlenecek duyuru / kural mesajı..." style="flex:1;min-width:200px;padding:8px;border-radius:8px;border:1px solid #334155;background:#020617;color:#fff;font-size:12px;">' +
+          '<button type="button" id="admChatPinSave" class="sm pri">📌 Sabitle</button>' +
+          '<button type="button" id="admChatPinClear" class="sm">Sabiti Kaldır</button>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+          '<input id="admChatNewInput" type="text" maxlength="220" placeholder="Yönetici olarak sohbete yeni mesaj ekle..." style="flex:1;min-width:200px;padding:8px;border-radius:8px;border:1px solid #334155;background:#020617;color:#fff;font-size:12px;">' +
+          '<button type="button" id="admChatSendBtn" class="sm pri">➕ Mesaj Ekle</button>' +
+          '<button type="button" id="admChatClearAllBtn" class="sm dng">🧹 Tüm Sohbeti Temizle</button>' +
+        '</div>' +
+        '<div style="font-size:12px;font-weight:700;color:#94a3b8;">Son Sohbet Mesajları:</div>' +
+        '<div id="admChatMsgList" style="display:grid;gap:5px;max-height:240px;overflow-y:auto;"></div>' +
+        '<div style="font-size:12px;font-weight:700;color:#fca5a5;">Engellenen Kullanıcılar:</div>' +
+        '<div id="admChatBanList" style="display:grid;gap:5px;"></div>' +
+      '</div>';
+
+    app.appendChild(card);
+    refreshAdminChatPanel();
+
+    card.addEventListener('click', async function(e) {
+      const t = e.target;
+      if (t.id === 'admChatPinSave') {
+        const txt = document.getElementById('admChatPinInput').value.trim();
+        await fetch('/api/chat/admin-manage', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-kl': '1' }, body: JSON.stringify({ action: 'pin', text: txt }) });
+        if (typeof toast === 'function') toast('Sabit mesaj güncellendi.');
+        refreshAdminChatPanel();
+      } else if (t.id === 'admChatPinClear') {
+        await fetch('/api/chat/admin-manage', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-kl': '1' }, body: JSON.stringify({ action: 'pin', text: '' }) });
+        if (typeof toast === 'function') toast('Sabit mesaj kaldırıldı.');
+        refreshAdminChatPanel();
+      } else if (t.id === 'admChatSendBtn') {
+        const inp = document.getElementById('admChatNewInput');
+        const txt = inp.value.trim();
+        if (!txt) return;
+        inp.value = '';
+        await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-kl': '1' }, body: JSON.stringify({ user: 'Yönetici', text: txt, cid: 'admin_panel' }) });
+        refreshAdminChatPanel();
+      } else if (t.id === 'admChatClearAllBtn') {
+        if (!confirm('Tüm sohbet geçmişi silinsin mi?')) return;
+        await fetch('/api/chat/delete', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-kl': '1' }, body: JSON.stringify({ clearAll: true }) });
+        refreshAdminChatPanel();
+      } else if (t.hasAttribute('data-adm-pin-txt')) {
+        const txt = t.getAttribute('data-adm-pin-txt');
+        await fetch('/api/chat/admin-manage', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-kl': '1' }, body: JSON.stringify({ action: 'pin', text: txt }) });
+        if (typeof toast === 'function') toast('Mesaj sohbete sabitlendi.');
+        refreshAdminChatPanel();
+      } else if (t.hasAttribute('data-adm-edit')) {
+        const id = t.getAttribute('data-adm-edit');
+        const oldTxt = t.getAttribute('data-adm-old') || '';
+        const nextTxt = prompt('Mesajı düzenle:', oldTxt);
+        if (nextTxt && nextTxt.trim()) {
+          await fetch('/api/chat/admin-manage', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-kl': '1' }, body: JSON.stringify({ action: 'edit', id, text: nextTxt.trim() }) });
+          refreshAdminChatPanel();
+        }
+      } else if (t.hasAttribute('data-adm-del')) {
+        const id = t.getAttribute('data-adm-del');
+        await fetch('/api/chat/delete', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-kl': '1' }, body: JSON.stringify({ id }) });
+        refreshAdminChatPanel();
+      } else if (t.hasAttribute('data-adm-ban')) {
+        const msgId = t.getAttribute('data-adm-ban');
+        if (!confirm('Bu kullanıcı sohbetten engellensin mi?')) return;
+        await fetch('/api/chat/ban', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-kl': '1' }, body: JSON.stringify({ msgId }) });
+        refreshAdminChatPanel();
+      } else if (t.hasAttribute('data-adm-unban')) {
+        const index = t.getAttribute('data-adm-unban');
+        await fetch('/api/chat/admin-manage', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-kl': '1' }, body: JSON.stringify({ action: 'unban', index }) });
+        refreshAdminChatPanel();
+      }
+    });
+  }
+
+  setInterval(mountAdminChatPanel, 1200);
 })();
 </script>
 </body></html>
