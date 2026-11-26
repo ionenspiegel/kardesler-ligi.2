@@ -1612,7 +1612,85 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
 #krdChatInput{user-select:text!important;-webkit-user-select:text!important;color:#fff!important;background:#0f172a!important}
 .modal,.mbox,#krdTeamModal,#krdTeamStatsModal{pointer-events:auto!important}
 </style>
-<style id="krd-story-modal-fix">
+<style id="krd-unified-master-css">
+html, body {
+  overflow-anchor: none !important;
+  scroll-behavior: auto !important;
+}
+#main-content {
+  display: block !important;
+  width: 100% !important;
+  max-width: 1060px !important;
+  margin: 0 auto !important;
+  padding: 0 12px 130px 12px !important;
+  box-sizing: border-box !important;
+}
+#app {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 100% !important;
+}
+#krdTopQuickBar, #krdChatFab, #krdChatCloseBtn {
+  display: none !important;
+}
+/* Sabit, tam ortali ve kaymasiz Canli Sohbet Bolumu */
+#krdChatBox {
+  position: relative !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 280px !important;
+  max-height: 280px !important;
+  margin: 12px 0 16px 0 !important;
+  border-radius: 16px !important;
+  background: #0f172a !important;
+  border: 1px solid rgba(148, 163, 184, 0.25) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  z-index: 10 !important;
+}
+#krdChatMsgs {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  padding: 8px 12px !important;
+}
+.krd-chat-form {
+  flex-shrink: 0 !important;
+  display: flex !important;
+  gap: 8px !important;
+  padding: 8px 10px !important;
+  background: #090f1e !important;
+  border-top: 1px solid rgba(148, 163, 184, 0.18) !important;
+}
+#krdChatInput {
+  flex: 1 !important;
+  color: #fff !important;
+  background: #1e293b !important;
+  border: 1px solid rgba(148, 163, 184, 0.25) !important;
+  border-radius: 10px !important;
+  padding: 8px 11px !important;
+}
+/* Bildirim ve Yukari Cik ikonlari muzik barinin ustunde */
+#krdPushBtn {
+  bottom: 84px !important;
+  left: 12px !important;
+  z-index: 99920 !important;
+}
+#krdScrollTop, #scrollTopBtn {
+  bottom: 84px !important;
+  right: 12px !important;
+  z-index: 99920 !important;
+}
+/* Telefon Hikaye Karti (.modal) tam gorunum */
 .modal:not(#krdTeamModal):not(#krdTeamStatsModal) {
   display: flex !important;
   flex-direction: column !important;
@@ -1637,115 +1715,6 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   flex-direction: column !important;
   opacity: 1 !important;
   visibility: visible !important;
-}
-</style>
-<style id="krd-only-chatbox-css">
-#krdTopQuickBar, #krdChatFab, #krdChatCloseBtn {
-  display: none !important;
-}
-#krdChatBox {
-  position: relative !important;
-  left: auto !important;
-  right: auto !important;
-  top: auto !important;
-  bottom: auto !important;
-  transform: none !important;
-  display: flex !important;
-  flex-direction: column !important;
-  box-sizing: border-box !important;
-  width: calc(100% - 24px) !important;
-  max-width: 1060px !important;
-  height: 410px !important;
-  max-height: 410px !important;
-  margin: 18px auto 96px auto !important;
-  border-radius: 16px !important;
-  background: #0f172a !important;
-  border: 1px solid rgba(148, 163, 184, 0.22) !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
-  z-index: 5 !important;
-  overflow: hidden !important;
-}
-#krdChatMsgs {
-  flex: 1 1 auto !important;
-  overflow-y: auto !important;
-  overscroll-behavior: contain !important;
-  padding: 10px 12px !important;
-}
-.krd-chat-form {
-  display: flex !important;
-  gap: 8px !important;
-  padding: 10px 12px !important;
-  background: #090f1e !important;
-  border-top: 1px solid rgba(148, 163, 184, 0.18) !important;
-}
-#krdChatInput {
-  flex: 1 !important;
-  color: #fff !important;
-  background: #1e293b !important;
-  border: 1px solid rgba(148, 163, 184, 0.25) !important;
-  border-radius: 10px !important;
-  padding: 9px 12px !important;
-}
-</style>
-<style id="krd-chat-final-fix-css">
-html, body {
-  overflow-anchor: none !important;
-  scroll-behavior: auto !important;
-}
-#main-content {
-  padding-bottom: 165px !important;
-}
-#krdChatBox {
-  margin: 16px auto 24px auto !important;
-  height: 380px !important;
-  max-height: 380px !important;
-  overflow-anchor: none !important;
-}
-#krdPushBtn {
-  bottom: 84px !important;
-  left: 12px !important;
-  z-index: 99920 !important;
-}
-#krdScrollTop, #scrollTopBtn {
-  bottom: 84px !important;
-  right: 12px !important;
-  z-index: 99920 !important;
-}
-</style>
-<style id="krd-fix-all-layout">
-#main-content {
-  display: block !important;
-  width: 100% !important;
-  max-width: 1060px !important;
-  margin: 0 auto !important;
-  padding: 0 12px 120px 12px !important;
-  box-sizing: border-box !important;
-}
-#app {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  min-height: 200px !important;
-}
-#krdChatBox {
-  position: relative !important;
-  left: auto !important;
-  right: auto !important;
-  top: auto !important;
-  bottom: auto !important;
-  transform: none !important;
-  display: flex !important;
-  flex-direction: column !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  height: 290px !important;
-  max-height: 290px !important;
-  margin: 12px auto 16px auto !important;
-  border-radius: 16px !important;
-  background: #0f172a !important;
-  border: 1px solid rgba(148, 163, 184, 0.25) !important;
-  box-sizing: border-box !important;
-  overflow: hidden !important;
 }
 </style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
@@ -5147,22 +5116,33 @@ events.onmessage = async () => {
   setInterval(mountAdminChatPanel, 1200);
 })();
 </script>
-<script id="krd-fix-all-js">
+<script id="krd-unified-master-js">
 (function() {
-  function syncLayoutAndRender() {
-    var cb = document.getElementById('krdChatBox');
+  function ensureAllVisible() {
     var app = document.getElementById('app');
-    if (cb && app && app.parentElement && cb.nextElementSibling !== app) {
+    var cb = document.getElementById('krdChatBox');
+    if (cb && app && app.parentElement && !app.contains(cb) && cb.nextElementSibling !== app) {
       app.parentElement.insertBefore(cb, app);
     }
-    if (app && app.children.length === 0) {
+    if (cb && !document.getElementById('krdPinnedBar')) {
+      var head = cb.querySelector('.krd-chat-head') || cb.firstElementChild;
+      if (head) {
+        var pinDiv = document.createElement('div');
+        pinDiv.id = 'krdPinnedBar';
+        pinDiv.style.cssText = 'display:none;margin:6px 12px 0 12px;padding:6px 10px;border-radius:8px;background:rgba(251,191,36,0.16);border:1px solid rgba(251,191,36,0.4);color:#fde68a;font-size:12px;font-weight:700;';
+        head.insertAdjacentElement('afterend', pinDiv);
+      }
+    }
+    // Eger #app bos kaldiysa veriyi ve arayuzu hemen cizdir
+    if (app && app.innerHTML.trim() === '') {
+      if (typeof window.render === 'function') window.render();
       if (typeof window.load === 'function') window.load();
-      else if (typeof window.render === 'function') window.render();
     }
   }
-  syncLayoutAndRender();
-  setTimeout(syncLayoutAndRender, 500);
-  setTimeout(syncLayoutAndRender, 1500);
+
+  ensureAllVisible();
+  setTimeout(ensureAllVisible, 300);
+  setTimeout(ensureAllVisible, 1200);
 })();
 </script>
 </body></html>
