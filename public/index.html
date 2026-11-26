@@ -1712,6 +1712,14 @@ html, body {
   z-index: 99920 !important;
 }
 </style>
+<style id="krd-restore-app-css">
+#main-content, #app {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 100% !important;
+}
+</style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
@@ -5111,67 +5119,20 @@ events.onmessage = async () => {
   setInterval(mountAdminChatPanel, 1200);
 })();
 </script>
-<script id="krd-only-chatbox-js">
+<script id="krd-safe-top-chat">
 (function() {
-  function setupCleanStaticChat() {
-    var topBar = document.getElementById('krdTopQuickBar');
-    if (topBar) topBar.remove();
-    var fab = document.getElementById('krdChatFab');
-    if (fab) fab.remove();
-
-    var mainEl = document.getElementById('main-content') || document.body;
+  function placeOnce() {
     var cb = document.getElementById('krdChatBox');
-    if (cb && cb.parentElement !== mainEl) {
-      mainEl.appendChild(cb);
+    var app = document.getElementById('app');
+    if (cb && app && app.parentElement && !app.contains(cb) && cb.nextElementSibling !== app) {
+      app.parentElement.insertBefore(cb, app);
     }
-
-    // Sabit mesaj kutusu yoksa sohbet basliginin altina ekle
-    if (cb && !document.getElementById('krdPinnedBar')) {
-      var head = cb.querySelector('.krd-chat-head') || cb.firstElementChild;
-      if (head) {
-        var pinDiv = document.createElement('div');
-        pinDiv.id = 'krdPinnedBar';
-        pinDiv.style.cssText = 'display:none;margin:6px 12px 0 12px;padding:7px 10px;border-radius:8px;background:rgba(251,191,36,0.16);border:1px solid rgba(251,191,36,0.4);color:#fde68a;font-size:12px;font-weight:700;';
-        head.insertAdjacentElement('afterend', pinDiv);
-      }
-    }
-
-    // Mesaj gonderirken sayfa scroll pozisyonunu koru (yukari kaymayi engelle)
-    var form = document.getElementById('krdChatForm');
-    if (form && !form.dataset.noJumpBound) {
-      form.dataset.noJumpBound = '1';
-      form.addEventListener('submit', function() {
-        var keepY = window.scrollY;
-        requestAnimationFrame(function() { window.scrollTo(0, keepY); });
-        setTimeout(function() { window.scrollTo(0, keepY); }, 60);
-        setTimeout(function() { window.scrollTo(0, keepY); }, 220);
-      }, true);
+    if (typeof window.render === 'function' && app && !app.innerHTML.trim()) {
+      window.render();
     }
   }
-
-  // Sabit mesaji periyodik olarak da senkronla
-  async function syncPinnedOnly() {
-    try {
-      var r = await fetch('/api/chat?cid=pin_check');
-      if (!r.ok) return;
-      var d = await r.json();
-      var pinEl = document.getElementById('krdPinnedBar');
-      if (pinEl) {
-        if (d.pinned && String(d.pinned).trim()) {
-          pinEl.style.display = 'block';
-          pinEl.textContent = '📌 Sabit Mesaj: ' + d.pinned;
-        } else {
-          pinEl.style.display = 'none';
-          pinEl.textContent = '';
-        }
-      }
-    } catch (e) {}
-  }
-
-  setupCleanStaticChat();
-  syncPinnedOnly();
-  setInterval(setupCleanStaticChat, 1200);
-  setInterval(syncPinnedOnly, 5000);
+  placeOnce();
+  setTimeout(placeOnce, 400);
 })();
 </script>
 </body></html>
