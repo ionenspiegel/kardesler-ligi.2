@@ -5576,15 +5576,15 @@ events.onmessage = async () => {
   setInterval(enhanceLiveUi, 1000);
 })();
 </script>
-<script id="krd-ultimate-fx-js">
+<script id="krd-withdraw-fix-js">
 (function() {
-  // Tek tusla takimi ligden cekip kalan maclarini 3-0 hukmen yapma fonksiyonu
   window.krdWithdrawTeamForfeit = async function() {
     var sel = document.getElementById('krdWithdrawTeamSel');
     if (!sel || !sel.value) { alert('Lütfen ligden çekilecek takımı seçin.'); return; }
     var tid = Number(sel.value);
     var team = (window.S && Array.isArray(S.teams)) ? S.teams.find(function(t) { return Number(t.id) === tid; }) : null;
     if (!team) return;
+
     var unplayed = (S.matches || []).filter(function(m) {
       return !m.played && (Number(m.home_id) === tid || Number(m.away_id) === tid);
     });
@@ -5592,7 +5592,7 @@ events.onmessage = async () => {
       alert(team.name + ' takımının oynanmamış maçı kalmamış.');
       return;
     }
-    if (!confirm(team.name + ' ligden çekilecek ve kalan ' + unplayed.length + ' maçı rakipleri lehine otomatik 3-0 HÜKMEN yazılacak. Onaylıyor musunuz?')) return;
+    if (!confirm(team.name + ' ligden çekilecek ve kalan ' + unplayed.length + ' maçı rakipleri lehine otomatik 3-0 HÜKMEN (hs/aws) yazılacak. Onaylıyor musunuz?')) return;
 
     var btn = document.getElementById('krdWithdrawBtn');
     if (btn) { btn.disabled = true; btn.textContent = 'İşleniyor (' + unplayed.length + ' maç)...'; }
@@ -5601,15 +5601,18 @@ events.onmessage = async () => {
       for (var i = 0; i < unplayed.length; i++) {
         var m = unplayed[i];
         var isHome = Number(m.home_id) === tid;
-        var hg = isHome ? 0 : 3;
-        var ag = isHome ? 3 : 0;
+        var payload = {
+          hs: isHome ? 0 : 3,
+          aws: isHome ? 3 : 0,
+          played: 1,
+          note: 'Hükmen 3-0 (' + team.name + ' ligden çekildi)'
+        };
         if (typeof window.api === 'function') {
-          await window.api('POST', '/api/matches/' + m.id, {
-            home_goals: hg,
-            away_goals: ag,
-            played: true,
-            note: 'Hükmen 3-0 (' + team.name + ' ligden çekildi)'
-          });
+          try {
+            await window.api('POST', '/api/matches/' + m.id, payload);
+          } catch (e1) {
+            await window.api('PUT', '/api/matches/' + m.id, payload);
+          }
         }
       }
       if (typeof window.load === 'function') await window.load();
@@ -5622,20 +5625,29 @@ events.onmessage = async () => {
     }
   };
 
-  function runVisualAndAdminEnhancements() {
-    // A. Yonetim Paneli aciksa en uste Tek Tusla Ligden Cekme kartini yerlestir
-    var isAdminHash = location.hash.indexOf('krd-kontrol') !== -1 || location.hash.indexOf('yonetici') !== -1;
+  function injectWithdrawCardIfNeeded() {
     var app = document.getElementById('app');
-    if (isAdminHash && app && window.S && Array.isArray(S.teams) && S.teams.length && !document.getElementById('krdWithdrawCard')) {
+    if (!app || !window.S || !Array.isArray(S.teams) || !S.teams.length) return;
+
+    var isPanelView =
+      location.hash.indexOf('yonetici') !== -1 ||
+      location.hash.indexOf('krd-kontrol') !== -1 ||
+      /Özel Spor Gazetesi Manşeti|Tahmin Kralı & Oy Yönetimi|Eklemeler ve Görüntü Ayarları/i.test(app.textContent || '');
+
+    if (isPanelView && !document.getElementById('krdWithdrawCard')) {
       var opts = S.teams.map(function(t) {
-        var rem = (S.matches || []).filter(function(m) { return !m.played && (Number(m.home_id) === Number(t.id) || Number(m.away_id) === Number(t.id)); }).length;
+        var rem = (S.matches || []).filter(function(m) {
+          return !m.played && (Number(m.home_id) === Number(t.id) || Number(m.away_id) === Number(t.id));
+        }).length;
         return '<option value="' + t.id + '">' + t.name + ' (Kalan: ' + rem + ' maç)</option>';
       }).join('');
+
       var box = document.createElement('div');
       box.id = 'krdWithdrawCard';
       box.className = 'card';
-      box.style.cssText = 'border:1px solid rgba(244,63,94,0.45)!important;background:linear-gradient(135deg,rgba(136,19,55,0.28),rgba(15,23,42,0.94))!important;margin-bottom:14px;';
-      box.innerHTML = '<h3 style="margin:0 0 6px 0;color:#fda4af;">🚫 Tek Tuşla Ligden Çekme (Otomatik 3-0 Hükmen)</h3>' +
+      box.style.cssText = 'border:1px solid rgba(244,63,94,0.5)!important;background:linear-gradient(135deg,rgba(136,19,55,0.32),rgba(15,23,42,0.95))!important;margin-bottom:14px;';
+      box.innerHTML =
+        '<h3 style="margin:0 0 6px 0;color:#fda4af;">🚫 Tek Tuşla Ligden Çekme (Otomatik 3-0 Hükmen)</h3>' +
         '<p class="mut" style="font-size:12.5px;margin:0 0 10px 0;">Takımı silmeden geçmiş maç ve gollerini korur; kalan tüm maçlarını rakiplerine otomatik <b>3-0 hükmen</b> yazar.</p>' +
         '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
         '<select id="krdWithdrawTeamSel" style="flex:1;min-width:180px;">' + opts + '</select>' +
@@ -5644,7 +5656,7 @@ events.onmessage = async () => {
       app.insertBefore(box, app.firstChild);
     }
 
-    // B. En altta tekrarlanan ikinci H2H Ac/Kapat kutusunu kesin gizle
+    // Tekrarlanan alttaki H2H Ac/Kapat kutusunu gizle
     document.querySelectorAll('div, section, details').forEach(function(el) {
       var txt = (el.textContent || '').trim();
       if (txt.indexOf('Kafa Kafaya (H2H) Rekabet & PNG Tablo İndir') !== -1 && el.offsetHeight > 0 && el.offsetHeight < 140) {
@@ -5652,42 +5664,37 @@ events.onmessage = async () => {
       }
     });
 
-    // C. Tarihi farkli skor kutularini (5+ fark) altin parilti ile vurgula
+    // Tarihi farkli skor kutularini (5+ fark) vurgula
     document.querySelectorAll('#app .grid > div').forEach(function(card) {
       var m = (card.textContent || '').match(/(d+)s*-s*(d+)/);
-      if (m) {
-        var diff = Math.abs(Number(m[1]) - Number(m[2]));
-        if (diff >= 5) {
-          card.querySelectorAll('div, span').forEach(function(el) {
-            if (/^s*d+s*-s*d+s*$/.test(el.textContent || '')) {
-              el.classList.add('krd-historic-score');
-            }
-          });
-        }
+      if (m && Math.abs(Number(m[1]) - Number(m[2])) >= 5) {
+        card.querySelectorAll('div, span').forEach(function(el) {
+          if (/^s*d+s*-s*d+s*$/.test(el.textContent || '')) {
+            el.classList.add('krd-historic-score');
+          }
+        });
       }
     });
 
-    // D. Tahmin Krali tablosunda mobilde Puan sutununu gorunur kil
+    // Tahmin Krali tablosunda mobilde Puan sutununu gorunur tut
     document.querySelectorAll('#app table').forEach(function(tbl) {
       var ths = tbl.querySelectorAll('thead th');
-      if (ths.length >= 6 && (tbl.querySelector('thead').textContent || '').indexOf('Tahminci') !== -1) {
-        if (window.innerWidth < 540) {
-          tbl.querySelectorAll('tr').forEach(function(tr) {
-            if (tr.children[3]) tr.children[3].style.display = 'none';
-            if (tr.children[4]) tr.children[4].style.display = 'none';
-            if (tr.children[5]) {
-              tr.children[5].style.display = 'table-cell';
-              tr.children[5].style.color = '#fde68a';
-              tr.children[5].style.fontWeight = '800';
-            }
-          });
-        }
+      if (ths.length >= 6 && (tbl.querySelector('thead').textContent || '').indexOf('Tahminci') !== -1 && window.innerWidth < 540) {
+        tbl.querySelectorAll('tr').forEach(function(tr) {
+          if (tr.children[3]) tr.children[3].style.display = 'none';
+          if (tr.children[4]) tr.children[4].style.display = 'none';
+          if (tr.children[5]) {
+            tr.children[5].style.display = 'table-cell';
+            tr.children[5].style.color = '#fde68a';
+            tr.children[5].style.fontWeight = '800';
+          }
+        });
       }
     });
   }
 
-  runVisualAndAdminEnhancements();
-  setInterval(runVisualAndAdminEnhancements, 900);
+  injectWithdrawCardIfNeeded();
+  setInterval(injectWithdrawCardIfNeeded, 500);
 })();
 </script>
 </body></html>
