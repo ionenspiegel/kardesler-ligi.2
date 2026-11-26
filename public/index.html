@@ -1824,6 +1824,78 @@ body {
   animation: krdLiveDotGlow 2s infinite;
 }
 </style>
+<link id="krd-broadcast-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Rajdhani:wght@600;700&display=swap">
+<style id="krd-typography-fx-css">
+@keyframes krdTrophyFloat {
+  0%, 100% { background-position: right 10px center, center; }
+  50% { background-position: right 10px calc(50% - 4px), center; }
+}
+@keyframes krdGoldPulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(251, 191, 36, 0.35); }
+  50% { box-shadow: 0 0 18px rgba(251, 191, 36, 0.72); }
+}
+
+body, button, input, select, textarea {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Basliklar ve Skor Rakamlari icin Keskin Spor Yayin Tipografisi */
+#app .hero h1,
+#app .sh h2 {
+  font-family: 'Rajdhani', 'Inter', sans-serif !important;
+  letter-spacing: 0.02em !important;
+  font-weight: 700 !important;
+}
+#app .hero {
+  animation: krdTrophyFloat 5s ease-in-out infinite !important;
+}
+
+/* Okunurluk: Koyu zeminde net beyaz-gumus kontrast ve hizali rakamlar */
+#app table th {
+  color: #cbd5e1 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  font-size: 11.5px !important;
+}
+#app table td {
+  color: #f8fafc !important;
+  font-variant-numeric: tabular-nums !important;
+  font-size: 13.5px !important;
+}
+#app .pts {
+  color: #fde68a !important;
+  font-weight: 800 !important;
+}
+#app .mut {
+  color: #94a3b8 !important;
+}
+#app .card.tw tbody tr:nth-child(1) .pos {
+  animation: krdGoldPulse 2.8s ease-in-out infinite !important;
+}
+
+/* Bildirim zili (#krdPushBtn) "Mesaj yaz..." kutusunun soluna binmesin */
+#krdPushBtn {
+  bottom: 132px !important;
+  left: 12px !important;
+  z-index: 99920 !important;
+}
+
+/* Sohbet mesajlari ve input okunurlugu */
+#krdChatBox {
+  overflow-anchor: none !important;
+}
+#krdChatMsgs {
+  font-size: 13.5px !important;
+  line-height: 1.45 !important;
+  color: #f1f5f9 !important;
+}
+#krdChatInput {
+  font-size: 14px !important;
+  color: #ffffff !important;
+}
+</style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
@@ -5248,6 +5320,47 @@ if (document.hidden) return;
   placeClean();
   setTimeout(placeClean, 500);
   setTimeout(placeClean, 1500);
+})();
+</script>
+<script id="krd-chat-nojump-js">
+(function() {
+  var pinActive = false;
+  var pinnedScrollY = 0;
+  var pinTimer = null;
+
+  function lockToChat(durationMs) {
+    var cb = document.getElementById('krdChatBox');
+    if (!cb) return;
+    pinnedScrollY = window.scrollY;
+    pinActive = true;
+    clearTimeout(pinTimer);
+    pinTimer = setTimeout(function() { pinActive = false; }, durationMs || 2200);
+  }
+
+  document.addEventListener('focusin', function(e) {
+    if (e.target && e.target.id === 'krdChatInput') {
+      setTimeout(function() { lockToChat(1500); }, 120);
+    }
+  }, true);
+
+  document.addEventListener('submit', function(e) {
+    if (e.target && e.target.id === 'krdChatForm') {
+      lockToChat(2600);
+      [0, 40, 120, 300, 650, 1200].forEach(function(ms) {
+        setTimeout(function() {
+          if (pinActive && Math.abs(window.scrollY - pinnedScrollY) > 20) {
+            window.scrollTo({ top: pinnedScrollY, behavior: 'instant' });
+          }
+        }, ms);
+      });
+    }
+  }, true);
+
+  window.addEventListener('scroll', function() {
+    if (pinActive && Math.abs(window.scrollY - pinnedScrollY) > 25) {
+      window.scrollTo({ top: pinnedScrollY, behavior: 'instant' });
+    }
+  }, { passive: true });
 })();
 </script>
 </body></html>
