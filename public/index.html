@@ -1896,6 +1896,90 @@ body, button, input, select, textarea {
   color: #ffffff !important;
 }
 </style>
+<style id="krd-modern-table-music-css">
+@keyframes krdEqBounce1 { 0%,100% { height: 4px; } 50% { height: 15px; } }
+@keyframes krdEqBounce2 { 0%,100% { height: 13px; } 50% { height: 5px; } }
+@keyframes krdEqBounce3 { 0%,100% { height: 7px; } 50% { height: 16px; } }
+@keyframes krdEqBounce4 { 0%,100% { height: 14px; } 50% { height: 6px; } }
+@keyframes krdChampRowShimmer {
+  0%, 100% { box-shadow: inset 3px 0 0 #fbbf24, 0 0 0 rgba(251, 191, 36, 0); }
+  50% { box-shadow: inset 4px 0 0 #fde68a, 0 0 18px rgba(251, 191, 36, 0.14); }
+}
+@keyframes krdMusicGlow {
+  0%, 100% { border-color: rgba(16, 185, 129, 0.35); box-shadow: 0 8px 28px rgba(2, 6, 23, 0.72), 0 0 14px rgba(16, 185, 129, 0.14); }
+  50% { border-color: rgba(56, 189, 248, 0.55); box-shadow: 0 8px 32px rgba(2, 6, 23, 0.78), 0 0 22px rgba(56, 189, 248, 0.24); }
+}
+
+/* --- MODERN PUAN TABLOSU --- */
+#app .card.tw {
+  border: 1px solid rgba(56, 189, 248, 0.22) !important;
+  box-shadow: 0 14px 36px rgba(2, 6, 23, 0.55) !important;
+}
+#app .card.tw table tbody tr {
+  position: relative;
+  transition: transform 0.2s ease, background 0.2s ease !important;
+}
+#app .card.tw table tbody tr:hover {
+  background: rgba(56, 189, 248, 0.08) !important;
+  transform: translateX(2px);
+}
+/* 1. Sira Sampiyonluk Hatti */
+#app .card.tw table tbody tr:nth-child(1) {
+  animation: krdChampRowShimmer 3.2s ease-in-out infinite !important;
+}
+/* 2-4. Sira Pota / Play-Off Hatti */
+#app .card.tw table tbody tr:nth-child(2),
+#app .card.tw table tbody tr:nth-child(3),
+#app .card.tw table tbody tr:nth-child(4) {
+  box-shadow: inset 3px 0 0 #10b981 !important;
+}
+/* Son 2 Sira Tehlike Hatti */
+#app .card.tw table tbody tr:nth-last-child(1),
+#app .card.tw table tbody tr:nth-last-child(2) {
+  box-shadow: inset 3px 0 0 rgba(244, 63, 94, 0.7) !important;
+}
+/* Form Rozetleri (G / B / M) Parlak Hap Tasarimi */
+#app .fb.G {
+  background: linear-gradient(135deg, #22c55e, #15803d) !important;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.35);
+}
+#app .fb.B {
+  background: linear-gradient(135deg, #f59e0b, #b45309) !important;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+#app .fb.M {
+  background: linear-gradient(135deg, #ef4444, #b91c1c) !important;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.32);
+}
+
+/* --- MODERN MUZIK CALAR & EKOLAYZER --- */
+#krdMusicDock {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.94) 0%, rgba(17, 24, 39, 0.97) 100%) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  animation: krdMusicGlow 4.5s ease-in-out infinite !important;
+}
+#krdEqBars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2.5px;
+  height: 16px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+#krdEqBars span {
+  display: inline-block;
+  width: 3px;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #34d399, #38bdf8);
+  transition: height 0.2s ease;
+}
+#krdEqBars.playing span:nth-child(1) { animation: krdEqBounce1 0.65s ease-in-out infinite; }
+#krdEqBars.playing span:nth-child(2) { animation: krdEqBounce2 0.52s ease-in-out infinite; }
+#krdEqBars.playing span:nth-child(3) { animation: krdEqBounce3 0.74s ease-in-out infinite; }
+#krdEqBars.playing span:nth-child(4) { animation: krdEqBounce4 0.58s ease-in-out infinite; }
+</style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
@@ -4441,9 +4525,9 @@ events.onmessage = async () => {
       const uBar = document.createElement('div');
       uBar.id = 'krdUnifiedFilterBar';
       uBar.innerHTML = `
-        <input type="search" id="krdUniSearch" placeholder="🔎 Oyuncu veya skor ara...">
+        <input type="search" id="krdUniSearch" placeholder="🔎 Takım veya skor ara...">
         <select aria-label="Secim listesi" id="krdUniWeek"><option value="">Tüm Haftalar</option>${weeks.map(w => `<option value="${w}">${w}. Hafta</option>`).join('')}</select>
-        <select aria-label="Secim listesi" id="krdUniTeam"><option value="">Tüm Oyuncular</option>${S.teams.map(t => `<option value="${esc(t.name.toLowerCase())}">${esc(t.name)}</option>`).join('')}</select>
+        <select aria-label="Secim listesi" id="krdUniTeam"><option value="">Tüm Takımlar</option>${S.teams.map(t => `<option value="${esc(t.name.toLowerCase())}">${esc(t.name)}</option>`).join('')}</select>
       `;
       matchGrid.parentNode.insertBefore(uBar, matchGrid);
 
@@ -5364,6 +5448,75 @@ events.onmessage = async () => {
       window.scrollTo({ top: pinnedScrollY, behavior: 'instant' });
     }
   }, { passive: true });
+})();
+</script>
+<script id="krd-modern-table-music-js">
+(function() {
+  function enhanceLiveUi() {
+    // A. Muzik Calar Ekolayzer Cubuklari
+    var dock = document.getElementById('krdMusicDock');
+    if (dock && !document.getElementById('krdEqBars')) {
+      var titleEl = dock.querySelector('.krd-music-title, #krdTrackTitle, marquee, span');
+      if (titleEl && titleEl.parentElement) {
+        var eq = document.createElement('span');
+        eq.id = 'krdEqBars';
+        eq.innerHTML = '<span></span><span></span><span></span><span></span>';
+        titleEl.parentElement.insertBefore(eq, titleEl);
+      }
+    }
+    var eqBars = document.getElementById('krdEqBars');
+    var audio = document.querySelector('audio');
+    if (eqBars && audio) {
+      if (!audio.paused && !audio.ended) eqBars.classList.add('playing');
+      else eqBars.classList.remove('playing');
+    }
+
+    // B. En alttaki ikinci tekrarlanan H2H Ac/Kapat kutusunu gizle
+    document.querySelectorAll('div, section, details').forEach(function(el) {
+      if (el.children.length <= 3 && /Kafa Kafaya (H2H) Rekabet & PNG Tablo İndir/i.test(el.textContent || '') && el.offsetHeight > 0 && el.offsetHeight < 120) {
+        el.style.display = 'none';
+      }
+    });
+
+    // C. Sohbet ustundeki ayni ismin cift rozetini (IonelSpiegel + IonelSpiegel{admin}) tek rozete indir
+    var cb = document.getElementById('krdChatBox');
+    if (cb) {
+      var seenNames = {};
+      cb.querySelectorAll('span, div').forEach(function(chip) {
+        var txt = (chip.textContent || '').trim();
+        if (txt.startsWith('• ') && txt.length < 35 && chip.children.length <= 1) {
+          var clean = txt.replace(/^•s*/, '').replace(/{admin}/gi, '').replace(/👑/g, '').trim().toLocaleLowerCase('tr-TR');
+          if (seenNames[clean]) {
+            if (txt.indexOf('admin') !== -1 || txt.indexOf('👑') !== -1) {
+              seenNames[clean].style.display = 'none';
+              seenNames[clean] = chip;
+            } else {
+              chip.style.display = 'none';
+            }
+          } else {
+            seenNames[clean] = chip;
+          }
+        }
+      });
+    }
+
+    // D. Tahmin Krali tablosunda mobil ekranda Puan sutununu gorunur tut ve 1. siraya Kahin rozeti ekle
+    document.querySelectorAll('#app table').forEach(function(tbl) {
+      var headTxt = tbl.querySelector('thead') ? tbl.querySelector('thead').textContent : '';
+      if (headTxt.indexOf('Tahminci') !== -1 && headTxt.indexOf('Puan') !== -1) {
+        tbl.querySelectorAll('th:nth-child(4), td:nth-child(4), th:nth-child(5), td:nth-child(5)').forEach(function(c) {
+          if (window.innerWidth < 520) c.style.display = 'none';
+        });
+        var firstNameCell = tbl.querySelector('tbody tr:first-child td:nth-child(2)');
+        if (firstNameCell && firstNameCell.textContent.indexOf('Kâhin') === -1) {
+          firstNameCell.insertAdjacentHTML('beforeend', ' <span style="font-size:10px;padding:2px 6px;border-radius:99px;background:rgba(251,191,36,0.2);color:#fde68a;border:1px solid rgba(251,191,36,0.4);">Kâhin</span>');
+        }
+      }
+    });
+  }
+
+  enhanceLiveUi();
+  setInterval(enhanceLiveUi, 1000);
 })();
 </script>
 </body></html>
