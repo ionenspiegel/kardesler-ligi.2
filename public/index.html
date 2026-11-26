@@ -1614,6 +1614,7 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
 </style>
 <style id="krd-unified-master-css">
 html, body {
+  overflow-x: hidden !important;
   overflow-anchor: none !important;
   scroll-behavior: auto !important;
 }
@@ -1624,15 +1625,16 @@ html, body {
   width: 100% !important;
   max-width: 1060px !important;
   margin: 0 auto !important;
-  padding: 0 12px 140px 12px !important;
+  padding: 6px 12px 16px 12px !important;
   box-sizing: border-box !important;
 }
 #krdTopQuickBar, #krdChatFab, #krdChatCloseBtn {
   display: none !important;
 }
-/* Canli Lig Sohbeti - Tam ortali, kompakt ve mesaj yazma alani muzik barinin ustunde */
+/* Canli Lig Sohbeti - Sifir tasma, hicbir kartin ustune binmez, #app altinda tam hizali */
 #krdChatBox {
-  position: relative !important;
+  position: static !important;
+  inset: auto !important;
   left: auto !important;
   right: auto !important;
   top: auto !important;
@@ -1642,16 +1644,16 @@ html, body {
   flex-direction: column !important;
   width: calc(100% - 24px) !important;
   max-width: 1036px !important;
-  height: 255px !important;
-  max-height: 255px !important;
-  margin: 8px auto 12px auto !important;
+  height: 320px !important;
+  max-height: 320px !important;
+  margin: 14px auto 155px auto !important;
   border-radius: 16px !important;
   background: #0f172a !important;
   border: 1px solid rgba(148, 163, 184, 0.25) !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
   box-sizing: border-box !important;
   overflow: hidden !important;
-  z-index: 10 !important;
+  z-index: 5 !important;
 }
 #krdChatMsgs {
   flex: 1 1 auto !important;
@@ -1669,6 +1671,7 @@ html, body {
 }
 #krdChatInput {
   flex: 1 !important;
+  min-width: 0 !important;
   color: #fff !important;
   background: #1e293b !important;
   border: 1px solid rgba(148, 163, 184, 0.25) !important;
@@ -5086,11 +5089,12 @@ if (document.hidden) return;
 </script>
 <script id="krd-unified-master-js">
 (function() {
-  async function bootAll() {
+  async function placeClean() {
     var app = document.getElementById('app');
     var cb = document.getElementById('krdChatBox');
-    if (cb && app && app.parentElement && cb.nextElementSibling !== app) {
-      app.parentElement.insertBefore(cb, app);
+    // Sohbet kutusunu #app'in hemen sonrasina koy ki ustteki hicbir kartin ustune binmesin ve bosluk olusmasin
+    if (cb && app && app.parentElement && app.nextElementSibling !== cb) {
+      app.insertAdjacentElement('afterend', cb);
     }
     if (cb && !document.getElementById('krdPinnedBar')) {
       var head = cb.querySelector('.krd-chat-head') || cb.firstElementChild;
@@ -5102,17 +5106,13 @@ if (document.hidden) return;
       }
     }
     if (app && (!app.innerHTML || app.innerHTML.trim().length < 40)) {
-      if (typeof window.load === 'function') {
-        try { await window.load(); } catch (e) {}
-      }
-      if (typeof window.render === 'function' && (!app.innerHTML || app.innerHTML.trim().length < 40)) {
-        try { window.render(); } catch (e) {}
-      }
+      if (typeof window.load === 'function') { try { await window.load(); } catch (e) {} }
+      if (typeof window.render === 'function' && (!app.innerHTML || app.innerHTML.trim().length < 40)) { try { window.render(); } catch (e) {} }
     }
   }
-  bootAll();
-  setTimeout(bootAll, 500);
-  setTimeout(bootAll, 1500);
+  placeClean();
+  setTimeout(placeClean, 500);
+  setTimeout(placeClean, 1500);
 })();
 </script>
 </body></html>
