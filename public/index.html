@@ -1688,14 +1688,17 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
 }
 </style>
 <style id="krd-chat-final-fix-css">
+html, body {
+  overflow-anchor: none !important;
+  scroll-behavior: auto !important;
+}
 #main-content {
-  padding-bottom: 155px !important;
+  padding-bottom: 165px !important;
 }
 #krdChatBox {
-  margin-top: 16px !important;
-  margin-bottom: 24px !important;
-  height: 390px !important;
-  max-height: 390px !important;
+  margin: 16px auto 24px auto !important;
+  height: 380px !important;
+  max-height: 380px !important;
   overflow-anchor: none !important;
 }
 #krdPushBtn {
@@ -2831,6 +2834,7 @@ addEventListener('hashchange', boot);
 boot();
 const events = new EventSource('/api/events');
 events.onmessage = async () => {
+  const __keepScrollY = window.scrollY;
   if (document.hidden) return;
   try {
     await load();
@@ -5167,85 +5171,6 @@ events.onmessage = async () => {
   syncPinnedOnly();
   setInterval(setupCleanStaticChat, 1200);
   setInterval(syncPinnedOnly, 5000);
-})();
-</script>
-<script id="krd-hard-scroll-anchor">
-(function() {
-  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-
-  // Sayfa yukari firlatilmaya calisilirsa (0'a dusme) ve kullanici sohbet bolgesindeyse geri tut
-  var lastUserY = 0;
-  var inChatZone = false;
-
-  window.addEventListener('touchmove', function() {
-    lastUserY = window.scrollY;
-    var cb = document.getElementById('krdChatBox');
-    if (cb) {
-      var r = cb.getBoundingClientRect();
-      inChatZone = r.top < window.innerHeight && r.bottom > 0;
-    }
-  }, { passive: true });
-
-  window.addEventListener('wheel', function() {
-    lastUserY = window.scrollY;
-    var cb = document.getElementById('krdChatBox');
-    if (cb) {
-      var r = cb.getBoundingClientRect();
-      inChatZone = r.top < window.innerHeight && r.bottom > 0;
-    }
-  }, { passive: true });
-
-  // Input odaklaninca veya form gonderilince mevcut konumu dondur
-  var inp = document.getElementById('krdChatInput');
-  var form = document.getElementById('krdChatForm');
-
-  function pinViewportToChat() {
-    var cb = document.getElementById('krdChatBox');
-    if (!cb) return;
-    var targetY = cb.getBoundingClientRect().top + window.scrollY - 68;
-    if (targetY < 0) targetY = 0;
-    lastUserY = targetY;
-    inChatZone = true;
-    window.scrollTo(0, targetY);
-  }
-
-  if (inp) {
-    inp.addEventListener('focus', function() {
-      lastUserY = window.scrollY;
-      inChatZone = true;
-    });
-  }
-
-  if (form) {
-    form.addEventListener('submit', function() {
-      var keep = window.scrollY;
-      inChatZone = true;
-      lastUserY = keep;
-      [0, 30, 100, 250, 500, 900].forEach(function(ms) {
-        setTimeout(function() {
-          if (Math.abs(window.scrollY - keep) > 25) {
-            window.scrollTo(0, keep);
-          }
-        }, ms);
-      });
-    }, true);
-  }
-
-  // Arka planda biri window.scrollTo(0, 0) cagirirsa veya DOM yenilenince sayfa 0'a duserse engelle
-  var origScrollTo = window.scrollTo.bind(window);
-  window.scrollTo = function(x, y) {
-    var topVal = (typeof x === 'object' && x !== null) ? x.top : y;
-    if (inChatZone && topVal === 0 && lastUserY > 200) {
-      return origScrollTo(0, lastUserY);
-    }
-    return origScrollTo.apply(window, arguments);
-  };
-
-  setInterval(function() {
-    if (inChatZone && window.scrollY < 100 && lastUserY > 250) {
-      origScrollTo(0, lastUserY);
-    }
-  }, 150);
 })();
 </script>
 </body></html>
