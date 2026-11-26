@@ -1053,6 +1053,94 @@ const u = new URL(req.url, 'http://x');
       notifyClients();
       return;
     }
+    if (u.pathname === '/api/chat/admin-manage' && req.method === 'POST') {
+      if (!isAdmin(req)) throw E(401, 'Yönetici yetkisi gerekli');
+      const raw = await new Promise((resolve, reject) => {
+        let d = '';
+        req.on('data', ch => { d += ch; if (d.length > 16384) reject(E(413, 'Veri çok büyük')); });
+        req.on('end', () => resolve(d));
+        req.on('error', reject);
+      });
+      const b = JSON.parse(raw || '{}');
+
+      if (b.action === 'pin') {
+        const pinText = clean(String(b.text || '')).slice(0, 220);
+        await tx(async t => {
+          await t.run(`DELETE FROM ${SETTINGS} WHERE k='chat_pinned'`);
+          if (pinText) await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES('chat_pinned',$1)`, pinText);
+        });
+        send(res, 200, { ok: 1, pinned: pinText });
+        notifyClients();
+        return;
+      }
+
+      if (b.action === 'edit') {
+        const newText = clean(String(b.text || '')).slice(0, 220);
+        if (!b.id || !newText) throw E(400, 'Mesaj ID ve yeni metin gerekli');
+        const row = await one(`SELECT v FROM ${SETTINGS} WHERE k='chat_msgs'`);
+        let msgs = [];
+        try { msgs = JSON.parse((row && row.v) || '[]'); } catch { msgs = []; }
+        msgs = (Array.isArray(msgs) ? msgs : []).map(m => m.id === b.id ? { ...m, text: newText, edited: true } : m);
+        await tx(async t => {
+          await t.run(`DELETE FROM ${SETTINGS} WHERE k='chat_msgs'`);
+          await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES('chat_msgs',$1)`, JSON.stringify(msgs));
+        });
+        send(res, 200, { ok: 1, messages: msgs });
+        notifyClients();
+        return;
+      }
+
+      if (b.action === 'mute') {
+        const msgRow = await one(`SELECT v FROM ${SETTINGS} WHERE k='chat_msgs'`);
+        let msgs = [];
+        try { msgs = JSON.parse((msgRow && msgRow.v) || '[]'); } catch { msgs = []; }
+        const tm = msgs.find(m => m.id === b.msgId);
+        if (tm && !tm.admin) {
+          const muteRow = await one(`SELECT v FROM ${SETTINGS} WHERE k='chat_mutes'`);
+          let mutes = [];
+          try { mutes = JSON.parse((muteRow && muteRow.v) || '[]'); } catch { mutes = []; }
+          if (!Array.isArray(mutes)) mutes = [];
+          if (!mutes.some(x => (tm.cid && x.cid === tm.cid) || (tm.ip && x.ip === tm.ip))) {
+            mutes.push({ cid: tm.cid || '', ip: tm.ip || '', user: tm.user || 'Kullanıcı', at: new Date().toISOString() });
+          }
+          await tx(async t => {
+            await t.run(`DELETE FROM ${SETTINGS} WHERE k='chat_mutes'`);
+            await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES('chat_mutes',$1)`, JSON.stringify(mutes));
+          });
+        }
+        send(res, 200, { ok: 1 });
+        notifyClients();
+        return;
+      }
+
+      if (b.action === 'unmute') {
+        const muteRow = await one(`SELECT v FROM ${SETTINGS} WHERE k='chat_mutes'`);
+        let mutes = [];
+        try { mutes = JSON.parse((muteRow && muteRow.v) || '[]'); } catch { mutes = []; }
+        mutes = (Array.isArray(mutes) ? mutes : []).filter((_, idx) => idx !== Number(b.index));
+        await tx(async t => {
+          await t.run(`DELETE FROM ${SETTINGS} WHERE k='chat_mutes'`);
+          await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES('chat_mutes',$1)`, JSON.stringify(mutes));
+        });
+        send(res, 200, { ok: 1, mutes });
+        notifyClients();
+        return;
+      }
+
+      if (b.action === 'unban') {
+        const banRow = await one(`SELECT v FROM ${SETTINGS} WHERE k='chat_bans'`);
+        let bans = [];
+        try { bans = JSON.parse((banRow && banRow.v) || '[]'); } catch { bans = []; }
+        bans = (Array.isArray(bans) ? bans : []).filter((_, idx) => idx !== Number(b.index));
+        await tx(async t => {
+          await t.run(`DELETE FROM ${SETTINGS} WHERE k='chat_bans'`);
+          await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES('chat_bans',$1)`, JSON.stringify(bans));
+        });
+        send(res, 200, { ok: 1, bans });
+        notifyClients();
+        return;
+      }
+    }
     if (u.pathname === '/api/chat/delete' && req.method === 'POST') {
       if (!isAdmin(req)) throw E(401, 'Yönetici yetkisi gerekli');
       const raw = await new Promise((resolve, reject) => {

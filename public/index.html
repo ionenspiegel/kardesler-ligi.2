@@ -3293,7 +3293,7 @@ events.onmessage = async () => {
 
     <form class="krd-chat-form" id="krdChatForm">
       <input id="krdChatInput" type="text" maxlength="240" placeholder="Mesaj yaz..." autocomplete="off" />
-      <button type="submit">Gönder</button>
+      <button type="submit" onmousedown="event.preventDefault()" ontouchstart="event.preventDefault();document.getElementById('krdChatForm').requestSubmit()">Gönder</button>
     </form>
   </div>
 </div>
@@ -3459,6 +3459,7 @@ events.onmessage = async () => {
     const text = inp.value.trim();
     if (!text) return;
     inp.value = '';
+    try { inp.focus({ preventScroll: true }); } catch {}
 
     // 1. Sunucuyu beklemeden mesaji aninda sohbet kutusuna ekle (sifir bekleme/yenilenme)
     const emptyEl = msgsEl.querySelector('div[style*="Henüz mesaj yok"], div[style*="text-align:center"]');
