@@ -1672,6 +1672,37 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   pointer-events: auto !important;
 }
 </style>
+<style id="krd-chat-mobile-fit">
+#krdChatBox {
+  top: 96px !important;
+  bottom: 86px !important;
+  height: auto !important;
+  max-height: calc(100dvh - 186px) !important;
+  z-index: 100080 !important;
+  display: flex;
+  flex-direction: column !important;
+}
+#krdChatBox:not(.open) {
+  display: none !important;
+}
+#krdChatMsgs {
+  flex: 1 1 auto !important;
+  min-height: 90px !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+}
+.krd-chat-form {
+  flex-shrink: 0 !important;
+  position: relative !important;
+  z-index: 2 !important;
+  background: #0f172a !important;
+  padding: 8px 10px !important;
+  border-top: 1px solid rgba(148, 163, 184, 0.2) !important;
+}
+#krdMusicDock {
+  z-index: 99900 !important;
+}
+</style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
