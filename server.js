@@ -979,7 +979,16 @@ const u = new URL(req.url, 'http://x');
       let msgs = [];
       try { msgs = JSON.parse((row && row.v) || '[]'); } catch { msgs = []; }
       const safeMsgs = (Array.isArray(msgs) ? msgs : []).map(({ ip, ...rest }) => rest);
-      return send(res, 200, { messages: safeMsgs, online: getActiveChatUsers() });
+      const pinRow = await one(`SELECT v FROM ${SETTINGS} WHERE k='chat_pinned'`);
+      const pinned = pinRow ? (pinRow.v || '') : '';
+      let bans = [], mutes = [];
+      if (isAdmin(req)) {
+        const banRow = await one(`SELECT v FROM ${SETTINGS} WHERE k='chat_bans'`);
+        try { bans = JSON.parse((banRow && banRow.v) || '[]'); } catch { bans = []; }
+        const muteRow = await one(`SELECT v FROM ${SETTINGS} WHERE k='chat_mutes'`);
+        try { mutes = JSON.parse((muteRow && muteRow.v) || '[]'); } catch { mutes = []; }
+      }
+      return send(res, 200, { messages: safeMsgs, online: getActiveChatUsers(), pinned, bans: Array.isArray(bans) ? bans : [], mutes: Array.isArray(mutes) ? mutes : [] });
     }
     if (u.pathname === '/api/chat' && req.method === 'POST') {
       const raw = await new Promise((resolve, reject) => {

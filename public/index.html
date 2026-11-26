@@ -1639,7 +1639,7 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   visibility: visible !important;
 }
 </style>
-<style id="krd-chat-fab-restore-css">
+<style id="krd-inline-chat-css">
 #krdTopQuickBar {
   display: flex !important;
   align-items: center !important;
@@ -1648,18 +1648,13 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   padding: 6px 12px !important;
   background: rgba(15, 23, 42, 0.9) !important;
   border-bottom: 1px solid rgba(148, 163, 184, 0.16) !important;
-  visibility: visible !important;
-  opacity: 1 !important;
 }
 #krdChatFab {
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
-  position: static !important;
-  inset: auto !important;
-  transform: none !important;
-  height: 30px !important;
-  padding: 0 12px !important;
+  height: 28px !important;
+  padding: 0 11px !important;
   border-radius: 999px !important;
   background: rgba(34, 224, 138, 0.16) !important;
   border: 1px solid rgba(34, 224, 138, 0.45) !important;
@@ -1667,40 +1662,47 @@ header, .topbar, .nav, [class*="header"], [class*="topbar"] {
   font-size: 12px !important;
   font-weight: 800 !important;
   cursor: pointer !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  pointer-events: auto !important;
 }
-</style>
-<style id="krd-chat-mobile-fit">
 #krdChatBox {
-  top: 96px !important;
-  bottom: 86px !important;
-  height: auto !important;
-  max-height: calc(100dvh - 186px) !important;
-  z-index: 100080 !important;
-  display: flex;
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+  display: flex !important;
   flex-direction: column !important;
+  width: min(1100px, calc(100% - 24px)) !important;
+  max-width: 100% !important;
+  height: 410px !important;
+  max-height: 410px !important;
+  margin: 18px auto 96px auto !important;
+  border-radius: 16px !important;
+  background: #0f172a !important;
+  border: 1px solid rgba(148, 163, 184, 0.22) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
+  z-index: 5 !important;
 }
-#krdChatBox:not(.open) {
+#krdChatCloseBtn {
   display: none !important;
 }
 #krdChatMsgs {
   flex: 1 1 auto !important;
-  min-height: 90px !important;
-  max-height: none !important;
   overflow-y: auto !important;
+  padding: 10px 12px !important;
 }
 .krd-chat-form {
-  flex-shrink: 0 !important;
-  position: relative !important;
-  z-index: 2 !important;
-  background: #0f172a !important;
-  padding: 8px 10px !important;
-  border-top: 1px solid rgba(148, 163, 184, 0.2) !important;
+  display: flex !important;
+  gap: 8px !important;
+  padding: 10px 12px !important;
+  background: #090f1e !important;
+  border-top: 1px solid rgba(148, 163, 184, 0.18) !important;
+  border-radius: 0 0 16px 16px !important;
 }
-#krdMusicDock {
-  z-index: 99900 !important;
+#krdChatInput {
+  flex: 1 !important;
+  color: #fff !important;
+  background: #1e293b !important;
+  border: 1px solid rgba(148, 163, 184, 0.25) !important;
+  border-radius: 10px !important;
+  padding: 9px 12px !important;
 }
 </style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
@@ -4917,80 +4919,6 @@ events.onmessage = async () => {
 
 
 
-<script id="krd-clean-backdrop-js">
-(function() {
-  function closeChatBox() {
-    var cb = document.getElementById('krdChatBox');
-    if (cb) {
-      cb.classList.remove('open');
-      cb.style.setProperty('display', 'none', 'important');
-    }
-  }
-
-  function closeAllOverlays() {
-    closeChatBox();
-    var tm = document.getElementById('krdTeamModal');
-    var tsm = document.getElementById('krdTeamStatsModal');
-    if (tm) { tm.classList.remove('open'); tm.style.display = ''; }
-    if (tsm) { tsm.classList.remove('open'); tsm.style.display = ''; }
-    document.body.classList.remove('krd-modal-open');
-
-    var changed = false;
-    try {
-      if (typeof story !== 'undefined' && story) { story = null; changed = true; }
-      if (typeof selTeam !== 'undefined' && selTeam) { selTeam = null; changed = true; }
-      if (typeof archView !== 'undefined' && archView) { archView = null; changed = true; }
-      if (typeof goalMatch !== 'undefined' && goalMatch) { goalMatch = null; changed = true; }
-    } catch (e) {}
-    if (changed && typeof render === 'function') render();
-  }
-
-  function handleOutsideOrX(e) {
-    var t = e.target;
-    if (!t) return;
-
-    // 1. Sohbet icindeki X butonuna basildiysa aninda kapat
-    if (t.closest && t.closest('#krdChatCloseBtn')) {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      closeChatBox();
-      return;
-    }
-
-    // 2. Sohbet aciksa ve sohbet kutusu veya Sohbet acma butonu disinda herhangi bir yere dokunulduysa kapat
-    var cb = document.getElementById('krdChatBox');
-    var fab = document.getElementById('krdChatFab');
-    if (cb && cb.classList.contains('open')) {
-      if (!cb.contains(t) && (!fab || !fab.contains(t))) {
-        closeChatBox();
-      }
-    }
-
-    // 3. Koyu arka plan (.modal veya takim modal arka plani) tiklandiysa kapat
-    if (t.classList && (t.classList.contains('modal') || t.id === 'krdTeamModal' || t.id === 'krdTeamStatsModal')) {
-      closeAllOverlays();
-    }
-  }
-
-  document.addEventListener('pointerdown', handleOutsideOrX, true);
-  document.addEventListener('click', handleOutsideOrX, true);
-
-  // Sohbet butonuna basildiginda ac/kapa durumunu senkronla
-  document.addEventListener('click', function(e) {
-    var fab = e.target && e.target.closest('#krdChatFab');
-    if (fab) {
-      var cb = document.getElementById('krdChatBox');
-      if (cb) {
-        if (cb.classList.contains('open')) {
-          cb.style.setProperty('display', 'flex', 'important');
-        } else {
-          cb.style.setProperty('display', 'none', 'important');
-        }
-      }
-    }
-  }, false);
-})();
-</script>
 <script id="krd-admin-chat-panel-js">
 (function() {
   async function refreshAdminChatPanel() {
@@ -5149,43 +5077,31 @@ events.onmessage = async () => {
   setInterval(mountAdminChatPanel, 1200);
 })();
 </script>
-<script id="krd-chat-fab-restore-js">
+<script id="krd-inline-chat-js">
 (function() {
-  function ensureMainMenuChatBtn() {
-    var topBar = document.getElementById('krdTopQuickBar');
-    var ticker = document.getElementById('krdLiveTickerBar') || document.querySelector('.ticker');
-    if (!topBar && ticker && ticker.parentElement) {
-      topBar = document.createElement('div');
-      topBar.id = 'krdTopQuickBar';
-      topBar.innerHTML = '<span style="font-weight:700;color:#94a3b8;font-size:12px;">⚽ Canlı Lig Sohbeti</span>';
-      ticker.parentElement.insertBefore(topBar, ticker);
+  function placeChatSectionAtBottom() {
+    var mainEl = document.getElementById('main-content') || document.body;
+    var cb = document.getElementById('krdChatBox');
+    if (cb && cb.parentElement !== mainEl) {
+      mainEl.appendChild(cb);
     }
     var fab = document.getElementById('krdChatFab');
-    if (!fab) {
-      fab = document.createElement('button');
-      fab.id = 'krdChatFab';
-      fab.type = 'button';
-      fab.innerHTML = '<span class="krd-online-dot"></span> 💬 Sohbet (<span id="krdFabCount">1</span>)';
+    if (fab && !fab.dataset.scrollBound) {
+      fab.dataset.scrollBound = '1';
       fab.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var cb = document.getElementById('krdChatBox');
-        if (!cb) return;
-        var willOpen = !cb.classList.contains('open');
-        if (willOpen) {
-          cb.classList.add('open');
-          cb.style.setProperty('display', 'flex', 'important');
-        } else {
-          cb.classList.remove('open');
-          cb.style.setProperty('display', 'none', 'important');
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        var target = document.getElementById('krdChatBox');
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          var inp = document.getElementById('krdChatInput');
+          if (inp) setTimeout(function() { inp.focus(); }, 350);
         }
-      });
-    }
-    if (topBar && fab.parentElement !== topBar) {
-      topBar.appendChild(fab);
+      }, true);
     }
   }
-  ensureMainMenuChatBtn();
-  setInterval(ensureMainMenuChatBtn, 1000);
+  placeChatSectionAtBottom();
+  setInterval(placeChatSectionAtBottom, 1200);
 })();
 </script>
 </body></html>
