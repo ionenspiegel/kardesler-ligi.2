@@ -2421,6 +2421,167 @@ body.krd-cyber-admin #krdAdmSwitchBar {
   box-shadow: 0 0 24px rgba(0, 255, 136, 0.12) !important;
 }
 </style>
+<style id="krd-home-radar-css">
+#krdHomeRadarWrap {
+  margin: 10px 0 14px 0;
+  padding: 13px;
+  border-radius: 16px;
+  background: linear-gradient(155deg, rgba(11, 20, 38, 0.94), rgba(7, 13, 26, 0.97));
+  border: 1px solid rgba(56, 189, 248, 0.32);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(125, 211, 252, 0.14);
+  position: relative;
+  overflow: hidden;
+}
+
+#krdHomeRadarWrap::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #38bdf8, #10b981, #f59e0b, transparent);
+}
+
+.krd-radar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.krd-radar-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #e0f2fe;
+}
+
+.krd-radar-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 800;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #6ee7b7;
+}
+
+.krd-radar-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: krdRadarBlink 1.5s infinite ease-in-out;
+}
+
+@keyframes krdRadarBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.krd-stats-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 640px) {
+  .krd-stats-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.krd-stat-pill {
+  padding: 8px 9px;
+  border-radius: 11px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.krd-stat-lbl {
+  font-size: 10px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 3px;
+}
+
+.krd-stat-val {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.krd-stat-sub {
+  font-size: 10.5px;
+  color: #38bdf8;
+  margin-top: 1px;
+}
+
+.krd-vitrin-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+@media (max-width: 560px) {
+  .krd-vitrin-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.krd-vitrin-card {
+  padding: 10px 11px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.55), rgba(15, 23, 42, 0.9));
+  border: 1px solid rgba(250, 204, 21, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.krd-vitrin-card.scorer {
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.krd-vitrin-badge {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #facc15;
+  letter-spacing: 0.04em;
+}
+
+.krd-vitrin-card.scorer .krd-vitrin-badge {
+  color: #34d399;
+}
+
+.krd-vitrin-main {
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.krd-vitrin-desc {
+  font-size: 11px;
+  color: #cbd5e1;
+}
+</style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
@@ -6310,6 +6471,189 @@ events.onmessage = async () => {
   syncCyberAdminTheme();
   setInterval(syncCyberAdminTheme, 1000);
   window.addEventListener('hashchange', syncCyberAdminTheme);
+})();
+</script>
+<script id="krd-home-radar-js">
+(function() {
+  function escH(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+    });
+  }
+
+  function renderHomeRadar() {
+    var slug = (typeof S !== 'undefined' && S && S.settings && S.settings.admin_slug) ? S.settings.admin_slug : 'krd-kontrol';
+    var h = location.hash || '';
+    var isAdmin = h.startsWith('#/' + slug) || h.startsWith('#/yonetici-gizli');
+    var existing = document.getElementById('krdHomeRadarWrap');
+
+    if (isAdmin || typeof S === 'undefined' || !S || !Array.isArray(S.teams) || !Array.isArray(S.matches)) {
+      if (existing) existing.remove();
+      return;
+    }
+
+    var app = document.getElementById('app');
+    if (!app) return;
+
+    var teams = S.teams || [];
+    var matches = S.matches || [];
+    var goals = S.goals || [];
+    var played = matches.filter(function(m) { return !!m.played; });
+
+    // 1. Lig Ozeti & Rekorlar Seridi
+    var totalGoals = 0;
+    var teamStats = {};
+    teams.forEach(function(t) {
+      teamStats[t.id] = { id: t.id, name: t.name, gf: 0, ga: 0, p: 0 };
+    });
+
+    played.forEach(function(m) {
+      var hg = Number(m.home_goals || 0);
+      var ag = Number(m.away_goals || 0);
+      totalGoals += (hg + ag);
+      if (teamStats[m.home_id]) {
+        teamStats[m.home_id].gf += hg;
+        teamStats[m.home_id].ga += ag;
+        teamStats[m.home_id].p += 1;
+      }
+      if (teamStats[m.away_id]) {
+        teamStats[m.away_id].gf += ag;
+        teamStats[m.away_id].ga += hg;
+        teamStats[m.away_id].p += 1;
+      }
+    });
+
+    var avgGoals = played.length ? (totalGoals / played.length).toFixed(2) : '0.00';
+    var statArr = Object.values(teamStats);
+
+    var bestAttack = statArr.slice().sort(function(a, b) { return b.gf - a.gf; })[0];
+    var playedTeams = statArr.filter(function(x) { return x.p > 0; });
+    var bestDefense = playedTeams.slice().sort(function(a, b) {
+      return (a.ga / a.p) - (b.ga / b.p) || a.ga - b.ga;
+    })[0];
+
+    // 2. Haftanin Takimi (Son oynanan haftanin en farkli galibi)
+    var teamOfWeekName = 'Henüz maç yok';
+    var teamOfWeekSub = 'İlk maçların oynanması bekleniyor';
+    if (played.length) {
+      var maxWeek = played.reduce(function(mx, m) { return Math.max(mx, Number(m.week || 1)); }, 1);
+      var weekMatches = played.filter(function(m) { return Number(m.week || 1) === maxWeek; });
+      var bestDiff = -1;
+      var bestGf = -1;
+      weekMatches.forEach(function(m) {
+        var hg = Number(m.home_goals || 0);
+        var ag = Number(m.away_goals || 0);
+        var diff = Math.abs(hg - ag);
+        if (hg > ag && (diff > bestDiff || (diff === bestDiff && hg > bestGf))) {
+          bestDiff = diff;
+          bestGf = hg;
+          var ht = teamStats[m.home_id];
+          var at = teamStats[m.away_id];
+          teamOfWeekName = ht ? ht.name : 'Ev Sahibi';
+          teamOfWeekSub = 'H' + maxWeek + ' • ' + (at ? at.name : 'Rakip') + ' karşısında ' + hg + '-' + ag + ' zafer';
+        } else if (ag > hg && (diff > bestDiff || (diff === bestDiff && ag > bestGf))) {
+          bestDiff = diff;
+          bestGf = ag;
+          var ht2 = teamStats[m.home_id];
+          var at2 = teamStats[m.away_id];
+          teamOfWeekName = at2 ? at2.name : 'Deplasman';
+          teamOfWeekSub = 'H' + maxWeek + ' • ' + (ht2 ? ht2.name : 'Rakip') + ' deplasmanında ' + ag + '-' + hg + ' zafer';
+        }
+      });
+      if (bestDiff === -1 && weekMatches[0]) {
+        var wm = weekMatches[0];
+        var t1 = teamStats[wm.home_id];
+        teamOfWeekName = t1 ? t1.name : 'Hafta ' + maxWeek;
+        teamOfWeekSub = 'H' + maxWeek + ' • Mücadeleci beraberlik (' + wm.home_goals + '-' + wm.away_goals + ')';
+      }
+    }
+
+    // 3. Gol Krali Vitrini
+    var topScorerName = 'Veri bekleniyor';
+    var topScorerSub = 'Oyuncu gol istatistiği girilmedi';
+    if (goals.length) {
+      var pMap = {};
+      goals.forEach(function(g) {
+        var key = (g.player || '').trim();
+        if (!key) return;
+        if (!pMap[key]) pMap[key] = { name: key, g: 0, a: 0, tid: g.team_id };
+        pMap[key].g += Number(g.goals || 0);
+        pMap[key].a += Number(g.assists || 0);
+      });
+      var topP = Object.values(pMap).sort(function(a, b) { return (b.g - a.g) || (b.a - a.a); })[0];
+      if (topP) {
+        var club = teamStats[topP.tid];
+        topScorerName = topP.name + (club ? ' (' + club.name + ')' : '');
+        topScorerSub = '⚽ ' + topP.g + ' Gol • 🎯 ' + topP.a + ' Asist';
+      }
+    } else if (bestAttack && bestAttack.gf > 0) {
+      topScorerName = bestAttack.name;
+      topScorerSub = 'Takım olarak toplam ' + bestAttack.gf + ' golle zirvede';
+    }
+
+    var nextMatch = matches.find(function(m) { return !m.played; });
+    var nextLabel = 'Sezon Tamamlandı';
+    if (nextMatch) {
+      var nh = teamStats[nextMatch.home_id];
+      var na = teamStats[nextMatch.away_id];
+      nextLabel = 'Sıradaki: ' + (nh ? nh.name : '?') + ' vs ' + (na ? na.name : '?') + ' (H' + (nextMatch.week || 1) + ')';
+    }
+
+    var wrap = existing || document.createElement('div');
+    wrap.id = 'krdHomeRadarWrap';
+    wrap.innerHTML =
+      '<div class="krd-radar-head">' +
+        '<div class="krd-radar-title">📡 LİG KOMUTA RADARI & VİTRİN</div>' +
+        '<div class="krd-radar-live"><span class="krd-radar-live-dot"></span><span>' + escH(nextLabel) + '</span></div>' +
+      '</div>' +
+      '<div class="krd-stats-strip">' +
+        '<div class="krd-stat-pill">' +
+          '<div class="krd-stat-lbl">⚽ Toplam Gol</div>' +
+          '<div class="krd-stat-val">' + totalGoals + ' Gol</div>' +
+          '<div class="krd-stat-sub">' + played.length + ' maç oynandı</div>' +
+        '</div>' +
+        '<div class="krd-stat-pill">' +
+          '<div class="krd-stat-lbl">📈 Gol Ortalaması</div>' +
+          '<div class="krd-stat-val">' + avgGoals + ' / Maç</div>' +
+          '<div class="krd-stat-sub">Yüksek tempo</div>' +
+        '</div>' +
+        '<div class="krd-stat-pill">' +
+          '<div class="krd-stat-lbl">🔥 En Golcü Takım</div>' +
+          '<div class="krd-stat-val">' + escH(bestAttack ? bestAttack.name : '-') + '</div>' +
+          '<div class="krd-stat-sub">' + (bestAttack ? bestAttack.gf + ' gol attı' : '-') + '</div>' +
+        '</div>' +
+        '<div class="krd-stat-pill">' +
+          '<div class="krd-stat-lbl">🛡️ En Sağlam Savunma</div>' +
+          '<div class="krd-stat-val">' + escH(bestDefense ? bestDefense.name : '-') + '</div>' +
+          '<div class="krd-stat-sub">' + (bestDefense ? bestDefense.ga + ' gol yedi' : '-') + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="krd-vitrin-grid">' +
+        '<div class="krd-vitrin-card">' +
+          '<div class="krd-vitrin-badge">🏅 HAFTANIN TAKIMI</div>' +
+          '<div class="krd-vitrin-main">' + escH(teamOfWeekName) + '</div>' +
+          '<div class="krd-vitrin-desc">' + escH(teamOfWeekSub) + '</div>' +
+        '</div>' +
+        '<div class="krd-vitrin-card scorer">' +
+          '<div class="krd-vitrin-badge">👑 GOL KRALI VİTRİNİ</div>' +
+          '<div class="krd-vitrin-main">' + escH(topScorerName) + '</div>' +
+          '<div class="krd-vitrin-desc">' + escH(topScorerSub) + '</div>' +
+        '</div>' +
+      '</div>';
+
+    if (!existing) {
+      var anchor = app.querySelector('.tabs') || app.querySelector('.sh') || app.firstChild;
+      if (anchor && anchor.parentNode === app) {
+        app.insertBefore(wrap, anchor);
+      } else {
+        app.prepend(wrap);
+      }
+    }
+  }
+
+  renderHomeRadar();
+  setInterval(renderHomeRadar, 2000);
+  window.addEventListener('hashchange', renderHomeRadar);
 })();
 </script>
 </body></html>
