@@ -782,7 +782,8 @@
       }
     });
     let box = document.getElementById('krdMasterAdmBox');
-    if (!isMaster) {
+    const showMasterBox = isMaster && (typeof tab === 'undefined' || tab === 's');
+    if (!showMasterBox) {
       if (box) box.style.display = 'none';
       return;
     }
