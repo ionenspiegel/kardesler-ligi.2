@@ -3538,11 +3538,13 @@ async function enableAdminDevicePush(enable){
       alert('Bildirim izni verilmedi. Tarayıcı ayarlarından bildirimlere izin verin.');
       return;
     }
+    await navigator.serviceWorker.register('/sw.js');
     const reg = await navigator.serviceWorker.ready;
-    const vk = await api('GET','/api/push/vapid');
-    if(!vk || !vk.key){ alert('Sunucu bildirim anahtarı bulunamadı.'); return; }
-    const pad = '='.repeat((4 - vk.key.length % 4) % 4);
-    const b64 = (vk.key + pad).replace(/-/g,'+').replace(/_/g,'/');
+    const vk = await api('GET','/api/push/key');
+    const pubKey = vk && (vk.publicKey || vk.key);
+    if(!pubKey){ alert('Sunucu bildirim anahtarı bulunamadı.'); return; }
+    const pad = '='.repeat((4 - pubKey.length % 4) % 4);
+    const b64 = (pubKey + pad).replace(/-/g,'+').replace(/_/g,'/');
     const raw = atob(b64);
     const arr = new Uint8Array(raw.length);
     for(let i=0;i<raw.length;i++) arr[i]=raw.charCodeAt(i);
