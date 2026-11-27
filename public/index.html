@@ -2171,6 +2171,256 @@ body, button, input, select, textarea {
 }
 #krdMusicTitle { cursor: pointer; }
 </style>
+<style id="krd-cyber-admin-css">
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&display=swap');
+
+body.krd-cyber-admin {
+  background: radial-gradient(circle at 50% 0%, #071912 0%, #030706 58%, #010302 100%) !important;
+  color: #d1fae5 !important;
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace !important;
+  position: relative;
+}
+
+/* Arka plan siber izgarasi */
+body.krd-cyber-admin::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(16, 185, 129, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 185, 129, 0.045) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Hafif CRT tarama cizgisi efekti */
+body.krd-cyber-admin::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 255, 136, 0.015) 0px,
+    rgba(0, 255, 136, 0.015) 1px,
+    transparent 2px,
+    transparent 4px
+  );
+}
+
+#krdCyberMatrixCanvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.22;
+}
+
+body.krd-cyber-admin #app,
+body.krd-cyber-admin header,
+body.krd-cyber-admin .wrap {
+  position: relative;
+  z-index: 2;
+}
+
+/* Ust Siber Telemetri Bar */
+#krdCyberHudBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 14px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, rgba(4, 24, 17, 0.94), rgba(6, 32, 24, 0.92), rgba(4, 20, 26, 0.94));
+  border: 1px solid rgba(16, 185, 129, 0.42);
+  box-shadow: 0 0 22px rgba(16, 185, 129, 0.14), inset 0 0 12px rgba(16, 185, 129, 0.08);
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: #6ee7b7;
+}
+
+#krdCyberHudBar .hud-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: #00ff88;
+}
+
+#krdCyberHudBar .hud-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00ff88;
+  box-shadow: 0 0 10px #00ff88;
+  animation: krdCyberPulse 1.6s infinite ease-in-out;
+}
+
+#krdCyberHudBar .hud-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+#krdCyberHudBar .hud-tag {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  color: #a7f3d0;
+  font-size: 10.5px;
+}
+
+@keyframes krdCyberPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.8); }
+}
+
+/* Kartlar ve Terminal Kutulari */
+body.krd-cyber-admin .card,
+body.krd-cyber-admin #krdMasterAdmBox,
+body.krd-cyber-admin #krdAdminMasterBox,
+body.krd-cyber-admin #krdAdminChatMgr {
+  background: linear-gradient(160deg, rgba(6, 18, 14, 0.94), rgba(4, 12, 10, 0.96)) !important;
+  border: 1px solid rgba(16, 185, 129, 0.34) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(16, 185, 129, 0.16) !important;
+  position: relative;
+}
+
+/* Keskin HUD Kose Cizgileri */
+body.krd-cyber-admin .card::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 14px;
+  height: 14px;
+  border-top: 2px solid #00ff88;
+  border-left: 2px solid #00ff88;
+  border-top-left-radius: 10px;
+  pointer-events: none;
+}
+
+body.krd-cyber-admin .card::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 14px;
+  height: 14px;
+  border-bottom: 2px solid #06b6d4;
+  border-right: 2px solid #06b6d4;
+  border-bottom-right-radius: 10px;
+  pointer-events: none;
+}
+
+/* Basliklar ve Bolum Ayiricilar */
+body.krd-cyber-admin h1,
+body.krd-cyber-admin h2,
+body.krd-cyber-admin h3,
+body.krd-cyber-admin .sh h2 {
+  color: #00ff88 !important;
+  text-shadow: 0 0 12px rgba(0, 255, 136, 0.25);
+  letter-spacing: 0.03em;
+}
+
+body.krd-cyber-admin .sh {
+  border-left: 3px solid #00ff88 !important;
+  padding-left: 10px !important;
+}
+
+body.krd-cyber-admin .mut {
+  color: #6ee7b7 !important;
+  opacity: 0.82;
+}
+
+/* Input, Select ve Textarea */
+body.krd-cyber-admin input,
+body.krd-cyber-admin select,
+body.krd-cyber-admin textarea {
+  background: #020806 !important;
+  color: #ecfdf5 !important;
+  border: 1px solid rgba(16, 185, 129, 0.36) !important;
+  border-radius: 8px !important;
+  font-family: 'JetBrains Mono', Consolas, monospace !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+body.krd-cyber-admin input:focus,
+body.krd-cyber-admin select:focus,
+body.krd-cyber-admin textarea:focus {
+  outline: none !important;
+  border-color: #00ff88 !important;
+  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.18), 0 0 14px rgba(0, 255, 136, 0.2) !important;
+}
+
+/* Sekme Butonlari (.tabs) */
+body.krd-cyber-admin .tabs {
+  background: rgba(3, 12, 9, 0.88) !important;
+  border: 1px solid rgba(16, 185, 129, 0.26) !important;
+  padding: 6px !important;
+  border-radius: 11px !important;
+}
+
+body.krd-cyber-admin .tabs button {
+  background: rgba(6, 22, 16, 0.9) !important;
+  color: #a7f3d0 !important;
+  border: 1px solid rgba(16, 185, 129, 0.22) !important;
+  border-radius: 8px !important;
+  font-family: 'JetBrains Mono', Consolas, monospace !important;
+  font-size: 11.5px !important;
+  transition: all 0.18s ease !important;
+}
+
+body.krd-cyber-admin .tabs button:hover {
+  border-color: #00ff88 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.22) !important;
+}
+
+body.krd-cyber-admin .tabs button.on {
+  background: linear-gradient(135deg, #059669, #0d9488) !important;
+  color: #02140d !important;
+  font-weight: 800 !important;
+  border-color: #00ff88 !important;
+  box-shadow: 0 0 16px rgba(0, 255, 136, 0.38) !important;
+}
+
+/* Ana Butonlar */
+body.krd-cyber-admin button.pri {
+  background: linear-gradient(135deg, #059669, #10b981) !important;
+  color: #02120b !important;
+  font-weight: 800 !important;
+  border: 1px solid #34d399 !important;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.28) !important;
+}
+
+body.krd-cyber-admin button.pri:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.45) !important;
+}
+
+body.krd-cyber-admin button.dng {
+  background: linear-gradient(135deg, #be123c, #e11d48) !important;
+  color: #fff1f2 !important;
+  border: 1px solid #fb7185 !important;
+  box-shadow: 0 0 14px rgba(244, 63, 94, 0.25) !important;
+}
+
+/* Ust Lig & Mac Yonetimi / Duyuru Switch Bar */
+body.krd-cyber-admin #krdAdmSwitchBar {
+  background: rgba(3, 14, 10, 0.95) !important;
+  border: 1px solid rgba(0, 255, 136, 0.38) !important;
+  box-shadow: 0 0 24px rgba(0, 255, 136, 0.12) !important;
+}
+</style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
@@ -5955,6 +6205,111 @@ events.onmessage = async () => {
 
   syncProSuite();
   setInterval(syncProSuite, 450);
+})();
+</script>
+<script id="krd-cyber-admin-js">
+(function() {
+  var matrixTimer = null;
+
+  function isAdminRoute() {
+    var slug = (typeof S !== 'undefined' && S && S.settings && S.settings.admin_slug) ? S.settings.admin_slug : 'krd-kontrol';
+    var h = location.hash || '';
+    return h.startsWith('#/' + slug) || h.startsWith('#/yonetici-gizli');
+  }
+
+  function startMatrixRain() {
+    var canvas = document.getElementById('krdCyberMatrixCanvas');
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.id = 'krdCyberMatrixCanvas';
+      document.body.prepend(canvas);
+    }
+    if (matrixTimer) return;
+    var ctx = canvas.getContext('2d');
+    var chars = '01アイウエオカキクケコKRD$#@%*+=-<>[]{}';
+    var fontSize = 13;
+    var columns = 0;
+    var drops = [];
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      columns = Math.floor(canvas.width / fontSize);
+      drops = Array(columns).fill(1).map(function() { return Math.floor(Math.random() * 25); });
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    matrixTimer = setInterval(function() {
+      if (!document.body.classList.contains('krd-cyber-admin')) return;
+      ctx.fillStyle = 'rgba(3, 7, 6, 0.09)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#00ff88';
+      ctx.font = fontSize + 'px monospace';
+      for (var i = 0; i < drops.length; i++) {
+        var text = chars.charAt(Math.floor(Math.random() * chars.length));
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
+        drops[i]++;
+      }
+    }, 65);
+  }
+
+  function stopMatrixRain() {
+    if (matrixTimer) {
+      clearInterval(matrixTimer);
+      matrixTimer = null;
+    }
+    var canvas = document.getElementById('krdCyberMatrixCanvas');
+    if (canvas) canvas.remove();
+  }
+
+  function syncCyberAdminTheme() {
+    var active = isAdminRoute();
+    var app = document.getElementById('app');
+
+    if (!active) {
+      if (document.body.classList.contains('krd-cyber-admin')) {
+        document.body.classList.remove('krd-cyber-admin');
+      }
+      var oldHud = document.getElementById('krdCyberHudBar');
+      if (oldHud) oldHud.remove();
+      stopMatrixRain();
+      return;
+    }
+
+    if (!document.body.classList.contains('krd-cyber-admin')) {
+      document.body.classList.add('krd-cyber-admin');
+    }
+    startMatrixRain();
+
+    if (app) {
+      var hud = document.getElementById('krdCyberHudBar');
+      var isAuth = (typeof ME !== 'undefined' && ME && ME.admin);
+      var nowStr = new Date().toTimeString().slice(0, 8);
+      if (!hud) {
+        hud = document.createElement('div');
+        hud.id = 'krdCyberHudBar';
+        app.prepend(hud);
+      }
+      hud.innerHTML =
+        '<div class="hud-left">' +
+          '<span class="hud-dot"></span>' +
+          '<span>' + (isAuth ? 'root@krd-league:~/command-center#' : 'AUTH://GATEWAY-LOCKED') + '</span>' +
+        '</div>' +
+        '<div class="hud-tags">' +
+          '<span class="hud-tag">' + (isAuth ? 'ACCESS: GRANTED' : 'SEC: TLS-256') + '</span>' +
+          '<span class="hud-tag">NODE: TR-IST</span>' +
+          '<span class="hud-tag">SYS: ' + nowStr + '</span>' +
+        '</div>';
+    }
+  }
+
+  syncCyberAdminTheme();
+  setInterval(syncCyberAdminTheme, 1000);
+  window.addEventListener('hashchange', syncCyberAdminTheme);
 })();
 </script>
 </body></html>
