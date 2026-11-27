@@ -624,6 +624,35 @@ async function setSettingJson(key, val) {
     await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES($1,$2)`, key, JSON.stringify(val));
   });
 }
+async function sendAdminAuditEmail(user, action, ip) {
+  try {
+    const cfg = await getSettingJson('admin_email_notify', null);
+    if (!cfg || !cfg.enabled || !cfg.email) return;
+    const to = String(cfg.email).trim();
+    if (!to.includes('@')) return;
+    const subject = `[KRD Ligi Yönetici Bildirimi] ${user} - ${action}`;
+    const htmlBody = `<div style="font-family:sans-serif;background:#0f172a;color:#e2e8f0;padding:18px;border-radius:12px;">
+      <h3 style="color:#38bdf8;margin-top:0;">🛡️ KRD Ligi Yönetici Hareket Bildirimi</h3>
+      <p><b>Yönetici:</b> ${user}</p>
+      <p><b>İşlem:</b> ${action}</p>
+      <p><b>IP Adresi:</b> ${ip || '-'}</p>
+      <p><b>Zaman:</b> ${new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })}</p>
+    </div>`;
+    if (process.env.RESEND_API_KEY) {
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from: process.env.RESEND_FROM || 'KRD Ligi <onboarding@resend.dev>',
+          to: [to],
+          subject,
+          html: htmlBody
+        })
+      }).catch(() => {});
+    }
+  } catch {}
+}
+
 async function recordAuditLog(user, action, req) {
   try {
     const ip = String((req && req.headers && req.headers['x-forwarded-for']) || (req && req.socket && req.socket.remoteAddress) || '-').split(',')[0].trim();
@@ -632,6 +661,7 @@ async function recordAuditLog(user, action, req) {
     arr.unshift({ id: Date.now() + '_' + Math.random().toString(36).slice(2, 5), user: String(user || 'Bilinmiyor'), action, ip, time: new Date().toISOString() });
     if (arr.length > 80) arr.length = 80;
     await setSettingJson('admin_logs', arr);
+    sendAdminAuditEmail(user, action, ip).catch(() => {});
   } catch {}
 }
 
@@ -911,11 +941,13 @@ const u = new URL(req.url, 'http://x');
       const extra = await getSettingJson('extra_admins', []);
       const logs = await getSettingJson('admin_logs', []);
       const slugRow = await one(`SELECT v FROM ${SETTINGS} WHERE k='admin_slug'`);
+      const emailNotify = await getSettingJson('admin_email_notify', { enabled: false, email: '' });
       return send(res, 200, {
         primary: mainAdm.username || 'Yönetici',
         admins: (Array.isArray(extra) ? extra : []).map(x => ({ username: x.username, created: x.created || '' })),
         logs: Array.isArray(logs) ? logs : [],
-        adminSlug: (slugRow && slugRow.v) || 'krd-kontrol'
+        adminSlug: (slugRow && slugRow.v) || 'krd-kontrol',
+        emailNotify
       });
     }
     if (u.pathname === '/api/admin/users' && req.method === 'POST') {
@@ -963,6 +995,22 @@ const u = new URL(req.url, 'http://x');
       await recordAuditLog((getAdminUser(req) || 'Yönetici') + ' → ' + uname, '🗑️ Yöneticiyi Kaldırdı', req);
       return send(res, 200, { ok: 1 });
     }
+        if (u.pathname === '/api/admin/email-notify' && req.method === 'POST') {
+      if (!isAdmin(req)) throw E(401, 'Yönetici yetkisi gerekli');
+      const raw = await new Promise((resolve, reject) => {
+        let d = '';
+        req.on('data', ch => { d += ch; if (d.length > 4096) reject(E(413, 'Veri çok büyük')); });
+        req.on('end', () => resolve(d));
+        req.on('error', reject);
+      });
+      let b = {};
+      try { b = JSON.parse(raw || '{}'); } catch { throw E(400, 'Geçersiz JSON'); }
+      const email = clean(String(b.email || '')).trim().slice(0, 120);
+      const enabled = !!b.enabled && email.includes('@');
+      await setSettingJson('admin_email_notify', { enabled, email });
+      return send(res, 200, { ok: 1, enabled, email });
+    }
+
     if (u.pathname === '/api/admin/slug' && req.method === 'POST') {
       if (!isAdmin(req)) throw E(401, 'Yönetici yetkisi gerekli');
       const raw = await new Promise((resolve, reject) => {

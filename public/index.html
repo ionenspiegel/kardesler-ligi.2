@@ -2582,6 +2582,97 @@ body.krd-cyber-admin #krdAdmSwitchBar {
   color: #cbd5e1;
 }
 </style>
+<style id="krd-derby-form-css">
+.krd-derby-box {
+  margin-top: 9px;
+  padding: 11px 12px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.14), rgba(15, 23, 42, 0.94), rgba(245, 158, 11, 0.14));
+  border: 1px solid rgba(251, 113, 133, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.krd-derby-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #fda4af;
+  text-transform: uppercase;
+}
+.krd-derby-teams {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+.krd-derby-side {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 800;
+  font-size: 13.5px;
+  color: #fff;
+}
+.krd-derby-side.away {
+  justify-content: flex-end;
+  text-align: right;
+}
+.krd-derby-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px currentColor;
+}
+.krd-derby-vs {
+  padding: 3px 9px;
+  border-radius: 8px;
+  background: rgba(244, 63, 94, 0.22);
+  border: 1px solid rgba(251, 113, 133, 0.45);
+  color: #ffe4e6;
+  font-weight: 900;
+  font-size: 11.5px;
+}
+.krd-form-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.krd-fdot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 800;
+  color: #fff;
+}
+.krd-fdot.W { background: #10b981; }
+.krd-fdot.D { background: #f59e0b; color: #111827; }
+.krd-fdot.L { background: #ef4444; }
+.krd-streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 5px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  background: rgba(249, 115, 22, 0.2);
+  border: 1px solid rgba(251, 146, 60, 0.45);
+  color: #fdba74;
+}
+</style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
@@ -3428,6 +3519,17 @@ function genStrongPass(len=12){
   if(navigator.clipboard) navigator.clipboard.writeText(out).catch(()=>{});
   toast('Güçlü şifre oluşturuldu ve kopyalandı!');
 }
+async function saveAdminEmailNotify(e){
+  e.preventDefault();
+  const email=document.getElementById('admNotifyEmail').value.trim();
+  const enabled=document.getElementById('admNotifyEnabled').checked;
+  await act(async()=>{
+    await api('POST','/api/admin/email-notify',{email,enabled});
+    await loadAdminUsersData();
+    alert(enabled ? '✅ E-posta bildirimi aktif edildi: ' + email : 'ℹ️ E-posta bildirimi kapatıldı.');
+  });
+  return false;
+}
 async function addNewAdminUser(e){
   e.preventDefault();
   const u=document.getElementById('newAdmUser').value.trim();
@@ -3595,6 +3697,18 @@ function adminSecurityTab(){
           <span>🛡️ <b>${esc(a.username)}</b></span>
           <button type="button" class="dng" style="padding:3px 8px;font-size:11px" onclick="deleteAdminUser('${esc(a.username).replace(/'/g,'')}')">Kaldır</button>
         </div>`).join('')}
+      </div>
+    </form>
+
+    <form class="card" style="display:grid;gap:8px" onsubmit="return saveAdminEmailNotify(event)">
+      <b>📧 Yönetici İşlem & Giriş E-Posta Bildirimi</b>
+      <div class="mut" style="font-size:12px">Başka bir yönetici giriş yaptığında veya panelde değişiklik yapıldığında aşağıdaki adrese otomatik bildirim gönderilir (Render'da <code>RESEND_API_KEY</code> tanımlıysa anında mail atar).</div>
+      <div class="row">
+        <input id="admNotifyEmail" type="email" value="${esc((d.emailNotify&&d.emailNotify.email)||'')}" placeholder="ornek@gmail.com" style="flex:1;min-width:180px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">
+          <input id="admNotifyEnabled" type="checkbox" ${d.emailNotify&&d.emailNotify.enabled?'checked':''}> Aktif
+        </label>
+        <button class="pri">Kaydet</button>
       </div>
     </form>
 
@@ -6654,6 +6768,149 @@ events.onmessage = async () => {
   renderHomeRadar();
   setInterval(renderHomeRadar, 2000);
   window.addEventListener('hashchange', renderHomeRadar);
+})();
+</script>
+<script id="krd-derby-form-js">
+(function() {
+  function escD(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+    });
+  }
+
+  function computeTeamForms() {
+    var teams = (typeof S !== 'undefined' && S && S.teams) ? S.teams : [];
+    var matches = (typeof S !== 'undefined' && S && S.matches) ? S.matches : [];
+    var played = matches.filter(function(m) { return !!m.played; })
+      .slice()
+      .sort(function(a, b) { return (Number(a.week || 1) - Number(b.week || 1)) || (Number(a.id || 0) - Number(b.id || 0)); });
+
+    var map = {};
+    teams.forEach(function(t) {
+      map[t.id] = { id: t.id, name: t.name, color: t.color || '#38bdf8', pts: 0, gd: 0, gf: 0, form: [], winStreak: 0 };
+    });
+
+    played.forEach(function(m) {
+      var hg = Number(m.home_goals || 0);
+      var ag = Number(m.away_goals || 0);
+      var h = map[m.home_id];
+      var a = map[m.away_id];
+      if (h) {
+        h.gf += hg; h.gd += (hg - ag);
+        if (hg > ag) { h.pts += 3; h.form.push('W'); }
+        else if (hg === ag) { h.pts += 1; h.form.push('D'); }
+        else { h.form.push('L'); }
+      }
+      if (a) {
+        a.gf += ag; a.gd += (ag - hg);
+        if (ag > hg) { a.pts += 3; a.form.push('W'); }
+        else if (ag === hg) { a.pts += 1; a.form.push('D'); }
+        else { a.form.push('L'); }
+      }
+    });
+
+    Object.values(map).forEach(function(t) {
+      var st = 0;
+      for (var i = t.form.length - 1; i >= 0; i--) {
+        if (t.form[i] === 'W') st++;
+        else break;
+      }
+      t.winStreak = st;
+      t.last5 = t.form.slice(-5);
+    });
+
+    var ranked = Object.values(map).sort(function(a, b) {
+      return (b.pts - a.pts) || (b.gd - a.gd) || (b.gf - a.gf);
+    });
+    ranked.forEach(function(t, idx) { t.rank = idx + 1; });
+    return map;
+  }
+
+  function enhanceHomeDerbyAndForms() {
+    var slug = (typeof S !== 'undefined' && S && S.settings && S.settings.admin_slug) ? S.settings.admin_slug : 'krd-kontrol';
+    var h = location.hash || '';
+    var isAdmin = h.startsWith('#/' + slug) || h.startsWith('#/yonetici-gizli');
+    if (isAdmin || typeof S === 'undefined' || !S || !Array.isArray(S.teams)) return;
+
+    var formMap = computeTeamForms();
+
+    // 1. Haftanin Derbi Vitrini (Radar kutusunun icine en kritik oynanmamis maci ekle)
+    var radarWrap = document.getElementById('krdHomeRadarWrap');
+    if (radarWrap) {
+      var unplayed = (S.matches || []).filter(function(m) { return !m.played; });
+      var derbyBox = document.getElementById('krdDerbyShowcase');
+      if (unplayed.length) {
+        // Siralama toplami en kucuk (zirveye en yakin) maci sec
+        var bestMatch = unplayed.slice().sort(function(m1, m2) {
+          var r1 = ((formMap[m1.home_id] && formMap[m1.home_id].rank) || 99) + ((formMap[m1.away_id] && formMap[m1.away_id].rank) || 99);
+          var r2 = ((formMap[m2.home_id] && formMap[m2.home_id].rank) || 99) + ((formMap[m2.away_id] && formMap[m2.away_id].rank) || 99);
+          return r1 - r2;
+        })[0];
+
+        var ht = formMap[bestMatch.home_id];
+        var at = formMap[bestMatch.away_id];
+        if (ht && at) {
+          if (!derbyBox) {
+            derbyBox = document.createElement('div');
+            derbyBox.id = 'krdDerbyShowcase';
+            derbyBox.className = 'krd-derby-box';
+            radarWrap.appendChild(derbyBox);
+          }
+          derbyBox.innerHTML =
+            '<div class="krd-derby-top">' +
+              '<span>🔥 HAFTANIN DEV MAÇI (DERBİ VİTRİNİ)</span>' +
+              '<span>Hafta ' + (bestMatch.week || 1) + ' • #' + ht.rank + ' vs #' + at.rank + '</span>' +
+            '</div>' +
+            '<div class="krd-derby-teams">' +
+              '<div class="krd-derby-side">' +
+                '<span class="krd-derby-dot" style="color:' + escD(ht.color) + ';background:' + escD(ht.color) + '"></span>' +
+                '<span>' + escD(ht.name) + ' <small style="color:#94a3b8;font-weight:600">(#' + ht.rank + ')</small></span>' +
+              '</div>' +
+              '<div class="krd-derby-vs">VS</div>' +
+              '<div class="krd-derby-side away">' +
+                '<span><small style="color:#94a3b8;font-weight:600">(#' + at.rank + ')</small> ' + escD(at.name) + '</span>' +
+                '<span class="krd-derby-dot" style="color:' + escD(at.color) + ';background:' + escD(at.color) + '"></span>' +
+              '</div>' +
+            '</div>';
+        }
+      } else if (derbyBox) {
+        derbyBox.remove();
+      }
+    }
+
+    // 2. Puan tablosu satirlarina Son 5 Mac Formu (G-B-M) & Seri Rozeti ekle
+    var rows = document.querySelectorAll('table tbody tr');
+    rows.forEach(function(tr) {
+      if (tr.dataset.krdFormDone === '1') return;
+      var txt = tr.textContent || '';
+      var matchedTeam = Object.values(formMap).find(function(t) {
+        return t.name && txt.indexOf(t.name) !== -1;
+      });
+      if (!matchedTeam || !matchedTeam.last5 || !matchedTeam.last5.length) return;
+
+      var cells = tr.querySelectorAll('td');
+      var nameCell = cells[1] || cells[0];
+      if (!nameCell) return;
+
+      var dotsHtml = '<span class="krd-form-dots" title="Son 5 Maç Formu">' +
+        matchedTeam.last5.map(function(res) {
+          var lbl = res === 'W' ? 'G' : (res === 'D' ? 'B' : 'M');
+          return '<span class="krd-fdot ' + res + '">' + lbl + '</span>';
+        }).join('') +
+      '</span>';
+
+      var streakHtml = matchedTeam.winStreak >= 3
+        ? '<span class="krd-streak-badge" title="' + matchedTeam.winStreak + ' maç üst üste galibiyet">🔥 ' + matchedTeam.winStreak + ' Seri</span>'
+        : '';
+
+      nameCell.insertAdjacentHTML('beforeend', dotsHtml + streakHtml);
+      tr.dataset.krdFormDone = '1';
+    });
+  }
+
+  enhanceHomeDerbyAndForms();
+  setInterval(enhanceHomeDerbyAndForms, 1500);
+  window.addEventListener('hashchange', enhanceHomeDerbyAndForms);
 })();
 </script>
 </body></html>
