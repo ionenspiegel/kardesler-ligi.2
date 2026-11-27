@@ -3681,22 +3681,45 @@ function adminSecurityTab(){
     </form>
 
     <form class="card" style="display:grid;gap:8px" onsubmit="return addNewAdminUser(event)">
-      <b>👤 Yeni Yönetici Ekle & Şifre Oluştur</b>
+      <b>👤 Yeni Yönetici Ekle & Yetki Seç</b>
       <div class="row">
         <input id="newAdmUser" placeholder="Yönetici kullanıcı adı" required minlength="3" maxlength="24">
         <input id="newAdmPass" type="text" placeholder="Şifre" required minlength="4" maxlength="40">
         <button type="button" onclick="genStrongPass(12)">🎲 Şifre Oluştur</button>
         <button class="pri">➕ Ekle</button>
       </div>
-      <div style="margin-top:6px;display:grid;gap:6px">
-        <div style="font-size:12px;padding:6px 8px;background:rgba(34,197,94,0.12);border-radius:8px;display:flex;justify-content:space-between">
-          <span>👑 <b>${esc(d.primary)}</b> (Ana Kurucu Yönetici)</span>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;padding:8px;border-radius:8px;background:rgba(15,23,42,0.55);border:1px solid rgba(56,189,248,0.22);font-size:11.5px">
+        <span style="width:100%;color:#7dd3fc;font-weight:700">Verilecek Kontrol Yetkileri:</span>
+        ${[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['canli','🔴 Canlı (1-4)'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler/Görüntü'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki & Log']].map(([pk,pl])=>{
+          const defOn=['m','t','c','f','canli'].includes(pk);
+          return `<label style="display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:6px;background:rgba(30,41,59,0.7);cursor:pointer">
+            <input type="checkbox" class="new-adm-perm" value="${pk}" ${defOn?'checked':''}> ${pl}
+          </label>`;
+        }).join('')}
+      </div>
+      <div style="margin-top:6px;display:grid;gap:8px">
+        <div style="font-size:12px;padding:8px 10px;background:rgba(34,197,94,0.14);border:1px solid rgba(34,197,94,0.35);border-radius:8px;display:flex;justify-content:space-between">
+          <span>👑 <b>${esc(d.primary)}</b> (Ana Kurucu Yönetici — Tam Yetki)</span>
           <span class="mut" style="font-size:11px">Korumalı</span>
         </div>
-        ${(d.admins||[]).map(a=>`<div style="font-size:12px;padding:6px 8px;background:rgba(15,23,42,0.5);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
-          <span>🛡️ <b>${esc(a.username)}</b></span>
-          <button type="button" class="dng" style="padding:3px 8px;font-size:11px" onclick="deleteAdminUser('${esc(a.username).replace(/'/g,'')}')">Kaldır</button>
-        </div>`).join('')}
+        ${(d.admins||[]).map(a=>{
+          const uSafe=esc(a.username).replace(/'/g,'');
+          const pArr=Array.isArray(a.perms)?a.perms:['m','t','c','f','canli'];
+          return `<div style="font-size:12px;padding:8px 10px;background:rgba(15,23,42,0.6);border:1px solid rgba(148,163,184,0.2);border-radius:9px;display:grid;gap:6px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span>🛡️ <b>${esc(a.username)}</b></span>
+              <div style="display:flex;gap:6px">
+                <button type="button" class="pri" style="padding:3px 9px;font-size:11px" onclick="saveSubAdminPerms('${uSafe}')">💾 Yetkileri Kaydet</button>
+                <button type="button" class="dng" style="padding:3px 8px;font-size:11px" onclick="deleteAdminUser('${uSafe}')">Kaldır</button>
+              </div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:11px">
+              ${[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['canli','🔴 Canlı'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki']].map(([pk,pl])=>`<label style="display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:5px;background:rgba(30,41,59,0.75);cursor:pointer">
+                <input type="checkbox" class="sub-perm-${uSafe}" value="${pk}" ${pArr.includes(pk)?'checked':''}> ${pl}
+              </label>`).join('')}
+            </div>
+          </div>`;
+        }).join('')}
       </div>
     </form>
 
@@ -3726,7 +3749,11 @@ function adminSecurityTab(){
 
 function panel(){const weeks=[...new Set(S.matches.map(m=>m.week))].sort((a,b)=>a-b);if(!wk||!weeks.includes(wk))wk=+S.settings.week&&weeks.includes(+S.settings.week)?+S.settings.week:weeks[0]||1;
  const _topStats=adminStatsBar();
-const tabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler ve Görüntü'],['canli','🔴 Canlı (1-4)'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki & Log']];let c='';
+const allTabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler ve Görüntü'],['canli','🔴 Canlı (1-4)'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki & Log']];
+const allowedSet = (ME && ME.isPrimary === false && Array.isArray(ME.perms)) ? new Set(ME.perms) : null;
+const tabs = allowedSet ? allTabs.filter(([k]) => allowedSet.has(k)) : allTabs;
+if (tabs.length && !tabs.some(([k]) => k === tab)) { tab = tabs[0][0]; }
+let c='';
  if(tab==='canli')c=adminLiveTab();else if(tab==='yetki')c=adminSecurityTab();else if(tab==='bildirim')c=adminNotifyTab();else if(tab==='kupa')c=adminExtrasTab();else if(tab==='m')c=`<div class="tabs">${weeks.map(w=>`<button class="${w===wk?'on':''}" onclick="wk=${w};render()">H${w}</button>`).join('')}</div>${(()=>{const wm=S.matches.filter(m=>m.week===wk);const unp=wm.filter(m=>!m.played);const nextW=weeks.find(w=>w>wk);let bar='';if(wm.length&&!unp.length&&nextW&&+S.settings.week===wk){bar=`<div class="card row" style="justify-content:space-between;margin-bottom:10px;border-color:rgba(34,197,94,0.4)"><span>✅ H${wk} maçlarının tamamı oynandı!</span><button type="button" class="pri" onclick="advanceLeagueWeek(${nextW})">⏭ Haftayı H${nextW} Yap</button></div>`;}return bar;})()}${S.matches.some(m=>m.week===wk)?`<div class="grid">${S.matches.filter(m=>m.week===wk).map(m=>mcard(m,1)).join('')}</div>`:'<div class="card empty">Bu haftada maç yok. Aşağıdan ekle ya da fikstür oluştur.</div>'}
  <div class="sh"><h2>Maç Ekle</h2></div><form class="card row" onsubmit="return addM(event)"><input name="w" type="number" min="1" value="${wk}" title="Hafta"><select aria-label="Secim listesi" name="h">${S.teams.map(t=>`<option value="${t.id}">${esc(t.name)}`).join('')}</select><select aria-label="Secim listesi" name="a">${S.teams.map((t,i)=>`<option value="${t.id}" ${i==1?'selected':''}>${esc(t.name)}`).join('')}</select><button class="pri">Ekle</button></form>${goalModal()}`;
  if(tab==='t')c=`<form class="card row" onsubmit="return addT(event)"><input name="n" placeholder="Takım adı" required maxlength="40"><input name="s" placeholder="Kısa ad" maxlength="4" style="max-width:100px"><input name="c" type="color" value="#22c55e"><button class="pri">Takım ekle</button></form><div class="grid" style="margin-top:12px">${S.teams.map(t=>`<form class="card row" onsubmit="return editT(event,${t.id})">${badge(t)}<input name="n" value="${esc(t.name)}" required maxlength="40"><input name="s" value="${esc(t.short||'')}" maxlength="4" style="max-width:80px"><input name="c" type="color" value="${esc(t.color)}"><button>💾</button><button type="button" class="dng" onclick="delT(${t.id},'${esc(t.name).replace(/'/g,'')}')">🗑</button></form>`).join('')||'<div class="card empty">Takım yok.</div>'}</div>`;

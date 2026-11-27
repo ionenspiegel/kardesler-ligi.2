@@ -100,6 +100,25 @@ const getAdminUser = req => {
   return null;
 };
 const isAdmin = req => !!getAdminUser(req);
+const DEFAULT_SUB_PERMS = ['m', 't', 'c', 'f', 'canli'];
+const ALL_ADMIN_PERMS = ['m', 't', 'c', 'f', 's', 'kupa', 'canli', 'bildirim', 'yetki'];
+
+async function getAdminSessionInfo(req) {
+  const uname = getAdminUser(req);
+  if (!uname) return null;
+  const aRow = await one(`SELECT username FROM ${ADMIN} WHERE id=1`);
+  const primaryName = (aRow && aRow.username) ? String(aRow.username) : 'yusuf';
+  const isPrimary = uname.toLowerCase() === primaryName.toLowerCase() || uname.toLowerCase() === 'yusuf';
+  if (isPrimary) {
+    return { admin: true, username: uname, isPrimary: true, perms: ALL_ADMIN_PERMS.slice() };
+  }
+  const extra = await getSettingJson('extra_admins', []);
+  const found = (Array.isArray(extra) ? extra : []).find(x => String(x.username || '').toLowerCase() === uname.toLowerCase());
+  if (!found) return null; // Kaldirilmis yonetici aninda duser
+  const perms = Array.isArray(found.perms) ? found.perms : DEFAULT_SUB_PERMS.slice();
+  return { admin: true, username: found.username, isPrimary: false, perms };
+}
+
 const needsSetup = async () => !(await one(`SELECT 1 x FROM ${ADMIN}`));
 let setupCode = null;
 const fails = new Map();
@@ -272,7 +291,7 @@ async function api(req, res, u) {
     const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => /.(mp3|ogg|wav|m4a)$/i.test(f)).map(f => ({ name: f.replace(/.[^.]+$/, ''), url: '/music/' + encodeURIComponent(f) })) : [];
     return send(res, 200, { tracks: files });
   }
-  if (M === 'GET' && P === '/api/me') { const admU = getAdminUser(req); return send(res, 200, { admin: !!admU, username: admU || '', needsSetup: await needsSetup() }); }
+  if (M === 'GET' && P === '/api/me') { const info = await getAdminSessionInfo(req); return send(res, 200, { admin: !!info, username: info ? info.username : '', isPrimary: info ? info.isPrimary : false, perms: info ? info.perms : [], needsSetup: await needsSetup() }); }
   if (M !== 'GET' && req.headers['x-kl'] !== '1') throw E(403, 'Geçersiz istek');
   if (M === 'POST' && P === '/api/admin/setup') {
     const b = await body(req); if (!(await needsSetup()) || !setupCode) throw E(409, 'Yönetici zaten oluşturulmuş');
@@ -303,7 +322,7 @@ async function api(req, res, u) {
     }
     fails.delete(ip);
     if (typeof recordAuditLog === 'function') await recordAuditLog(matchedUser, '🟢 Yönetici Girişi Yaptı', req);
-    return send(res, 200, { ok: 1, username: matchedUser }, { 'Set-Cookie': cookie(mkToken(matchedUser), 43200) });
+    const isPrimLogin = a && String(matchedUser).toLowerCase() === String(a.username || '').toLowerCase(); return send(res, 200, { ok: 1, username: matchedUser, isPrimary: !!isPrimLogin }, { 'Set-Cookie': cookie(mkToken(matchedUser), 43200) });
   }
   if (M === 'POST' && P === '/api/admin/logout') {
     const outUser = getAdminUser(req) || 'Yönetici'; if (typeof recordAuditLog === 'function') await recordAuditLog(outUser, '🔴 Oturumu Kapattı (Çıkış)', req);
@@ -311,7 +330,23 @@ async function api(req, res, u) {
   }
   // === KRD_HARD_AUTH_GUARD ===
   if ((M !== 'GET' && P === '/api/krd-extras') || P.startsWith('/api/admin/')) {
-    if (!isAdmin(req)) throw E(401, 'Yönetici girişi gerekli');
+    const sess = await getAdminSessionInfo(req);
+    if (!sess) throw E(401, 'Yönetici girişi gerekli');
+    if (!sess.isPrimary) {
+      const pSet = new Set(sess.perms || []);
+      const needPerm = (
+        P.startsWith('/api/admin/users') || P === '/api/admin/slug' || P === '/api/admin/email-notify' ? 'yetki' :
+        P === '/api/admin/announce' ? 'bildirim' :
+        P === '/api/admin/settings' ? 's' :
+        P === '/api/krd-extras' || P === '/api/admin/krd-pro5-save' || P === '/api/admin/extras' ? 'kupa' :
+        P.startsWith('/api/admin/penalties') ? 'c' :
+        P.startsWith('/api/admin/teams') ? 't' :
+        P.startsWith('/api/admin/matches') ? 'm' : null
+      );
+      if (needPerm && !pSet.has(needPerm)) {
+        throw E(403, 'Bu işlem için ana yönetici (Yusuf) tarafından verilmiş yetkiniz yok.');
+      }
+    }
     if (M !== 'GET' && P !== '/api/admin/login' && P !== '/api/admin/logout' && P !== '/api/admin/users' && P !== '/api/admin/users/delete' && typeof recordAuditLog === 'function') {
       const actor = getAdminUser(req) || 'Yönetici';
       const actionMap = {
@@ -944,7 +979,7 @@ const u = new URL(req.url, 'http://x');
       const emailNotify = await getSettingJson('admin_email_notify', { enabled: false, email: '' });
       return send(res, 200, {
         primary: mainAdm.username || 'Yönetici',
-        admins: (Array.isArray(extra) ? extra : []).map(x => ({ username: x.username, created: x.created || '' })),
+        admins: (Array.isArray(extra) ? extra : []).map(x => ({ username: x.username, created: x.created || '', perms: Array.isArray(x.perms) ? x.perms : DEFAULT_SUB_PERMS.slice() })),
         logs: Array.isArray(logs) ? logs : [],
         adminSlug: (slugRow && slugRow.v) || 'krd-kontrol',
         emailNotify
@@ -971,13 +1006,36 @@ const u = new URL(req.url, 'http://x');
 
       const extra = await getSettingJson('extra_admins', []);
       const filtered = (Array.isArray(extra) ? extra : []).filter(x => x.username.toLowerCase() !== uname.toLowerCase());
+      const rawPerms = Array.isArray(b.perms) ? b.perms.filter(k => ALL_ADMIN_PERMS.includes(k)) : DEFAULT_SUB_PERMS.slice();
       const salt = crypto.randomBytes(16).toString('hex');
       const hash = hashPw(pass, salt);
-      filtered.push({ username: uname, salt, hash, created: new Date().toISOString() });
+      filtered.push({ username: uname, salt, hash, perms: rawPerms, created: new Date().toISOString() });
       await setSettingJson('extra_admins', filtered);
       await recordAuditLog((getAdminUser(req) || 'Yönetici') + ' → ' + uname, '➕ Yeni Yönetici Ekledi', req);
       return send(res, 200, { ok: 1 });
     }
+        if (u.pathname === '/api/admin/users/perms' && req.method === 'POST') {
+      const sess = await getAdminSessionInfo(req);
+      if (!sess || !sess.isPrimary) throw E(403, 'Sadece ana kurucu yönetici yetkileri değiştirebilir');
+      const raw = await new Promise((resolve, reject) => {
+        let d = '';
+        req.on('data', ch => { d += ch; if (d.length > 4096) reject(E(413, 'Veri çok büyük')); });
+        req.on('end', () => resolve(d));
+        req.on('error', reject);
+      });
+      let b = {};
+      try { b = JSON.parse(raw || '{}'); } catch { throw E(400, 'Geçersiz JSON'); }
+      const uname = clean(String(b.username || '')).trim();
+      const perms = Array.isArray(b.perms) ? b.perms.filter(k => ALL_ADMIN_PERMS.includes(k)) : DEFAULT_SUB_PERMS.slice();
+      const extra = await getSettingJson('extra_admins', []);
+      const updated = (Array.isArray(extra) ? extra : []).map(x =>
+        String(x.username || '').toLowerCase() === uname.toLowerCase() ? { ...x, perms } : x
+      );
+      await setSettingJson('extra_admins', updated);
+      await recordAuditLog(sess.username + ' → ' + uname, '🛡️ Yönetici Yetkileri Güncellendi', req);
+      return send(res, 200, { ok: 1 });
+    }
+
     if (u.pathname === '/api/admin/users/delete' && req.method === 'POST') {
       if (!isAdmin(req)) throw E(401, 'Yönetici yetkisi gerekli');
       const raw = await new Promise((resolve, reject) => {
