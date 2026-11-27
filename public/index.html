@@ -2037,6 +2037,80 @@ body, button, input, select, textarea {
   transform: scale(0.95) !important;
 }
 </style>
+<style id="krd-pro-suite-css">
+@keyframes krdCrownBob {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-3px) rotate(4deg); }
+}
+@keyframes krdMovePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.16); }
+}
+@keyframes krdGoalZoom {
+  0% { transform: scale(0.72); opacity: 0; }
+  25% { transform: scale(1.06); opacity: 1; }
+  85% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.08); opacity: 0; }
+}
+
+/* Gelismis SVG Stadyum GOL! Kutlama Ekrani */
+#goal {
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20400%20220%22%20fill%3D%22none%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22gBurst%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fde68a%22%20stop-opacity%3D%220.45%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2255%25%22%20stop-color%3D%22%2310b981%22%20stop-opacity%3D%220.22%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23060b19%22%20stop-opacity%3D%220%22%2F%3E%0A%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22400%22%20height%3D%22220%22%20fill%3D%22url(%23gBurst)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22200%22%20cy%3D%22110%22%20r%3D%2285%22%20stroke%3D%22%23fbbf24%22%20stroke-opacity%3D%220.35%22%20stroke-width%3D%222%22%20stroke-dasharray%3D%228%206%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22200%22%20cy%3D%22110%22%20r%3D%2256%22%20stroke%3D%22%2334d399%22%20stroke-opacity%3D%220.45%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M90%20165%20H310%20L290%20120%20H110%20Z%22%20stroke%3D%22%23ffffff%22%20stroke-opacity%3D%220.25%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22135%22%20cy%3D%2260%22%20r%3D%224%22%20fill%3D%22%23fbbf24%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22268%22%20cy%3D%2254%22%20r%3D%224.5%22%20fill%3D%22%2334d399%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22285%22%20cy%3D%22145%22%20r%3D%223.5%22%20fill%3D%22%2338bdf8%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22112%22%20cy%3D%22140%22%20r%3D%224%22%20fill%3D%22%23f43f5e%22%2F%3E%0A%3C%2Fsvg%3E"), radial-gradient(circle, rgba(16,185,129,0.32), rgba(6,11,25,0.94)) !important;
+  background-size: cover, cover !important;
+  background-position: center, center !important;
+  text-shadow: 0 4px 28px rgba(251, 191, 36, 0.75) !important;
+  letter-spacing: 0.08em !important;
+}
+#goal.show, #goal[style*="display: flex"], #goal[style*="display:flex"] {
+  animation: krdGoalZoom 1.8s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+}
+
+/* 1. Sira Altin Tac Animasyonu & Siralama Degisim Nabzi */
+.krd-leader-crown {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 13px;
+  animation: krdCrownBob 2.2s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.7));
+}
+#app .mv.up, #app .mv.dn {
+  display: inline-block;
+  animation: krdMovePulse 2s ease-in-out infinite;
+}
+
+/* Tahmin Oy Butonlari Altinda Yuzde Doluluk Bari */
+.krd-vote-bar {
+  display: block;
+  height: 3px;
+  margin-top: 5px;
+  border-radius: 99px;
+  background: rgba(148, 163, 184, 0.18);
+  overflow: hidden;
+}
+.krd-vote-bar > i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #10b981, #38bdf8);
+  transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Ozel Yonetici Duyuru Bandi */
+#krdAdminBanner {
+  margin: 0 auto 10px auto;
+  padding: 9px 14px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, rgba(14, 165, 233, 0.22), rgba(16, 185, 129, 0.22));
+  border: 1px solid rgba(56, 189, 248, 0.42);
+  color: #f8fafc;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 6px 20px rgba(2, 6, 23, 0.35);
+}
+</style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
@@ -5712,6 +5786,121 @@ events.onmessage = async () => {
 
   injectWithdrawCardIfNeeded();
   setInterval(injectWithdrawCardIfNeeded, 500);
+})();
+</script>
+<script id="krd-pro-suite-js">
+(function() {
+  // Tek tikla tam JSON yedek indirme
+  window.krdDownloadBackupJson = function() {
+    if (!window.S) { alert('Lig verisi henüz yüklenmedi.'); return; }
+    var payload = {
+      exported_at: new Date().toISOString(),
+      settings: S.settings || {},
+      teams: S.teams || [],
+      matches: S.matches || [],
+      goals: S.goals || []
+    };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    var d = new Date().toISOString().slice(0, 10);
+    a.href = URL.createObjectURL(blob);
+    a.download = 'kardesler-ligi-yedek-' + d + '.json';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  };
+
+  // Yonetici duyuru bandini kaydetme / temizleme
+  window.krdSaveAdminBanner = function(clear) {
+    var inp = document.getElementById('krdBannerInp');
+    if (clear) {
+      localStorage.removeItem('krd_custom_banner');
+      if (inp) inp.value = '';
+    } else if (inp) {
+      var val = inp.value.trim();
+      if (val) localStorage.setItem('krd_custom_banner', val);
+      else localStorage.removeItem('krd_custom_banner');
+    }
+    syncProSuite();
+  };
+
+  function syncProSuite() {
+    var app = document.getElementById('app');
+    if (!app) return;
+
+    // 1. Puan tablosu 1. siraya altin tac ikonu ekle
+    var firstTeamLink = app.querySelector('.card.tw tbody tr:first-child .tlink');
+    if (firstTeamLink && !firstTeamLink.querySelector('.krd-leader-crown')) {
+      var cr = document.createElement('span');
+      cr.className = 'krd-leader-crown';
+      cr.textContent = '👑';
+      firstTeamLink.appendChild(cr);
+    }
+
+    // 2. Siradaki maclardaki oy butonlarina animasyonlu yuzde bari ekle
+    app.querySelectorAll('button').forEach(function(btn) {
+      var m = (btn.textContent || '').match(/(%(d+))/);
+      if (m) {
+        var pct = Math.min(100, Math.max(0, Number(m[1])));
+        var bar = btn.querySelector('.krd-vote-bar');
+        if (!bar) {
+          bar = document.createElement('span');
+          bar.className = 'krd-vote-bar';
+          bar.innerHTML = '<i style="width:' + pct + '%"></i>';
+          btn.appendChild(bar);
+        } else {
+          var fill = bar.querySelector('i');
+          if (fill && fill.style.width !== pct + '%') fill.style.width = pct + '%';
+        }
+      }
+    });
+
+    // 3. Yonetici Duyuru Bandini ana sayfa ustunde goster
+    var bannerText = localStorage.getItem('krd_custom_banner') || '';
+    var existingBanner = document.getElementById('krdAdminBanner');
+    if (bannerText) {
+      if (!existingBanner) {
+        var b = document.createElement('div');
+        b.id = 'krdAdminBanner';
+        b.innerHTML = '<span>📢</span><span></span>';
+        app.insertBefore(b, app.firstChild);
+        existingBanner = b;
+      }
+      if (existingBanner.children[1].textContent !== bannerText) {
+        existingBanner.children[1].textContent = bannerText;
+      }
+    } else if (existingBanner) {
+      existingBanner.remove();
+    }
+
+    // 4. Yonetim Paneli aciksa Duyuru + Tek Tikla JSON Yedek araclarini ekle
+    var isPanelView =
+      location.hash.indexOf('yonetici') !== -1 ||
+      location.hash.indexOf('krd-kontrol') !== -1 ||
+      /Özel Spor Gazetesi Manşeti|Tahmin Kralı & Oy Yönetimi|Eklemeler ve Görüntü Ayarları/i.test(app.textContent || '');
+
+    if (isPanelView && !document.getElementById('krdAdminToolsBox')) {
+      var toolBox = document.createElement('div');
+      toolBox.id = 'krdAdminToolsBox';
+      toolBox.className = 'card';
+      toolBox.style.cssText = 'border:1px solid rgba(56,189,248,0.4)!important;margin-bottom:14px;';
+      toolBox.innerHTML =
+        '<h3 style="margin:0 0 8px 0;color:#7dd3fc;">🛠️ Hızlı Yönetim Araçları (Duyuru & Yedek)</h3>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">' +
+        '<input id="krdBannerInp" type="text" maxlength="140" placeholder="Ana sayfa üst duyuru bandı yaz..." value="' + bannerText.replace(/"/g, '&quot;') + '" style="flex:1;min-width:190px;">' +
+        '<button type="button" onclick="window.krdSaveAdminBanner(false)" style="background:#0284c7;color:#fff;border:none;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer;">📢 Yayınla</button>' +
+        '<button type="button" onclick="window.krdSaveAdminBanner(true)" style="background:rgba(148,163,184,0.2);color:#e2e8f0;border:none;padding:8px 10px;border-radius:10px;cursor:pointer;">Temizle</button>' +
+        '</div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
+        '<button type="button" onclick="window.krdDownloadBackupJson()" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;padding:9px 14px;border-radius:10px;font-weight:700;cursor:pointer;">💾 Tüm Lig Verisini Yedekle (.JSON)</button>' +
+        '<span class="mut" style="font-size:12px;">Takımlar, skorlar ve ayarlar tek dosyada iner.</span>' +
+        '</div>';
+      app.insertBefore(toolBox, app.firstChild);
+    }
+  }
+
+  syncProSuite();
+  setInterval(syncProSuite, 750);
 })();
 </script>
 </body></html>
