@@ -3201,35 +3201,28 @@ function adminSecurityTab(){
 
 function panel(){const weeks=[...new Set(S.matches.map(m=>m.week))].sort((a,b)=>a-b);if(!wk||!weeks.includes(wk))wk=+S.settings.week&&weeks.includes(+S.settings.week)?+S.settings.week:weeks[0]||1;
  const _topStats=adminStatsBar();
-const _bannerVal=(localStorage.getItem('krd_custom_banner')||'').replace(/"/g,'&quot;');
-const _withdrawOpts=(S.teams||[]).map(t=>{
-  const rem=(S.matches||[]).filter(m=>!m.played&&(Number(m.home_id)===Number(t.id)||Number(m.away_id)===Number(t.id))).length;
-  return `<option value="${t.id}">${esc(t.name)} (Kalan: ${rem} maç)</option>`;
-}).join('');
-const _krdMasterToolsHtml=`
-<div id="krdAdminMasterBox" class="card" style="border:1px solid rgba(244,63,94,0.45)!important;background:linear-gradient(135deg,rgba(136,19,55,0.25),rgba(15,23,42,0.96))!important;margin-bottom:14px;">
-  <h3 style="margin:0 0 6px 0;color:#fda4af;">🚫 Tek Tuşla Ligden Çekme (Kalan Maçları 3-0 Hükmen Yap)</h3>
-  <p class="mut" style="font-size:12.5px;margin:0 0 10px 0;">Takımı silmeden geçmiş maç ve gollerini korur; kalan tüm maçlarını rakiplerine otomatik <b>3-0 hükmen</b> yazar.</p>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid rgba(148,163,184,0.18);">
-    <select id="krdWithdrawTeamSel" style="flex:1;min-width:180px;">${_withdrawOpts}</select>
-    <button type="button" id="krdWithdrawBtn" onclick="window.krdWithdrawTeamForfeit()" style="background:linear-gradient(135deg,#e11d48,#be123c);color:#fff;border:none;padding:9px 14px;border-radius:10px;font-weight:700;cursor:pointer;">🚫 Kalan Maçları 3-0 Hükmen Yap</button>
-  </div>
-  <h3 style="margin:0 0 8px 0;color:#7dd3fc;">🛠️ Hızlı Yönetim Araçları (Duyuru & Yedek)</h3>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-    <input id="krdBannerInp" type="text" maxlength="140" placeholder="Ana sayfa üst duyuru bandı yaz..." value="${_bannerVal}" style="flex:1;min-width:190px;">
-    <button type="button" onclick="window.krdSaveAdminBanner(false)" style="background:#0284c7;color:#fff;border:none;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer;">📢 Yayınla</button>
-    <button type="button" onclick="window.krdSaveAdminBanner(true)" style="background:rgba(148,163,184,0.2);color:#e2e8f0;border:none;padding:8px 10px;border-radius:10px;cursor:pointer;">Temizle</button>
-  </div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-    <button type="button" onclick="window.krdDownloadBackupJson()" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;padding:9px 14px;border-radius:10px;font-weight:700;cursor:pointer;">💾 Tüm Lig Verisini Yedekle (.JSON)</button>
-    <span class="mut" style="font-size:12px;">Takımlar, skorlar ve ayarlar tek dosyada iner.</span>
-  </div>
-</div>`;const tabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler ve Görüntü'],['canli','🔴 Canlı (1-4)'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki & Log']];let c='';
+const tabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler ve Görüntü'],['canli','🔴 Canlı (1-4)'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki & Log']];let c='';
  if(tab==='canli')c=adminLiveTab();else if(tab==='yetki')c=adminSecurityTab();else if(tab==='bildirim')c=adminNotifyTab();else if(tab==='kupa')c=adminExtrasTab();else if(tab==='m')c=`<div class="tabs">${weeks.map(w=>`<button class="${w===wk?'on':''}" onclick="wk=${w};render()">H${w}</button>`).join('')}</div>${(()=>{const wm=S.matches.filter(m=>m.week===wk);const unp=wm.filter(m=>!m.played);const nextW=weeks.find(w=>w>wk);let bar='';if(wm.length&&!unp.length&&nextW&&+S.settings.week===wk){bar=`<div class="card row" style="justify-content:space-between;margin-bottom:10px;border-color:rgba(34,197,94,0.4)"><span>✅ H${wk} maçlarının tamamı oynandı!</span><button type="button" class="pri" onclick="advanceLeagueWeek(${nextW})">⏭ Haftayı H${nextW} Yap</button></div>`;}return bar;})()}${S.matches.some(m=>m.week===wk)?`<div class="grid">${S.matches.filter(m=>m.week===wk).map(m=>mcard(m,1)).join('')}</div>`:'<div class="card empty">Bu haftada maç yok. Aşağıdan ekle ya da fikstür oluştur.</div>'}
  <div class="sh"><h2>Maç Ekle</h2></div><form class="card row" onsubmit="return addM(event)"><input name="w" type="number" min="1" value="${wk}" title="Hafta"><select aria-label="Secim listesi" name="h">${S.teams.map(t=>`<option value="${t.id}">${esc(t.name)}`).join('')}</select><select aria-label="Secim listesi" name="a">${S.teams.map((t,i)=>`<option value="${t.id}" ${i==1?'selected':''}>${esc(t.name)}`).join('')}</select><button class="pri">Ekle</button></form>${goalModal()}`;
  if(tab==='t')c=`<form class="card row" onsubmit="return addT(event)"><input name="n" placeholder="Takım adı" required maxlength="40"><input name="s" placeholder="Kısa ad" maxlength="4" style="max-width:100px"><input name="c" type="color" value="#22c55e"><button class="pri">Takım ekle</button></form><div class="grid" style="margin-top:12px">${S.teams.map(t=>`<form class="card row" onsubmit="return editT(event,${t.id})">${badge(t)}<input name="n" value="${esc(t.name)}" required maxlength="40"><input name="s" value="${esc(t.short||'')}" maxlength="4" style="max-width:80px"><input name="c" type="color" value="${esc(t.color)}"><button>💾</button><button type="button" class="dng" onclick="delT(${t.id},'${esc(t.name).replace(/'/g,'')}')">🗑</button></form>`).join('')||'<div class="card empty">Takım yok.</div>'}</div>`;
  if(tab==='c'){
   const list=getPenalties().slice().reverse();
+  const _wOpts=(S.teams||[]).map(t=>{
+    const rem=(S.matches||[]).filter(m=>!m.played&&(Number(m.home_id)===Number(t.id)||Number(m.away_id)===Number(t.id))).length;
+    return `<option value="${t.id}">${esc(t.name)} (Kalan: ${rem} maç)</option>`;
+  }).join('');
+  const _cezaExtras=`<div id="krdAdminMasterBox" class="card" style="border:1px solid rgba(244,63,94,0.45)!important;background:linear-gradient(135deg,rgba(136,19,55,0.22),rgba(15,23,42,0.96))!important;margin-top:12px;">
+    <h3 style="margin:0 0 6px 0;color:#fda4af;">🚫 Tek Tuşla Ligden Çekme (Kalan Maçları 3-0 Hükmen Yap)</h3>
+    <p class="mut" style="font-size:12.5px;margin:0 0 10px 0;">Takımı silmeden geçmiş maç ve gollerini korur; kalan tüm maçlarını rakiplerine otomatik <b>3-0 hükmen</b> yazar.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid rgba(148,163,184,0.18);">
+      <select id="krdWithdrawTeamSel" style="flex:1;min-width:180px;">${_wOpts}</select>
+      <button type="button" id="krdWithdrawBtn" onclick="window.krdWithdrawTeamForfeit()" style="background:linear-gradient(135deg,#e11d48,#be123c);color:#fff;border:none;padding:9px 14px;border-radius:10px;font-weight:700;cursor:pointer;">🚫 Kalan Maçları 3-0 Hükmen Yap</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <button type="button" onclick="window.krdDownloadBackupJson()" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;padding:9px 14px;border-radius:10px;font-weight:700;cursor:pointer;">💾 Tüm Lig Verisini Yedekle (.JSON)</button>
+      <span class="mut" style="font-size:12px;">Takımlar, skorlar ve ayarlar tek dosyada iner.</span>
+    </div>
+  </div>`;
   c=`<form class="card" style="display:grid;gap:10px" onsubmit="return addPenalty(event)">
    <b>⚖️ Puan Silme / Ekleme & Disiplin İşlemi</b>
    <div class="row">
@@ -5549,7 +5542,7 @@ events.onmessage = async () => {
     if (typeof ME === 'undefined' || !ME.admin) return;
     const slug = (typeof S !== 'undefined' && S.settings && S.settings.admin_slug) ? S.settings.admin_slug : 'krd-kontrol';
     if (!location.hash.startsWith('#/yonetici') && !location.hash.startsWith('#/' + slug)) return;
-    if (document.getElementById('krdAdminChatMgr')) return;
+    var _exChatMgr = document.getElementById('krdAdminChatMgr'); if (typeof tab === 'undefined' || tab !== 'bildirim') { if (_exChatMgr) _exChatMgr.remove(); return; } if (_exChatMgr) return;
 
     const app = document.getElementById('app');
     if (!app) return;
