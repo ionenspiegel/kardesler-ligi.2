@@ -5760,8 +5760,9 @@ events.onmessage = async () => {
   setInterval(enhanceLiveUi, 1000);
 })();
 </script>
-<script id="krd-withdraw-fix-js">
+<script id="krd-pro-suite-js">
 (function() {
+  // 1. Tek tusla takimi ligden cekip kalan maclarini PUT /api/admin/matches/:id ile 3-0 hukmen yapma
   window.krdWithdrawTeamForfeit = async function() {
     var sel = document.getElementById('krdWithdrawTeamSel');
     if (!sel || !sel.value) { alert('Lütfen ligden çekilecek takımı seçin.'); return; }
@@ -5776,7 +5777,7 @@ events.onmessage = async () => {
       alert(team.name + ' takımının oynanmamış maçı kalmamış.');
       return;
     }
-    if (!confirm(team.name + ' ligden çekilecek ve kalan ' + unplayed.length + ' maçı rakipleri lehine otomatik 3-0 HÜKMEN (hs/aws) yazılacak. Onaylıyor musunuz?')) return;
+    if (!confirm(team.name + ' ligden çekilecek ve kalan ' + unplayed.length + ' maçı rakipleri lehine otomatik 3-0 HÜKMEN yazılacak. Onaylıyor musunuz?')) return;
 
     var btn = document.getElementById('krdWithdrawBtn');
     if (btn) { btn.disabled = true; btn.textContent = 'İşleniyor (' + unplayed.length + ' maç)...'; }
@@ -5791,16 +5792,10 @@ events.onmessage = async () => {
           played: 1,
           note: 'Hükmen 3-0 (' + team.name + ' ligden çekildi)'
         };
-        if (typeof window.api === 'function') {
-          try {
-            await window.api('POST', '/api/matches/' + m.id, payload);
-          } catch (e1) {
-            await window.api('PUT', '/api/matches/' + m.id, payload);
-          }
-        }
+        await api('PUT', '/api/admin/matches/' + m.id, payload);
       }
-      if (typeof window.load === 'function') await window.load();
-      if (typeof window.render === 'function') window.render();
+      await load();
+      render();
       alert('Tamamlandı: ' + team.name + ' için ' + unplayed.length + ' maç 3-0 hükmen işlendi.');
     } catch (err) {
       alert('Hükmen işleminde hata oluştu: ' + (err && err.message ? err.message : err));
@@ -5809,38 +5804,82 @@ events.onmessage = async () => {
     }
   };
 
-  function injectWithdrawCardIfNeeded() {
+  // 2. Tek tikla tam JSON yedek indirme
+  window.krdDownloadBackupJson = function() {
+    if (!window.S) { alert('Lig verisi henüz yüklenmedi.'); return; }
+    var payload = {
+      exported_at: new Date().toISOString(),
+      settings: S.settings || {},
+      teams: S.teams || [],
+      matches: S.matches || [],
+      goals: S.goals || []
+    };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'kardesler-ligi-yedek-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  };
+
+  // 3. Yonetici duyuru bandini kaydetme / temizleme
+  window.krdSaveAdminBanner = function(clear) {
+    var inp = document.getElementById('krdBannerInp');
+    if (clear) {
+      localStorage.removeItem('krd_custom_banner');
+      if (inp) inp.value = '';
+    } else if (inp) {
+      var val = inp.value.trim();
+      if (val) localStorage.setItem('krd_custom_banner', val);
+      else localStorage.removeItem('krd_custom_banner');
+    }
+    syncProSuite();
+  };
+
+  function isLoggedInAdminPanel() {
+    if (typeof ME === 'undefined' || !ME || !ME.admin) return false;
+    var slug = (typeof S !== 'undefined' && S && S.settings && S.settings.admin_slug) ? S.settings.admin_slug : 'krd-kontrol';
+    var h = location.hash || '';
+    return h.startsWith('#/' + slug) || h.startsWith('#/yonetici-gizli');
+  }
+
+  function syncProSuite() {
     var app = document.getElementById('app');
-    if (!app || !window.S || !Array.isArray(S.teams) || !S.teams.length) return;
+    if (!app) return;
 
-    var isPanelView =
-      location.hash.indexOf('yonetici') !== -1 ||
-      location.hash.indexOf('krd-kontrol') !== -1 ||
-      /Özel Spor Gazetesi Manşeti|Tahmin Kralı & Oy Yönetimi|Eklemeler ve Görüntü Ayarları/i.test(app.textContent || '');
+    var onAdminPanel = isLoggedInAdminPanel();
 
-    if (isPanelView && !document.getElementById('krdWithdrawCard')) {
-      var opts = S.teams.map(function(t) {
-        var rem = (S.matches || []).filter(function(m) {
-          return !m.played && (Number(m.home_id) === Number(t.id) || Number(m.away_id) === Number(t.id));
-        }).length;
-        return '<option value="' + t.id + '">' + t.name + ' (Kalan: ' + rem + ' maç)</option>';
-      }).join('');
+    // A. Puan tablosu 1. siraya altin tac ikonu ekle (sadece ana sayfada)
+    if (!onAdminPanel) {
+      var firstTeamLink = app.querySelector('.card.tw tbody tr:first-child .tlink');
+      if (firstTeamLink && !firstTeamLink.querySelector('.krd-leader-crown')) {
+        var cr = document.createElement('span');
+        cr.className = 'krd-leader-crown';
+        cr.textContent = '👑';
+        firstTeamLink.appendChild(cr);
+      }
 
-      var box = document.createElement('div');
-      box.id = 'krdWithdrawCard';
-      box.className = 'card';
-      box.style.cssText = 'border:1px solid rgba(244,63,94,0.5)!important;background:linear-gradient(135deg,rgba(136,19,55,0.32),rgba(15,23,42,0.95))!important;margin-bottom:14px;';
-      box.innerHTML =
-        '<h3 style="margin:0 0 6px 0;color:#fda4af;">🚫 Tek Tuşla Ligden Çekme (Otomatik 3-0 Hükmen)</h3>' +
-        '<p class="mut" style="font-size:12.5px;margin:0 0 10px 0;">Takımı silmeden geçmiş maç ve gollerini korur; kalan tüm maçlarını rakiplerine otomatik <b>3-0 hükmen</b> yazar.</p>' +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' +
-        '<select id="krdWithdrawTeamSel" style="flex:1;min-width:180px;">' + opts + '</select>' +
-        '<button type="button" id="krdWithdrawBtn" onclick="window.krdWithdrawTeamForfeit()" style="background:linear-gradient(135deg,#e11d48,#be123c);color:#fff;border:none;padding:9px 14px;border-radius:10px;font-weight:700;cursor:pointer;">🚫 Kalan Maçları 3-0 Hükmen Yap</button>' +
-        '</div>';
-      app.insertBefore(box, app.firstChild);
+      // B. Siradaki maclardaki oy butonlarina animasyonlu yuzde bari ekle
+      app.querySelectorAll('button').forEach(function(btn) {
+        var m = (btn.textContent || '').match(/(%(d+))/);
+        if (m) {
+          var pct = Math.min(100, Math.max(0, Number(m[1])));
+          var bar = btn.querySelector('.krd-vote-bar');
+          if (!bar) {
+            bar = document.createElement('span');
+            bar.className = 'krd-vote-bar';
+            bar.innerHTML = '<i style="width:' + pct + '%"></i>';
+            btn.appendChild(bar);
+          } else {
+            var fill = bar.querySelector('i');
+            if (fill && fill.style.width !== pct + '%') fill.style.width = pct + '%';
+          }
+        }
+      });
     }
 
-    // Tekrarlanan alttaki H2H Ac/Kapat kutusunu gizle
+    // C. Tekrarlanan alttaki H2H Ac/Kapat kutusunu gizle
     document.querySelectorAll('div, section, details').forEach(function(el) {
       var txt = (el.textContent || '').trim();
       if (txt.indexOf('Kafa Kafaya (H2H) Rekabet & PNG Tablo İndir') !== -1 && el.offsetHeight > 0 && el.offsetHeight < 140) {
@@ -5848,7 +5887,7 @@ events.onmessage = async () => {
       }
     });
 
-    // Tarihi farkli skor kutularini (5+ fark) vurgula
+    // D. Tarihi farkli skor kutularini (5+ fark) vurgula
     document.querySelectorAll('#app .grid > div').forEach(function(card) {
       var m = (card.textContent || '').match(/(d+)s*-s*(d+)/);
       if (m && Math.abs(Number(m[1]) - Number(m[2])) >= 5) {
@@ -5860,7 +5899,7 @@ events.onmessage = async () => {
       }
     });
 
-    // Tahmin Krali tablosunda mobilde Puan sutununu gorunur tut
+    // E. Tahmin Krali tablosunda mobilde Puan sutununu gorunur tut
     document.querySelectorAll('#app table').forEach(function(tbl) {
       var ths = tbl.querySelectorAll('thead th');
       if (ths.length >= 6 && (tbl.querySelector('thead').textContent || '').indexOf('Tahminci') !== -1 && window.innerWidth < 540) {
@@ -5875,80 +5914,8 @@ events.onmessage = async () => {
         });
       }
     });
-  }
 
-  injectWithdrawCardIfNeeded();
-  setInterval(injectWithdrawCardIfNeeded, 500);
-})();
-</script>
-<script id="krd-pro-suite-js">
-(function() {
-  // Tek tikla tam JSON yedek indirme
-  window.krdDownloadBackupJson = function() {
-    if (!window.S) { alert('Lig verisi henüz yüklenmedi.'); return; }
-    var payload = {
-      exported_at: new Date().toISOString(),
-      settings: S.settings || {},
-      teams: S.teams || [],
-      matches: S.matches || [],
-      goals: S.goals || []
-    };
-    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    var a = document.createElement('a');
-    var d = new Date().toISOString().slice(0, 10);
-    a.href = URL.createObjectURL(blob);
-    a.download = 'kardesler-ligi-yedek-' + d + '.json';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 500);
-  };
-
-  // Yonetici duyuru bandini kaydetme / temizleme
-  window.krdSaveAdminBanner = function(clear) {
-    var inp = document.getElementById('krdBannerInp');
-    if (clear) {
-      localStorage.removeItem('krd_custom_banner');
-      if (inp) inp.value = '';
-    } else if (inp) {
-      var val = inp.value.trim();
-      if (val) localStorage.setItem('krd_custom_banner', val);
-      else localStorage.removeItem('krd_custom_banner');
-    }
-    syncProSuite();
-  };
-
-  function syncProSuite() {
-    var app = document.getElementById('app');
-    if (!app) return;
-
-    // 1. Puan tablosu 1. siraya altin tac ikonu ekle
-    var firstTeamLink = app.querySelector('.card.tw tbody tr:first-child .tlink');
-    if (firstTeamLink && !firstTeamLink.querySelector('.krd-leader-crown')) {
-      var cr = document.createElement('span');
-      cr.className = 'krd-leader-crown';
-      cr.textContent = '👑';
-      firstTeamLink.appendChild(cr);
-    }
-
-    // 2. Siradaki maclardaki oy butonlarina animasyonlu yuzde bari ekle
-    app.querySelectorAll('button').forEach(function(btn) {
-      var m = (btn.textContent || '').match(/(%(d+))/);
-      if (m) {
-        var pct = Math.min(100, Math.max(0, Number(m[1])));
-        var bar = btn.querySelector('.krd-vote-bar');
-        if (!bar) {
-          bar = document.createElement('span');
-          bar.className = 'krd-vote-bar';
-          bar.innerHTML = '<i style="width:' + pct + '%"></i>';
-          btn.appendChild(bar);
-        } else {
-          var fill = bar.querySelector('i');
-          if (fill && fill.style.width !== pct + '%') fill.style.width = pct + '%';
-        }
-      }
-    });
-
-    // 3. Yonetici Duyuru Bandini ana sayfa ustunde goster
+    // F. Yonetici Duyuru Bandi (sadece yonetici metin girdiyse goster)
     var bannerText = localStorage.getItem('krd_custom_banner') || '';
     var existingBanner = document.getElementById('krdAdminBanner');
     if (bannerText) {
@@ -5966,18 +5933,32 @@ events.onmessage = async () => {
       existingBanner.remove();
     }
 
-    // 4. Yonetim Paneli aciksa Duyuru + Tek Tikla JSON Yedek araclarini ekle
-    var isPanelView =
-      location.hash.indexOf('yonetici') !== -1 ||
-      location.hash.indexOf('krd-kontrol') !== -1 ||
-      /Özel Spor Gazetesi Manşeti|Tahmin Kralı & Oy Yönetimi|Eklemeler ve Görüntü Ayarları/i.test(app.textContent || '');
+    // G. YALNIZCA ME.admin === true VE YONETICI PANELINDEYKEN (giris/ana ekranda ASLA cikmaz)
+    var existingPanelBox = document.getElementById('krdAdminMasterBox');
+    if (!onAdminPanel) {
+      if (existingPanelBox) existingPanelBox.remove();
+      return;
+    }
 
-    if (isPanelView && !document.getElementById('krdAdminToolsBox')) {
-      var toolBox = document.createElement('div');
-      toolBox.id = 'krdAdminToolsBox';
-      toolBox.className = 'card';
-      toolBox.style.cssText = 'border:1px solid rgba(56,189,248,0.4)!important;margin-bottom:14px;';
-      toolBox.innerHTML =
+    if (!existingPanelBox && window.S && Array.isArray(S.teams) && S.teams.length) {
+      var opts = S.teams.map(function(t) {
+        var rem = (S.matches || []).filter(function(m) {
+          return !m.played && (Number(m.home_id) === Number(t.id) || Number(m.away_id) === Number(t.id));
+        }).length;
+        return '<option value="' + t.id + '">' + t.name + ' (Kalan: ' + rem + ' maç)</option>';
+      }).join('');
+
+      var masterBox = document.createElement('div');
+      masterBox.id = 'krdAdminMasterBox';
+      masterBox.className = 'card';
+      masterBox.style.cssText = 'border:1px solid rgba(244,63,94,0.45)!important;background:linear-gradient(135deg,rgba(136,19,55,0.25),rgba(15,23,42,0.96))!important;margin-bottom:14px;';
+      masterBox.innerHTML =
+        '<h3 style="margin:0 0 6px 0;color:#fda4af;">🚫 Tek Tuşla Ligden Çekme (Kalan Maçları 3-0 Hükmen Yap)</h3>' +
+        '<p class="mut" style="font-size:12.5px;margin:0 0 10px 0;">Takımı silmeden geçmiş maç ve gollerini korur; kalan tüm maçlarını rakiplerine otomatik <b>3-0 hükmen</b> yazar.</p>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid rgba(148,163,184,0.18);">' +
+        '<select id="krdWithdrawTeamSel" style="flex:1;min-width:180px;">' + opts + '</select>' +
+        '<button type="button" id="krdWithdrawBtn" onclick="window.krdWithdrawTeamForfeit()" style="background:linear-gradient(135deg,#e11d48,#be123c);color:#fff;border:none;padding:9px 14px;border-radius:10px;font-weight:700;cursor:pointer;">🚫 Kalan Maçları 3-0 Hükmen Yap</button>' +
+        '</div>' +
         '<h3 style="margin:0 0 8px 0;color:#7dd3fc;">🛠️ Hızlı Yönetim Araçları (Duyuru & Yedek)</h3>' +
         '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">' +
         '<input id="krdBannerInp" type="text" maxlength="140" placeholder="Ana sayfa üst duyuru bandı yaz..." value="' + bannerText.replace(/"/g, '&quot;') + '" style="flex:1;min-width:190px;">' +
@@ -5988,12 +5969,12 @@ events.onmessage = async () => {
         '<button type="button" onclick="window.krdDownloadBackupJson()" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;padding:9px 14px;border-radius:10px;font-weight:700;cursor:pointer;">💾 Tüm Lig Verisini Yedekle (.JSON)</button>' +
         '<span class="mut" style="font-size:12px;">Takımlar, skorlar ve ayarlar tek dosyada iner.</span>' +
         '</div>';
-      app.insertBefore(toolBox, app.firstChild);
+      app.insertBefore(masterBox, app.firstChild);
     }
   }
 
   syncProSuite();
-  setInterval(syncProSuite, 750);
+  setInterval(syncProSuite, 450);
 })();
 </script>
 </body></html>
