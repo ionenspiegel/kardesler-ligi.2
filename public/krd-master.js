@@ -775,6 +775,12 @@
       el.style.display = '';
     });
 
+    // Canli Yayin Akisi Duyurusu kutusunu sadece Duyuru modunda goster
+    document.querySelectorAll('#app > div, #app > form, .card').forEach(el => {
+      if ((el.textContent || '').indexOf('Canlı Yayın Akışı Duyurusu') !== -1 && el.offsetHeight > 0 && el.offsetHeight < 180) {
+        el.style.display = isMaster ? '' : 'none';
+      }
+    });
     let box = document.getElementById('krdMasterAdmBox');
     if (!isMaster) {
       if (box) box.style.display = 'none';
@@ -822,7 +828,7 @@
       <button type="button" class="pri" onclick="window.krdSaveAdminMaster()">💾 Tüm Ayarları Kaydet</button>
       <div id="krdInboxReports" style="border-top:1px solid rgba(148,163,184,.2);padding-top:8px;font-size:12px;">📩 Gelen sorun bildirimleri yükleniyor...</div>
     `;
-    const _sw = document.getElementById('krdAdmSwitchBar'); if (_sw && _sw.nextSibling) app.insertBefore(box, _sw.nextSibling); else app.appendChild(box);
+    const _tb = app.querySelector('.tabs'); if (_tb && _tb.nextSibling) app.insertBefore(box, _tb.nextSibling); else app.appendChild(box);
 
     try {
       const repRes = await api('GET', '/api/admin/krd-reports');
