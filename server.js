@@ -262,11 +262,32 @@ async function api(req, res, u) {
   }
   if (req.method === 'POST' && u.pathname === '/api/admin/login') {
     const b = await body(req); if (limited(ip)) throw E(429, 'Çok fazla deneme; 15 dk sonra tekrar dene');
-    const a = await one(`SELECT * FROM ${ADMIN} WHERE id=1`); const ok = a && String(b.username || '').toLowerCase() === a.username && eq(hashPw(String(b.password || ''), a.salt), a.hash);
-    if (!ok) { fail(ip); throw E(401, 'Kullanıcı adı veya şifre hatalı'); } fails.delete(ip);
-    return send(res, 200, { ok: 1 }, { 'Set-Cookie': cookie(mkToken(), 43200) });
+    const inUser = String(b.username || '').trim().toLowerCase();
+    const inPass = String(b.password || '');
+    const a = await one(`SELECT * FROM ${ADMIN} WHERE id=1`);
+    let matchedUser = null;
+    if (a && inUser === String(a.username || '').toLowerCase() && eq(hashPw(inPass, a.salt), a.hash)) {
+      matchedUser = a.username;
+    } else if (typeof getSettingJson === 'function') {
+      const extra = await getSettingJson('extra_admins', []);
+      const found = (Array.isArray(extra) ? extra : []).find(x => String(x.username || '').toLowerCase() === inUser);
+      if (found && found.salt && found.hash && eq(hashPw(inPass, found.salt), found.hash)) {
+        matchedUser = found.username;
+      }
+    }
+    if (!matchedUser) {
+      fail(ip);
+      if (typeof recordAuditLog === 'function') await recordAuditLog(inUser || 'Bilinmiyor', '❌ Hatalı Giriş Denemesi', req);
+      throw E(401, 'Kullanıcı adı veya şifre hatalı');
+    }
+    fails.delete(ip);
+    if (typeof recordAuditLog === 'function') await recordAuditLog(matchedUser, '🟢 Yönetici Girişi Yaptı', req);
+    return send(res, 200, { ok: 1, username: matchedUser }, { 'Set-Cookie': cookie(mkToken(), 43200) });
   }
-  if (M === 'POST' && P === '/api/admin/logout') return send(res, 200, { ok: 1 }, { 'Set-Cookie': cookie('', 0) });
+  if (M === 'POST' && P === '/api/admin/logout') {
+    if (typeof recordAuditLog === 'function') await recordAuditLog('Yönetici', '🔴 Oturumu Kapattı (Çıkış)', req);
+    return send(res, 200, { ok: 1 }, { 'Set-Cookie': cookie('', 0) });
+  }
   // === KRD_HARD_AUTH_GUARD ===
   if ((M !== 'GET' && P === '/api/krd-extras') || P.startsWith('/api/admin/')) {
     if (!isAdmin(req)) throw E(401, 'Yönetici girişi gerekli');
@@ -842,9 +863,8 @@ const u = new URL(req.url, 'http://x');
     
     if (u.pathname === '/api/admin/users' && req.method === 'GET') {
       if (!isAdmin(req)) throw E(401, 'Yönetici yetkisi gerekli');
-      const aRow = await one(`SELECT v FROM ${SETTINGS} WHERE k='admin'`);
-      let mainAdm = {};
-      try { mainAdm = JSON.parse((aRow && aRow.v) || '{}'); } catch {}
+      const aRow = await one(`SELECT username FROM ${ADMIN} WHERE id=1`);
+      const mainAdm = { username: (aRow && aRow.username) || 'Yönetici' };
       const extra = await getSettingJson('extra_admins', []);
       const logs = await getSettingJson('admin_logs', []);
       const slugRow = await one(`SELECT v FROM ${SETTINGS} WHERE k='admin_slug'`);
@@ -876,8 +896,9 @@ const u = new URL(req.url, 'http://x');
 
       const extra = await getSettingJson('extra_admins', []);
       const filtered = (Array.isArray(extra) ? extra : []).filter(x => x.username.toLowerCase() !== uname.toLowerCase());
-      const hashed = hashPass(pass);
-      filtered.push({ username: uname, ...hashed, created: new Date().toISOString() });
+      const salt = crypto.randomBytes(16).toString('hex');
+      const hash = hashPw(pass, salt);
+      filtered.push({ username: uname, salt, hash, created: new Date().toISOString() });
       await setSettingJson('extra_admins', filtered);
       await recordAuditLog(uname, '➕ Yönetici Eklendi/Güncellendi', req);
       return send(res, 200, { ok: 1 });
