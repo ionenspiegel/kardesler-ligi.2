@@ -3201,11 +3201,7 @@ function adminSecurityTab(){
 
 function panel(){const weeks=[...new Set(S.matches.map(m=>m.week))].sort((a,b)=>a-b);if(!wk||!weeks.includes(wk))wk=+S.settings.week&&weeks.includes(+S.settings.week)?+S.settings.week:weeks[0]||1;
  const _topStats=adminStatsBar();
-const _isDuyuruMode=(typeof window._krdAdminSection==='string'?window._krdAdminSection==='duyuru':['s','kupa','bildirim','yetki'].includes(tab));
- const tabs=_isDuyuruMode
-  ?[['s','⚙ Ayarlar'],['kupa','✨ Eklemeler ve Görüntü'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki & Log']]
-  :[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['canli','🔴 Canlı (1-4)']];
- if(!tabs.some(x=>x[0]===tab)){tab=tabs[0][0];}let c='';
+const tabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler ve Görüntü'],['canli','🔴 Canlı (1-4)'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki & Log']];let c='';
  if(tab==='canli')c=adminLiveTab();else if(tab==='yetki')c=adminSecurityTab();else if(tab==='bildirim')c=adminNotifyTab();else if(tab==='kupa')c=adminExtrasTab();else if(tab==='m')c=`<div class="tabs">${weeks.map(w=>`<button class="${w===wk?'on':''}" onclick="wk=${w};render()">H${w}</button>`).join('')}</div>${(()=>{const wm=S.matches.filter(m=>m.week===wk);const unp=wm.filter(m=>!m.played);const nextW=weeks.find(w=>w>wk);let bar='';if(wm.length&&!unp.length&&nextW&&+S.settings.week===wk){bar=`<div class="card row" style="justify-content:space-between;margin-bottom:10px;border-color:rgba(34,197,94,0.4)"><span>✅ H${wk} maçlarının tamamı oynandı!</span><button type="button" class="pri" onclick="advanceLeagueWeek(${nextW})">⏭ Haftayı H${nextW} Yap</button></div>`;}return bar;})()}${S.matches.some(m=>m.week===wk)?`<div class="grid">${S.matches.filter(m=>m.week===wk).map(m=>mcard(m,1)).join('')}</div>`:'<div class="card empty">Bu haftada maç yok. Aşağıdan ekle ya da fikstür oluştur.</div>'}
  <div class="sh"><h2>Maç Ekle</h2></div><form class="card row" onsubmit="return addM(event)"><input name="w" type="number" min="1" value="${wk}" title="Hafta"><select aria-label="Secim listesi" name="h">${S.teams.map(t=>`<option value="${t.id}">${esc(t.name)}`).join('')}</select><select aria-label="Secim listesi" name="a">${S.teams.map((t,i)=>`<option value="${t.id}" ${i==1?'selected':''}>${esc(t.name)}`).join('')}</select><button class="pri">Ekle</button></form>${goalModal()}`;
  if(tab==='t')c=`<form class="card row" onsubmit="return addT(event)"><input name="n" placeholder="Takım adı" required maxlength="40"><input name="s" placeholder="Kısa ad" maxlength="4" style="max-width:100px"><input name="c" type="color" value="#22c55e"><button class="pri">Takım ekle</button></form><div class="grid" style="margin-top:12px">${S.teams.map(t=>`<form class="card row" onsubmit="return editT(event,${t.id})">${badge(t)}<input name="n" value="${esc(t.name)}" required maxlength="40"><input name="s" value="${esc(t.short||'')}" maxlength="4" style="max-width:80px"><input name="c" type="color" value="${esc(t.color)}"><button>💾</button><button type="button" class="dng" onclick="delT(${t.id},'${esc(t.name).replace(/'/g,'')}')">🗑</button></form>`).join('')||'<div class="card empty">Takım yok.</div>'}</div>`;
@@ -5959,28 +5955,6 @@ events.onmessage = async () => {
 
   syncProSuite();
   setInterval(syncProSuite, 450);
-})();
-</script>
-<script id="krd-admin-mode-sync-js">
-(function() {
-  document.addEventListener('click', function(e) {
-    var btn = e.target.closest('button, div');
-    if (!btn) return;
-    var txt = (btn.textContent || '').trim();
-    if (txt === '📋 Lig & Maç Yönetimi' || (txt.indexOf('Lig & Maç Yönetimi') !== -1 && btn.offsetHeight > 40 && btn.offsetHeight < 140)) {
-      window._krdAdminSection = 'lig';
-      if (typeof tab !== 'undefined' && ['s','kupa','bildirim','yetki'].includes(tab)) {
-        tab = 'm';
-        if (typeof render === 'function') render();
-      }
-    } else if (txt === '⚙️ Duyuru, Bakım & Kurallar' || (txt.indexOf('Duyuru, Bakım & Kurallar') !== -1 && btn.offsetHeight > 40 && btn.offsetHeight < 140)) {
-      window._krdAdminSection = 'duyuru';
-      if (typeof tab !== 'undefined' && !['s','kupa','bildirim','yetki'].includes(tab)) {
-        tab = 's';
-        if (typeof render === 'function') render();
-      }
-    }
-  }, true);
 })();
 </script>
 </body></html>

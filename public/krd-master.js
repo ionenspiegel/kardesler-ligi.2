@@ -744,10 +744,35 @@
       <button type="button" onclick="window.krdOpenAdmMasterTab(true)" style="flex:1;padding:8px 12px;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;border:1px solid ${isMaster ? '#facc15' : 'rgba(148,163,184,0.25)'};background:${isMaster ? 'linear-gradient(135deg,#d97706,#eab308)' : '#131c31'};color:${isMaster ? '#090d16' : '#fef08a'};">⚙️ Duyuru, Bakım & Kurallar</button>
     `;
 
-    // Diger yonetici ogelerini sekme secimine gore gizle/goster
+    // Diger yonetici ogelerini sekme secimine gore akilli goster (hicbir sekme bos kalmasin)
+    const ligOnlyTabs = ['m', 't', 'c', 'f', 'canli'];
+    const duyuruOnlyTabs = ['s', 'kupa', 'bildirim', 'yetki'];
+    const tabsBar = app.querySelector('.tabs');
+    if (tabsBar) {
+      Array.from(tabsBar.querySelectorAll('button')).forEach(btn => {
+        const oc = btn.getAttribute('onclick') || '';
+        const m = oc.match(/tab='([^']+)'/);
+        if (!m) return;
+        const tKey = m[1];
+        if (isMaster) {
+          btn.style.display = duyuruOnlyTabs.includes(tKey) ? '' : 'none';
+        } else {
+          btn.style.display = ligOnlyTabs.includes(tKey) ? '' : 'none';
+        }
+      });
+    }
+    if (typeof tab !== 'undefined') {
+      if (isMaster && ligOnlyTabs.includes(tab)) {
+        tab = 's';
+        if (typeof render === 'function') { render(); return; }
+      } else if (!isMaster && duyuruOnlyTabs.includes(tab)) {
+        tab = 'm';
+        if (typeof render === 'function') { render(); return; }
+      }
+    }
     Array.from(app.children).forEach(el => {
       if (el.id === 'krdAdmSwitchBar' || el.id === 'krdMasterAdmBox') return;
-      el.style.display = isMaster ? 'none' : '';
+      el.style.display = '';
     });
 
     let box = document.getElementById('krdMasterAdmBox');
@@ -797,7 +822,7 @@
       <button type="button" class="pri" onclick="window.krdSaveAdminMaster()">💾 Tüm Ayarları Kaydet</button>
       <div id="krdInboxReports" style="border-top:1px solid rgba(148,163,184,.2);padding-top:8px;font-size:12px;">📩 Gelen sorun bildirimleri yükleniyor...</div>
     `;
-    app.appendChild(box);
+    const _sw = document.getElementById('krdAdmSwitchBar'); if (_sw && _sw.nextSibling) app.insertBefore(box, _sw.nextSibling); else app.appendChild(box);
 
     try {
       const repRes = await api('GET', '/api/admin/krd-reports');
