@@ -3519,6 +3519,44 @@ function genStrongPass(len=12){
   if(navigator.clipboard) navigator.clipboard.writeText(out).catch(()=>{});
   toast('Güçlü şifre oluşturuldu ve kopyalandı!');
 }
+async function enableAdminDevicePush(enable){
+  try {
+    if(!enable){
+      await act(async()=>{
+        await api('POST','/api/admin/push-notify',{enabled:false});
+        await loadAdminUsersData();
+        alert('ℹ️ Yönetici cihaz bildirimi kapatıldı.');
+      });
+      return;
+    }
+    if(!('Notification' in window) || !('serviceWorker' in navigator)){
+      alert('Bu tarayıcı anlık bildirimleri desteklemiyor. Ana ekrana ekleyip tekrar deneyin.');
+      return;
+    }
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted'){
+      alert('Bildirim izni verilmedi. Tarayıcı ayarlarından bildirimlere izin verin.');
+      return;
+    }
+    const reg = await navigator.serviceWorker.ready;
+    const vk = await api('GET','/api/push/vapid');
+    if(!vk || !vk.key){ alert('Sunucu bildirim anahtarı bulunamadı.'); return; }
+    const pad = '='.repeat((4 - vk.key.length % 4) % 4);
+    const b64 = (vk.key + pad).replace(/-/g,'+').replace(/_/g,'/');
+    const raw = atob(b64);
+    const arr = new Uint8Array(raw.length);
+    for(let i=0;i<raw.length;i++) arr[i]=raw.charCodeAt(i);
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub) sub = await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:arr});
+    await act(async()=>{
+      await api('POST','/api/admin/push-notify',{enabled:true, sub:sub.toJSON()});
+      await loadAdminUsersData();
+      alert('✅ Harika! Artık başka bir yönetici giriş yaptığında veya değişiklik yaptığında doğrudan bu cihaza bildirim gelecek.');
+    });
+  } catch(err) {
+    alert('Bildirim açılırken hata: ' + (err.message || err));
+  }
+}
 async function saveAdminEmailNotify(e){
   e.preventDefault();
   const email=document.getElementById('admNotifyEmail').value.trim();
@@ -3722,6 +3760,18 @@ function adminSecurityTab(){
         }).join('')}
       </div>
     </form>
+
+    <div class="card" style="display:grid;gap:8px;border-color:rgba(16,185,129,0.35)">
+      <b>📲 Ana Yönetici Anlık Telefon / Cihaz Bildirimi (En Kolay Yol)</b>
+      <div class="mut" style="font-size:12px">Hiçbir şifre veya API anahtarı gerekmez. Başka bir yönetici (<b>mirror</b> vb.) giriş yaptığında veya değişiklik yaptığında doğrudan bu cihaza bildirim gelir.</div>
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <span style="font-size:12px;color:#6ee7b7">Durum: <b>${d.pushNotify&&d.pushNotify.enabled ? '✅ Aktif ('+(d.pushNotify.deviceCount||1)+' cihaz bağlı)' : '⚪ Kapalı'}</b></span>
+        <div style="display:flex;gap:6px">
+          <button type="button" class="pri" onclick="enableAdminDevicePush(true)">📲 Bu Cihaza Bildirim Aç</button>
+          ${d.pushNotify&&d.pushNotify.enabled ? '<button type="button" class="dng" onclick="enableAdminDevicePush(false)">Kapat</button>' : ''}
+        </div>
+      </div>
+    </div>
 
     <form class="card" style="display:grid;gap:8px" onsubmit="return saveAdminEmailNotify(event)">
       <b>📧 Yönetici İşlem & Giriş E-Posta Bildirimi</b>

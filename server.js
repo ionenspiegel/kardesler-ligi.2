@@ -688,6 +688,34 @@ async function sendAdminAuditEmail(user, action, ip) {
   } catch {}
 }
 
+async function sendAdminAuditPush(user, action) {
+  try {
+    if (!webpush) return;
+    const cfg = await getSettingJson('admin_push_notify', null);
+    if (!cfg || !cfg.enabled || !Array.isArray(cfg.subs) || !cfg.subs.length) return;
+    const actor = String(user || '').trim();
+    // Sadece diger yoneticilerin (mirror vb.) hareketlerinde veya hatali girislerde bildirim at (kendi isleminde spam yapmasin)
+    if (actor.toLowerCase() === 'yusuf' && !action.includes('Hatalı')) return;
+    const payload = JSON.stringify({
+      title: '🛡️ KRD Yönetici Hareketi',
+      body: actor + ' — ' + action,
+      url: '/#/krd-kontrol'
+    });
+    const alive = [];
+    for (const sub of cfg.subs) {
+      try {
+        await webpush.sendNotification(sub, payload);
+        alive.push(sub);
+      } catch (err) {
+        if (!err || (err.statusCode !== 404 && err.statusCode !== 410)) alive.push(sub);
+      }
+    }
+    if (alive.length !== cfg.subs.length) {
+      await setSettingJson('admin_push_notify', { enabled: cfg.enabled, subs: alive });
+    }
+  } catch {}
+}
+
 async function recordAuditLog(user, action, req) {
   try {
     const ip = String((req && req.headers && req.headers['x-forwarded-for']) || (req && req.socket && req.socket.remoteAddress) || '-').split(',')[0].trim();
@@ -697,6 +725,7 @@ async function recordAuditLog(user, action, req) {
     if (arr.length > 80) arr.length = 80;
     await setSettingJson('admin_logs', arr);
     sendAdminAuditEmail(user, action, ip).catch(() => {});
+    sendAdminAuditPush(user, action).catch(() => {});
   } catch {}
 }
 
@@ -977,12 +1006,14 @@ const u = new URL(req.url, 'http://x');
       const logs = await getSettingJson('admin_logs', []);
       const slugRow = await one(`SELECT v FROM ${SETTINGS} WHERE k='admin_slug'`);
       const emailNotify = await getSettingJson('admin_email_notify', { enabled: false, email: '' });
+      const pushNotify = await getSettingJson('admin_push_notify', { enabled: false, subs: [] });
       return send(res, 200, {
         primary: mainAdm.username || 'Yönetici',
         admins: (Array.isArray(extra) ? extra : []).map(x => ({ username: x.username, created: x.created || '', perms: Array.isArray(x.perms) ? x.perms : DEFAULT_SUB_PERMS.slice() })),
         logs: Array.isArray(logs) ? logs : [],
         adminSlug: (slugRow && slugRow.v) || 'krd-kontrol',
-        emailNotify
+        emailNotify,
+        pushNotify: { enabled: !!(pushNotify && pushNotify.enabled), deviceCount: Array.isArray(pushNotify && pushNotify.subs) ? pushNotify.subs.length : 0 }
       });
     }
     if (u.pathname === '/api/admin/users' && req.method === 'POST') {
@@ -1053,7 +1084,30 @@ const u = new URL(req.url, 'http://x');
       await recordAuditLog((getAdminUser(req) || 'Yönetici') + ' → ' + uname, '🗑️ Yöneticiyi Kaldırdı', req);
       return send(res, 200, { ok: 1 });
     }
-        if (u.pathname === '/api/admin/email-notify' && req.method === 'POST') {
+            if (u.pathname === '/api/admin/push-notify' && req.method === 'POST') {
+      const sess = await getAdminSessionInfo(req);
+      if (!sess || !sess.isPrimary) throw E(403, 'Sadece ana kurucu yönetici bu ayarı değiştirebilir');
+      const raw = await new Promise((resolve, reject) => {
+        let d = '';
+        req.on('data', ch => { d += ch; if (d.length > 8192) reject(E(413, 'Veri çok büyük')); });
+        req.on('end', () => resolve(d));
+        req.on('error', reject);
+      });
+      let b = {};
+      try { b = JSON.parse(raw || '{}'); } catch { throw E(400, 'Geçersiz JSON'); }
+      const cur = await getSettingJson('admin_push_notify', { enabled: false, subs: [] });
+      let subs = Array.isArray(cur && cur.subs) ? cur.subs : [];
+      if (b.sub && b.sub.endpoint) {
+        subs = subs.filter(s => s && s.endpoint !== b.sub.endpoint);
+        subs.push(b.sub);
+      }
+      const enabled = !!b.enabled;
+      if (!enabled) subs = [];
+      await setSettingJson('admin_push_notify', { enabled, subs });
+      return send(res, 200, { ok: 1, enabled, deviceCount: subs.length });
+    }
+
+    if (u.pathname === '/api/admin/email-notify' && req.method === 'POST') {
       if (!isAdmin(req)) throw E(401, 'Yönetici yetkisi gerekli');
       const raw = await new Promise((resolve, reject) => {
         let d = '';
