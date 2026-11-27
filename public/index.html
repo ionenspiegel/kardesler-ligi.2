@@ -5186,7 +5186,7 @@ events.onmessage = async () => {
 (function() {
   if (document.getElementById('krdMusicDock')) return;
 
-  var audio = new Audio();
+  var audio = window.__krdAudio = new Audio();
   audio.loop = false;
   audio.volume = Number(localStorage.getItem('krd_music_vol') || 0.65);
 
@@ -5267,14 +5267,31 @@ events.onmessage = async () => {
   fetch('/api/music-list')
     .then(function(r) { return r.json(); })
     .then(function(d) {
+      var builtinTracks = [
+        { name: '🏆 KRD Champions Anthem (Stadyum)', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+        { name: '⚡ Matchday Arena Pulse', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
+        { name: '🔥 Derby Night Synth', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
+        { name: '🎯 Golden Goal Stadium', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3' },
+        { name: '👑 Final Whistle Victory', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3' }
+      ];
       if (d && Array.isArray(d.tracks) && d.tracks.length) {
-        tracks = d.tracks;
+        tracks = d.tracks.concat(builtinTracks);
         loadAndPlay(0, false);
       } else {
-        updateUi();
+        tracks = builtinTracks;
+        loadAndPlay(0, false);
       }
     })
-    .catch(updateUi);
+    .catch(function() {
+      tracks = [
+        { name: '🏆 KRD Champions Anthem (Stadyum)', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+        { name: '⚡ Matchday Arena Pulse', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
+        { name: '🔥 Derby Night Synth', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
+        { name: '🎯 Golden Goal Stadium', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3' },
+        { name: '👑 Final Whistle Victory', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3' }
+      ];
+      loadAndPlay(0, false);
+    });
 })();
 </script>
 
@@ -5522,7 +5539,7 @@ events.onmessage = async () => {
       }
     }
     var eqBars = document.getElementById('krdEqBars');
-    var audio = document.querySelector('audio');
+    var audio = window.__krdAudio || document.querySelector('audio');
     if (eqBars && audio) {
       if (!audio.paused && !audio.ended) eqBars.classList.add('playing');
       else eqBars.classList.remove('playing');
