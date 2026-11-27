@@ -77,8 +77,29 @@ async function loadSecret() {
 const hashPw = (pw, salt) => crypto.scryptSync(pw, salt, 64).toString('hex');
 const sign = v => crypto.createHmac('sha256', SECRET).update(v).digest('hex');
 const eq = (a, b) => { a = Buffer.from(String(a)); b = Buffer.from(String(b)); return a.length === b.length && crypto.timingSafeEqual(a, b); };
-const mkToken = () => { const e = Date.now() + 12 * 36e5; return `${e}.${sign('s' + e)}`; };
-const isAdmin = req => { const m = /(?:^|; )kl_s=([^;]+)/.exec(req.headers.cookie || ''); if (!m) return false; const [e, s] = m[1].split('.'); return +e > Date.now() && s && eq(s, sign('s' + e)); };
+const mkToken = (uname = 'Yusuf') => {
+  const e = Date.now() + 12 * 36e5;
+  const u = Buffer.from(String(uname || 'Yusuf'), 'utf8').toString('base64url');
+  return `${e}.${u}.${sign('s' + e + '.' + u)}`;
+};
+const getAdminUser = req => {
+  const m = /(?:^|; )kl_s=([^;]+)/.exec(req.headers.cookie || '');
+  if (!m) return null;
+  const parts = m[1].split('.');
+  if (parts.length === 3) {
+    const [e, u, s] = parts;
+    if (+e > Date.now() && s && eq(s, sign('s' + e + '.' + u))) {
+      try { return Buffer.from(u, 'base64url').toString('utf8') || 'Yusuf'; } catch { return 'Yusuf'; }
+    }
+    return null;
+  }
+  if (parts.length === 2) {
+    const [e, s] = parts;
+    if (+e > Date.now() && s && eq(s, sign('s' + e))) return 'Yusuf';
+  }
+  return null;
+};
+const isAdmin = req => !!getAdminUser(req);
 const needsSetup = async () => !(await one(`SELECT 1 x FROM ${ADMIN}`));
 let setupCode = null;
 const fails = new Map();
@@ -251,7 +272,7 @@ async function api(req, res, u) {
     const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter(f => /.(mp3|ogg|wav|m4a)$/i.test(f)).map(f => ({ name: f.replace(/.[^.]+$/, ''), url: '/music/' + encodeURIComponent(f) })) : [];
     return send(res, 200, { tracks: files });
   }
-  if (M === 'GET' && P === '/api/me') return send(res, 200, { admin: isAdmin(req), needsSetup: await needsSetup() });
+  if (M === 'GET' && P === '/api/me') { const admU = getAdminUser(req); return send(res, 200, { admin: !!admU, username: admU || '', needsSetup: await needsSetup() }); }
   if (M !== 'GET' && req.headers['x-kl'] !== '1') throw E(403, 'Geçersiz istek');
   if (M === 'POST' && P === '/api/admin/setup') {
     const b = await body(req); if (!(await needsSetup()) || !setupCode) throw E(409, 'Yönetici zaten oluşturulmuş');
@@ -282,15 +303,37 @@ async function api(req, res, u) {
     }
     fails.delete(ip);
     if (typeof recordAuditLog === 'function') await recordAuditLog(matchedUser, '🟢 Yönetici Girişi Yaptı', req);
-    return send(res, 200, { ok: 1, username: matchedUser }, { 'Set-Cookie': cookie(mkToken(), 43200) });
+    return send(res, 200, { ok: 1, username: matchedUser }, { 'Set-Cookie': cookie(mkToken(matchedUser), 43200) });
   }
   if (M === 'POST' && P === '/api/admin/logout') {
-    if (typeof recordAuditLog === 'function') await recordAuditLog('Yönetici', '🔴 Oturumu Kapattı (Çıkış)', req);
+    const outUser = getAdminUser(req) || 'Yönetici'; if (typeof recordAuditLog === 'function') await recordAuditLog(outUser, '🔴 Oturumu Kapattı (Çıkış)', req);
     return send(res, 200, { ok: 1 }, { 'Set-Cookie': cookie('', 0) });
   }
   // === KRD_HARD_AUTH_GUARD ===
   if ((M !== 'GET' && P === '/api/krd-extras') || P.startsWith('/api/admin/')) {
     if (!isAdmin(req)) throw E(401, 'Yönetici girişi gerekli');
+    if (M !== 'GET' && P !== '/api/admin/login' && P !== '/api/admin/logout' && P !== '/api/admin/users' && P !== '/api/admin/users/delete' && typeof recordAuditLog === 'function') {
+      const actor = getAdminUser(req) || 'Yönetici';
+      const actionMap = {
+        '/api/krd-extras': '⚙️ Duyuru / Bakım / Kurallar Güncellendi',
+        '/api/admin/krd-pro5-save': '✨ Kulüp Armaları / Play-Off Kaydedildi',
+        '/api/admin/matches': '⚽ Maç Eklendi / Güncellendi',
+        '/api/admin/teams': '👕 Takım Eklendi / Güncellendi',
+        '/api/admin/penalties': '⚖️ Ceza / Puan İşlemi Yapıldı',
+        '/api/admin/settings': '🔧 Lig Ayarları Güncellendi',
+        '/api/admin/slug': '🔐 Gizli Giriş Yolu Değiştirildi',
+        '/api/admin/announce': '🔔 Bildirim / Duyuru Gönderildi',
+        '/api/admin/extras': '🎨 Görüntü & Vitrin Ayarları Güncellendi'
+      };
+      let desc = actionMap[P];
+      if (!desc) {
+        if (P.startsWith('/api/admin/matches')) desc = M === 'DELETE' ? '🗑️ Maç Silindi' : '⚽ Maç Skoru / Detayı Güncellendi';
+        else if (P.startsWith('/api/admin/teams')) desc = M === 'DELETE' ? '🗑️ Takım Silindi' : '👕 Takım Düzenlendi';
+        else if (P.startsWith('/api/admin/penalties')) desc = M === 'DELETE' ? '🗑️ Ceza Kaydı Silindi' : '⚖️ Disiplin / Hükmen İşlemi';
+        else desc = '🛠️ Panel Değişikliği (' + P.replace('/api/admin/', '') + ')';
+      }
+      recordAuditLog(actor, desc, req).catch(() => {});
+    }
   }
   if (M === 'POST' && P === '/api/krd-extras') {
     const b = await body(req);
@@ -900,7 +943,7 @@ const u = new URL(req.url, 'http://x');
       const hash = hashPw(pass, salt);
       filtered.push({ username: uname, salt, hash, created: new Date().toISOString() });
       await setSettingJson('extra_admins', filtered);
-      await recordAuditLog(uname, '➕ Yönetici Eklendi/Güncellendi', req);
+      await recordAuditLog((getAdminUser(req) || 'Yönetici') + ' → ' + uname, '➕ Yeni Yönetici Ekledi', req);
       return send(res, 200, { ok: 1 });
     }
     if (u.pathname === '/api/admin/users/delete' && req.method === 'POST') {
@@ -917,7 +960,7 @@ const u = new URL(req.url, 'http://x');
       const extra = await getSettingJson('extra_admins', []);
       const filtered = (Array.isArray(extra) ? extra : []).filter(x => x.username.toLowerCase() !== uname.toLowerCase());
       await setSettingJson('extra_admins', filtered);
-      await recordAuditLog(uname, '🗑️ Yönetici Kaldırıldı', req);
+      await recordAuditLog((getAdminUser(req) || 'Yönetici') + ' → ' + uname, '🗑️ Yöneticiyi Kaldırdı', req);
       return send(res, 200, { ok: 1 });
     }
     if (u.pathname === '/api/admin/slug' && req.method === 'POST') {
