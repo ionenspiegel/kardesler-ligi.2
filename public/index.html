@@ -3763,29 +3763,32 @@ function adminSecurityTab(){
       </div>
     </form>
 
-    <div class="card" style="display:grid;gap:8px;border-color:rgba(16,185,129,0.35)">
-      <b>📲 Ana Yönetici Anlık Telefon / Cihaz Bildirimi (En Kolay Yol)</b>
-      <div class="mut" style="font-size:12px">Hiçbir şifre veya API anahtarı gerekmez. Başka bir yönetici (<b>mirror</b> vb.) giriş yaptığında veya değişiklik yaptığında doğrudan bu cihaza bildirim gelir.</div>
-      <div class="row" style="justify-content:space-between;align-items:center">
-        <span style="font-size:12px;color:#6ee7b7">Durum: <b>${d.pushNotify&&d.pushNotify.enabled ? '✅ Aktif ('+(d.pushNotify.deviceCount||1)+' cihaz bağlı)' : '⚪ Kapalı'}</b></span>
+    <div class="card" style="display:grid;gap:10px;border-color:rgba(56,189,248,0.4)">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+        <b>🔔 Ana Yönetici Anlık Bildirim Merkezi (Telefon Push + E-Posta)</b>
+        <button type="button" class="sm" onclick="testUnifiedAdminNotify()">🧪 Test Gönder</button>
+      </div>
+      <div class="mut" style="font-size:12px">Başka bir yönetici (<b>mirror</b> vb.) giriş yaptığında veya değişiklik yaptığında hem cihazına Push bildirimi hem de e-posta adresine anında rapor gönderilir.</div>
+
+      <div style="padding:8px 10px;border-radius:8px;background:rgba(15,23,42,0.55);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+        <span style="font-size:12px">📲 <b>Telefon / Cihaz Push:</b> <span style="color:#6ee7b7">${d.pushNotify&&d.pushNotify.enabled ? '✅ Aktif ('+(d.pushNotify.deviceCount||1)+' cihaz)' : '⚪ Kapalı'}</span></span>
         <div style="display:flex;gap:6px">
-          <button type="button" class="pri" onclick="enableAdminDevicePush(true)">📲 Bu Cihaza Bildirim Aç</button>
-          ${d.pushNotify&&d.pushNotify.enabled ? '<button type="button" class="dng" onclick="enableAdminDevicePush(false)">Kapat</button>' : ''}
+          <button type="button" class="sm pri" onclick="enableAdminDevicePush(true)">📲 Cihazı Bağla</button>
+          ${d.pushNotify&&d.pushNotify.enabled ? '<button type="button" class="sm dng" onclick="enableAdminDevicePush(false)">Kapat</button>' : ''}
         </div>
       </div>
-    </div>
 
-    <form class="card" style="display:grid;gap:8px" onsubmit="return saveAdminEmailNotify(event)">
-      <b>📧 Yönetici İşlem & Giriş E-Posta Bildirimi</b>
-      <div class="mut" style="font-size:12px">Başka bir yönetici giriş yaptığında veya panelde değişiklik yapıldığında aşağıdaki adrese otomatik bildirim gönderilir (Render'da <code>RESEND_API_KEY</code> tanımlıysa anında mail atar).</div>
-      <div class="row">
-        <input id="admNotifyEmail" type="email" value="${esc((d.emailNotify&&d.emailNotify.email)||'')}" placeholder="ornek@gmail.com" style="flex:1;min-width:180px">
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">
-          <input id="admNotifyEnabled" type="checkbox" ${d.emailNotify&&d.emailNotify.enabled?'checked':''}> Aktif
-        </label>
-        <button class="pri">Kaydet</button>
-      </div>
-    </form>
+      <form style="display:grid;gap:6px;padding:8px 10px;border-radius:8px;background:rgba(15,23,42,0.55)" onsubmit="return saveAdminEmailNotify(event)">
+        <div class="row">
+          <input id="admNotifyEmail" type="email" value="${esc((d.emailNotify&&d.emailNotify.email)||'')}" placeholder="Bildirim alacak e-posta (ornek@gmail.com)" style="flex:1;min-width:180px">
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer">
+            <input id="admNotifyEnabled" type="checkbox" ${d.emailNotify&&d.emailNotify.enabled?'checked':''}> E-Posta Aktif
+          </label>
+          <button class="sm pri">💾 Kaydet</button>
+        </div>
+        <div class="mut" style="font-size:11px">Not: Render'da <code>SMTP_USER</code> + <code>SMTP_PASS</code> (Gmail Uygulama Şifresi) veya <code>RESEND_API_KEY</code> eklendiğinde e-posta da otomatik gider; ekli değilse Push bildirimi tek başına çalışmaya devam eder.</div>
+      </form>
+    </div>
 
     <div class="card" style="display:grid;gap:6px">
       <b>📋 Yönetici İşlem, Giriş & Çıkış Kayıtları</b>

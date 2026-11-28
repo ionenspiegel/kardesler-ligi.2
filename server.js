@@ -659,22 +659,29 @@ async function setSettingJson(key, val) {
     await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES($1,$2)`, key, JSON.stringify(val));
   });
 }
-async function sendAdminAuditEmail(user, action, ip) {
+async function sendAdminAuditEmail(user, action, ip, forceTest = false) {
   try {
     const cfg = await getSettingJson('admin_email_notify', null);
-    if (!cfg || !cfg.enabled || !cfg.email) return;
-    const to = String(cfg.email).trim();
-    if (!to.includes('@')) return;
-    const subject = `[KRD Ligi Yönetici Bildirimi] ${user} - ${action}`;
-    const htmlBody = `<div style="font-family:sans-serif;background:#0f172a;color:#e2e8f0;padding:18px;border-radius:12px;">
+    if (!forceTest && (!cfg || !cfg.enabled || !cfg.email)) return { ok: false, reason: 'disabled' };
+    const to = String((cfg && cfg.email) || '').trim();
+    if (!to.includes('@')) return { ok: false, reason: 'invalid_email' };
+    const actor = String(user || '').trim();
+    if (!forceTest && actor.toLowerCase() === 'yusuf' && !String(action).includes('Hatalı')) {
+      return { ok: false, reason: 'self_skip' };
+    }
+    const subject = `[KRD Ligi Yönetici Bildirimi] ${actor} — ${action}`;
+    const timeStr = new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' });
+    const htmlBody = `<div style="font-family:sans-serif;background:#0f172a;color:#e2e8f0;padding:18px;border-radius:12px;border:1px solid #1e293b;">
       <h3 style="color:#38bdf8;margin-top:0;">🛡️ KRD Ligi Yönetici Hareket Bildirimi</h3>
-      <p><b>Yönetici:</b> ${user}</p>
+      <p><b>Yönetici:</b> ${actor}</p>
       <p><b>İşlem:</b> ${action}</p>
       <p><b>IP Adresi:</b> ${ip || '-'}</p>
-      <p><b>Zaman:</b> ${new Date().toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })}</p>
+      <p><b>Zaman:</b> ${timeStr}</p>
     </div>`;
+
+    // 1. Yol: RESEND_API_KEY tanimliysa Resend API ile gonder
     if (process.env.RESEND_API_KEY) {
-      await fetch('https://api.resend.com/emails', {
+      const r = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -683,9 +690,54 @@ async function sendAdminAuditEmail(user, action, ip) {
           subject,
           html: htmlBody
         })
-      }).catch(() => {});
+      });
+      return { ok: r.ok, provider: 'resend' };
     }
-  } catch {}
+
+    // 2. Yol: SMTP_USER ve SMTP_PASS (Gmail Uygulama Sifresi) tanimliysa dogrudan TLS SMTP ile gonder
+    const smtpUser = String(process.env.SMTP_USER || '').trim();
+    const smtpPass = String(process.env.SMTP_PASS || '').replace(/s+/g, '');
+    if (smtpUser && smtpPass) {
+      const tls = require('tls');
+      const host = process.env.SMTP_HOST || 'smtp.gmail.com';
+      const port = Number(process.env.SMTP_PORT || 465);
+      await new Promise((resolve, reject) => {
+        const sock = tls.connect(port, host, { rejectUnauthorized: false }, () => {});
+        let step = 0;
+        const b64 = s => Buffer.from(s, 'utf8').toString('base64');
+        const rawMsg = [
+          `From: "KRD Ligi" <${smtpUser}>`,
+          `To: <${to}>`,
+          `Subject: =?UTF-8?B?${b64(subject)}?=`,
+          'MIME-Version: 1.0',
+          'Content-Type: text/html; charset=UTF-8',
+          '',
+          htmlBody,
+          '.'
+        ].join('\r\n');
+
+        sock.on('data', chunk => {
+          const line = chunk.toString('utf8');
+          if (line.startsWith('4') || line.startsWith('5')) { sock.destroy(); return reject(new Error(line)); }
+          if (step === 0 && line.includes('220')) { step = 1; sock.write('EHLO krd-ligi\r\n'); }
+          else if (step === 1 && line.includes('250')) { step = 2; sock.write('AUTH LOGIN\r\n'); }
+          else if (step === 2 && line.includes('334')) { step = 3; sock.write(b64(smtpUser) + '\r\n'); }
+          else if (step === 3 && line.includes('334')) { step = 4; sock.write(b64(smtpPass) + '\r\n'); }
+          else if (step === 4 && line.includes('235')) { step = 5; sock.write(`MAIL FROM:<${smtpUser}>\r\n`); }
+          else if (step === 5 && line.includes('250')) { step = 6; sock.write(`RCPT TO:<${to}>\r\n`); }
+          else if (step === 6 && line.includes('250')) { step = 7; sock.write('DATA\r\n'); }
+          else if (step === 7 && line.includes('354')) { step = 8; sock.write(rawMsg + '\r\n'); }
+          else if (step === 8 && line.includes('250')) { step = 9; sock.write('QUIT\r\n'); sock.end(); resolve(); }
+        });
+        sock.on('error', reject);
+        setTimeout(() => { sock.destroy(); reject(new Error('SMTP timeout')); }, 10000);
+      });
+      return { ok: true, provider: 'smtp' };
+    }
+    return { ok: false, reason: 'no_mail_env' };
+  } catch (err) {
+    return { ok: false, reason: err.message || 'mail_err' };
+  }
 }
 
 async function sendAdminAuditPush(user, action) {
@@ -1084,7 +1136,29 @@ const u = new URL(req.url, 'http://x');
       await recordAuditLog((getAdminUser(req) || 'Yönetici') + ' → ' + uname, '🗑️ Yöneticiyi Kaldırdı', req);
       return send(res, 200, { ok: 1 });
     }
-            if (u.pathname === '/api/admin/push-notify' && req.method === 'POST') {
+                if (u.pathname === '/api/admin/test-notify' && req.method === 'POST') {
+      const sess = await getAdminSessionInfo(req);
+      if (!sess || !sess.isPrimary) throw E(403, 'Sadece ana kurucu yönetici test gönderebilir');
+      const ip = krdGetIp(req);
+      // 1. Push Testi
+      let pushSent = 0;
+      const pCfg = await getSettingJson('admin_push_notify', null);
+      if (webpush && pCfg && pCfg.enabled && Array.isArray(pCfg.subs) && pCfg.subs.length) {
+        const payload = JSON.stringify({
+          title: '🧪 KRD Ligi Test Bildirimi',
+          body: 'Telefon Push + E-Posta bildirim merkezi sorunsuz çalışıyor!',
+          url: '/#/krd-kontrol'
+        });
+        for (const sub of pCfg.subs) {
+          try { await webpush.sendNotification(sub, payload); pushSent++; } catch {}
+        }
+      }
+      // 2. E-Posta Testi
+      const mailRes = await sendAdminAuditEmail('Test Sistemi', '🧪 Yönetici Bildirim Testi', ip, true);
+      return send(res, 200, { ok: 1, pushSent, mail: mailRes });
+    }
+
+    if (u.pathname === '/api/admin/push-notify' && req.method === 'POST') {
       const sess = await getAdminSessionInfo(req);
       if (!sess || !sess.isPrimary) throw E(403, 'Sadece ana kurucu yönetici bu ayarı değiştirebilir');
       const raw = await new Promise((resolve, reject) => {
