@@ -30,7 +30,7 @@
     return h.startsWith('#/yonetici') || h.startsWith('#/' + sl.toLowerCase());
   };
 
-  window._krdData = { extras: {}, predictions: {}, archive: [], badges: {}, cup: {} };
+  window._krdData = { extras: {}, predictions: {}, archive: [], badges: {}, cup: {}, cl: null };
   window._krdActiveTab = (window._krdActiveTab && window._krdActiveTab !== 'all') ? window._krdActiveTab : 'table';
   let _isApplying = false;
 
@@ -43,14 +43,15 @@
 
   async function pullAll() {
     try {
-      const [r1, r2, r3] = await Promise.all([
+      const [r1, r2, r3, r4] = await Promise.all([
         origFetch('/api/krd-extras?_=' + Date.now()),
         origFetch('/api/krd-mega-data?_=' + Date.now()),
-        origFetch('/api/krd-pro5-data?_=' + Date.now())
+        origFetch('/api/krd-pro5-data?_=' + Date.now()), origFetch('/api/krd-cl?_=' + Date.now())
       ]);
       if (r1.ok) { const d1 = await r1.json(); window._krdData.extras = d1.extras || {}; }
       if (r2.ok) { const d2 = await r2.json(); window._krdData.predictions = d2.predictions || {}; window._krdData.archive = d2.archive || []; }
       if (r3.ok) { const d3 = await r3.json(); window._krdData.badges = d3.badges || {}; window._krdData.cup = d3.cup || {}; }
+      if (r4 && r4.ok) { const d4 = await r4.json(); window._krdData.cl = d4.cl || null; }
     } catch {}
   }
 
@@ -518,67 +519,109 @@
     const tMap = Object.fromEntries(teams.map(t => [t.id, t.name]));
     const ex = (window._krdData && window._krdData.extras) || {};
 
-        if (tab === 'champions') {
-      const { table } = calcStats();
-      const sorted = table.length ? table : teams.map(t => ({ id: t.id, name: t.name, p: 0, o: 0, av: 0, ag: 0 }));
-      const topTeams = sorted.slice(0, 8);
-      const q1 = topTeams[0] || { name: '1. Sıra Bekleniyor' };
-      const q2 = topTeams[1] || { name: '2. Sıra Bekleniyor' };
-      const q3 = topTeams[2] || { name: '3. Sıra Bekleniyor' };
-      const q4 = topTeams[3] || { name: '4. Sıra Bekleniyor' };
-      const topScorer = [...sorted].sort((a, b) => (b.ag || 0) - (a.ag || 0))[0];
+            if (tab === 'champions') {
+      const cl = (window._krdData && window._krdData.cl) || { active: false };
+      if (!cl.active || !(cl.teamIds || []).length) {
+        host.innerHTML = `
+          <div class="krd-cl-hero" style="text-align:center;padding:28px 18px;">
+            <div><span class="krd-cl-trophy">🏆</span></div>
+            <div style="font-size:11px;font-weight:900;letter-spacing:1.5px;color:#facc15;">✦ UEFA DEVLER LİGİ FORMATI ✦</div>
+            <h3 style="margin:2px 0;font-size:19px;color:#fff;font-weight:900;">🌟 KRD ŞAMPİYONLAR LİGİ</h3>
+            <p style="margin:4px auto 0;max-width:440px;font-size:13px;color:#cbd5e1;line-height:1.5;">
+              Yeni <b>KRD Şampiyonlar Ligi</b> sezonu henüz başlatılmadı.<br>
+              Yönetici panelinden kura çekildiğinde tüm kulüpler <b>0 puanla</b> Devler Arenası'nda yerini alacak!
+            </p>
+          </div>`;
+      } else {
+        const rows = (cl.teamIds || []).map(id => ({ id: Number(id), name: tMap[id] || ('Kulüp #' + id), o: 0, g: 0, b: 0, m: 0, ag: 0, yg: 0, av: 0, p: 0 }));
+        const rMap = Object.fromEntries(rows.map(r => [r.id, r]));
+        (cl.matches || []).filter(m => m.played).forEach(m => {
+          const h = rMap[Number(m.home_id)], a = rMap[Number(m.away_id)];
+          if (!h || !a) return;
+          const hs = Number(m.hs), aws = Number(m.aws);
+          h.o++; a.o++; h.ag += hs; h.yg += aws; a.ag += aws; a.yg += hs;
+          if (hs > aws) { h.g++; h.p += 3; a.m++; }
+          else if (hs < aws) { a.g++; a.p += 3; h.m++; }
+          else { h.b++; a.b++; h.p += 1; a.p += 1; }
+        });
+        rows.forEach(r => { r.av = r.ag - r.yg; });
+        rows.sort((a, b) => (b.p - a.p) || (b.av - a.av) || (b.ag - a.ag));
 
-      host.innerHTML = `
-        <div class="krd-cl-hero">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-            <div style="display:flex;align-items:center;gap:12px;">
-              <span class="krd-cl-trophy">🏆</span>
-              <div>
-                <div style="font-size:11px;font-weight:900;letter-spacing:1.4px;color:#facc15;">✦ UEFA DEVLER LİGİ FORMATI ✦</div>
-                <h3 style="margin:2px 0 0;font-size:18px;color:#fff;font-weight:900;">🌟 KRD ŞAMPİYONLAR LİGİ</h3>
-                <div style="font-size:12px;color:#c7d2fe;">Lig aşamasının en elit kulüpleri Büyük Kupa için sahnede!</div>
+        const q1 = rows[0] || { name: '1. Sıra' };
+        const q2 = rows[1] || { name: '2. Sıra' };
+        const q3 = rows[2] || { name: '3. Sıra' };
+        const q4 = rows[3] || { name: '4. Sıra' };
+        const ko = cl.ko || {};
+        const sf1Ok = ko.sf1_h !== '' && ko.sf1_h !== undefined && ko.sf1_a !== '' && ko.sf1_a !== undefined;
+        const sf2Ok = ko.sf2_h !== '' && ko.sf2_h !== undefined && ko.sf2_a !== '' && ko.sf2_a !== undefined;
+        const fOk = ko.f_h !== '' && ko.f_h !== undefined && ko.f_a !== '' && ko.f_a !== undefined;
+        const f1 = sf1Ok ? (Number(ko.sf1_h) >= Number(ko.sf1_a) ? q1 : q4) : { name: 'Yarı Final 1 Galibi' };
+        const f2 = sf2Ok ? (Number(ko.sf2_h) >= Number(ko.sf2_a) ? q2 : q3) : { name: 'Yarı Final 2 Galibi' };
+        const champ = fOk ? (Number(ko.f_h) >= Number(ko.f_a) ? f1 : f2) : null;
+
+        host.innerHTML = `
+          <div class="krd-cl-hero">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <span class="krd-cl-trophy">🏆</span>
+                <div>
+                  <div style="font-size:11px;font-weight:900;letter-spacing:1.4px;color:#facc15;">✦ ${esc(cl.season || 'KRD ŞAMPİYONLAR LİGİ')} ✦</div>
+                  <h3 style="margin:2px 0 0;font-size:18px;color:#fff;font-weight:900;">🌟 KRD ŞAMPİYONLAR LİGİ</h3>
+                  <div style="font-size:12px;color:#c7d2fe;">Bağımsız Devler Ligi Puan Durumu & Eleme Sahnesi</div>
+                </div>
+              </div>
+              <div style="padding:7px 12px;border-radius:999px;background:rgba(250,204,21,.16);border:1px solid rgba(250,204,21,.5);color:#fde047;font-size:11.5px;font-weight:900;">
+                ⭐ ${rows.length} Kulüp • ${(cl.matches||[]).filter(m=>m.played).length}/${(cl.matches||[]).length} Maç
               </div>
             </div>
-            <div style="padding:7px 12px;border-radius:999px;background:rgba(250,204,21,.16);border:1px solid rgba(250,204,21,.5);color:#fde047;font-size:11.5px;font-weight:900;">
-              ⭐ Katılımcı: ${topTeams.length} Elit Kulüp
-            </div>
-          </div>
 
-          <div style="background:rgba(2,6,23,.72);border:1px solid rgba(129,140,248,.32);border-radius:14px;padding:12px;">
-            <div style="font-size:13px;font-weight:900;color:#93c5fd;margin-bottom:8px;">🌌 Devler Ligi Sıralaması & Eleme Potası</div>
-            <div style="display:grid;gap:6px;">
-              ${topTeams.length ? topTeams.map((tm, idx) => {
-                const isElite = idx < 4;
-                return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 11px;border-radius:10px;background:${isElite ? 'linear-gradient(90deg,rgba(67,56,202,.42),rgba(15,23,42,.85))' : 'rgba(15,23,42,.65)'};border:1px solid ${isElite ? 'rgba(250,204,21,.45)' : 'rgba(148,163,184,.2)'};">
-                  <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#fff;">
-                    <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:${isElite ? '#facc15' : '#334155'};color:${isElite ? '#090d16' : '#fff'};font-size:11px;font-weight:900;">${idx + 1}</span>
-                    <span>${esc(tm.name)}</span>
-                    ${isElite ? '<span style="font-size:10px;padding:2px 7px;border-radius:999px;background:rgba(250,204,21,.2);color:#fde047;border:1px solid rgba(250,204,21,.4);">🌟 Yarı Final Potası</span>' : ''}
-                  </div>
-                  <div style="font-size:12px;font-weight:900;color:#38bdf8;">${tm.p || 0} P <span style="color:#94a3b8;font-weight:700;">(Av: ${tm.av || 0})</span></div>
-                </div>`;
-              }).join('') : '<div class="mut" style="font-size:12px;">Henüz takım bulunmuyor.</div>'}
-            </div>
-          </div>
+            ${champ ? `<div style="padding:14px;border-radius:14px;background:linear-gradient(135deg,rgba(234,179,8,.32),rgba(67,56,202,.45));border:2px solid #facc15;text-align:center;">
+              <div style="font-size:11px;font-weight:900;color:#fde047;letter-spacing:1.2px;">👑 KRD ŞAMPİYONLAR LİGİ ŞAMPİYONU 👑</div>
+              <div style="font-size:20px;font-weight:900;color:#fff;margin-top:4px;">🏆 ${esc(champ.name)}</div>
+            </div>` : ''}
 
-          <div class="krd-cl-grid">
-            <div class="krd-cl-match">
-              <div style="font-size:11px;font-weight:900;color:#facc15;">⚔️ ŞAMPİYONLAR LİGİ YARI FİNAL 1</div>
-              <div style="font-size:13.5px;font-weight:900;color:#fff;">🌟 ${esc(q1.name)} <span style="color:#818cf8;">VS</span> ${esc(q4.name)}</div>
-              <div style="font-size:11px;color:#94a3b8;">1. Sıra ile 4. Sıra Devler Arenasında karşı karşıya</div>
+            <div style="background:rgba(2,6,23,.74);border:1px solid rgba(129,140,248,.35);border-radius:14px;padding:12px;">
+              <div style="font-size:13px;font-weight:900;color:#93c5fd;margin-bottom:8px;">🌌 Devler Ligi Puan Durumu (İlk 4 Yarı Finale Yükselir)</div>
+              <div style="display:grid;gap:6px;">
+                ${rows.map((tm, idx) => {
+                  const isElite = idx < 4;
+                  return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 11px;border-radius:10px;background:${isElite ? 'linear-gradient(90deg,rgba(67,56,202,.42),rgba(15,23,42,.85))' : 'rgba(15,23,42,.65)'};border:1px solid ${isElite ? 'rgba(250,204,21,.45)' : 'rgba(148,163,184,.2)'};">
+                    <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#fff;">
+                      <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:${isElite ? '#facc15' : '#334155'};color:${isElite ? '#090d16' : '#fff'};font-size:11px;font-weight:900;">${idx + 1}</span>
+                      <span>${esc(tm.name)}</span>
+                      ${isElite ? '<span style="font-size:10px;padding:2px 7px;border-radius:999px;background:rgba(250,204,21,.2);color:#fde047;border:1px solid rgba(250,204,21,.4);">🌟 Yarı Final Potası</span>' : ''}
+                    </div>
+                    <div style="font-size:12px;font-weight:900;color:#38bdf8;">${tm.p} P <span style="color:#94a3b8;font-weight:700;">(${tm.o}O • Av:${tm.av})</span></div>
+                  </div>`;
+                }).join('')}
+              </div>
             </div>
-            <div class="krd-cl-match">
-              <div style="font-size:11px;font-weight:900;color:#facc15;">⚔️ ŞAMPİYONLAR LİGİ YARI FİNAL 2</div>
-              <div style="font-size:13.5px;font-weight:900;color:#fff;">🌟 ${esc(q2.name)} <span style="color:#818cf8;">VS</span> ${esc(q3.name)}</div>
-              <div style="font-size:11px;color:#94a3b8;">2. Sıra ile 3. Sıra Final bileti için mücadele ediyor</div>
-            </div>
-          </div>
 
-          <div style="padding:12px 14px;border-radius:14px;background:linear-gradient(90deg,rgba(180,83,9,.28),rgba(67,56,202,.32));border:1.5px solid rgba(250,204,21,.6);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-            <div style="font-size:12.5px;font-weight:900;color:#fef08a;">👑 BÜYÜK FİNAL: Yarı Final 1 Galibi vs Yarı Final 2 Galibi</div>
-            ${topScorer ? `<div style="font-size:11.5px;font-weight:800;color:#38bdf8;">⚽ Gol Makinesi: <b style="color:#fff;">${esc(topScorer.name)}</b> (${topScorer.ag || 0} Gol)</div>` : ''}
-          </div>
-        </div>`;
+            <div class="krd-cl-grid">
+              <div class="krd-cl-match">
+                <div style="font-size:11px;font-weight:900;color:#facc15;">⚔️ ŞAMPİYONLAR LİGİ YARI FİNAL 1</div>
+                <div style="font-size:13.5px;font-weight:900;color:#fff;">🌟 ${esc(q1.name)} <b>${sf1Ok ? ko.sf1_h : '-'}</b> : <b>${sf1Ok ? ko.sf1_a : '-'}</b> ${esc(q4.name)}</div>
+              </div>
+              <div class="krd-cl-match">
+                <div style="font-size:11px;font-weight:900;color:#facc15;">⚔️ ŞAMPİYONLAR LİGİ YARI FİNAL 2</div>
+                <div style="font-size:13.5px;font-weight:900;color:#fff;">🌟 ${esc(q2.name)} <b>${sf2Ok ? ko.sf2_h : '-'}</b> : <b>${sf2Ok ? ko.sf2_a : '-'}</b> ${esc(q3.name)}</div>
+              </div>
+            </div>
+
+            <div style="padding:12px 14px;border-radius:14px;background:linear-gradient(90deg,rgba(180,83,9,.28),rgba(67,56,202,.32));border:1.5px solid rgba(250,204,21,.6);text-align:center;">
+              <div style="font-size:13px;font-weight:900;color:#fef08a;">👑 BÜYÜK FİNAL: ${esc(f1.name)} <b>${fOk ? ko.f_h : '-'}</b> vs <b>${fOk ? ko.f_a : '-'}</b> ${esc(f2.name)}</div>
+            </div>
+
+            <div style="background:rgba(2,6,23,.68);border:1px solid rgba(129,140,248,.28);border-radius:14px;padding:12px;display:grid;gap:6px;">
+              <div style="font-size:13px;font-weight:900;color:#a5b4fc;">📅 Devler Ligi Maç Programı & Sonuçlar</div>
+              ${(cl.matches || []).map(m => `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:9px;background:rgba(15,23,42,.75);font-size:12.5px;">
+                <span style="flex:1;text-align:right;font-weight:700;color:#fff;">${esc(tMap[m.home_id] || 'Ev')}</span>
+                <span style="margin:0 10px;padding:2px 9px;border-radius:7px;background:${m.played ? 'rgba(16,185,129,.22)' : 'rgba(99,102,241,.22)'};color:${m.played ? '#4ade80' : '#c7d2fe'};font-weight:900;">${m.played ? (m.hs + ' - ' + m.aws) : 'Oynanmadı'}</span>
+                <span style="flex:1;font-weight:700;color:#fff;">${esc(tMap[m.away_id] || 'Dep')}</span>
+              </div>`).join('')}
+            </div>
+          </div>`;
+      }
     } else if (tab === 'fixtures') {
       const opts = teams.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
       const opts2 = teams.map((t, i) => `<option value="${t.id}" ${i === 1 ? 'selected' : ''}>${esc(t.name)}</option>`).join('');

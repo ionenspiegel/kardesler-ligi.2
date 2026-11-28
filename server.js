@@ -952,6 +952,27 @@ const u = new URL(req.url, 'http://x');
   }
   // === KRD_EXTRAS_END ===
   
+  
+  // === KRD_CHAMPIONS_LEAGUE_START ===
+  if (req.method === 'GET' && u.pathname === '/api/krd-cl') {
+    const row = await krdDbGet(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_champions_league');
+    let cl = { active: false, season: '1. Devler Ligi', teamIds: [], matches: [], ko: { sf1_h: '', sf1_a: '', sf2_h: '', sf2_a: '', f_h: '', f_a: '' } };
+    try { if (row && row.v) cl = Object.assign(cl, JSON.parse(row.v)); } catch {}
+    return send(res, 200, { ok: 1, cl });
+  }
+  if (req.method === 'POST' && u.pathname === '/api/admin/krd-cl') {
+    const me = await getAdmin(req);
+    if (!me) return send(res, 401, { error: 'Yetkisiz' });
+    const b = await body(req);
+    const cl = b.cl || {};
+    await pool.query(
+      `INSERT INTO ${SETTINGS} (k, v) VALUES ($1, $2) ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v`,
+      ['krd_champions_league', JSON.stringify(cl)]
+    );
+    return send(res, 200, { ok: 1, cl });
+  }
+  // === KRD_CHAMPIONS_LEAGUE_END ===
+
   // === KRD_PRO5_START ===
   if (req.method === 'GET' && u.pathname === '/api/krd-pro5-data') {
     const bRow = await krdDbGet(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_club_badges');
