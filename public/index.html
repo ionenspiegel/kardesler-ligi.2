@@ -2776,6 +2776,19 @@ body.krd-cyber-admin #krdAdmSwitchBar {
   color: #fde047; font-weight: 900; min-width: 34px; text-align: center;
 }
 </style>
+<script id="krd-sw-bust-v2">
+  if ('serviceWorker' in navigator && !sessionStorage.getItem('krd_sw_busted_v2')) {
+    sessionStorage.setItem('krd_sw_busted_v2', '1');
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      Promise.all(regs.map(r => r.update())).catch(()=>{});
+    });
+    if (window.caches) {
+      caches.keys().then(ks => Promise.all(ks.map(k => caches.delete(k)))).then(() => {
+        location.reload();
+      }).catch(()=>{});
+    }
+  }
+  </script>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
