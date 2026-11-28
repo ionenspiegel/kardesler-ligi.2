@@ -31,7 +31,7 @@
   };
 
   window._krdData = { extras: {}, predictions: {}, archive: [], badges: {}, cup: {} };
-  window._krdActiveTab = window._krdActiveTab || 'all';
+  window._krdActiveTab = (window._krdActiveTab && window._krdActiveTab !== 'all') ? window._krdActiveTab : 'table';
   let _isApplying = false;
 
   const DEFAULT_RULES = [
@@ -101,27 +101,99 @@
         border: 1.5px solid rgba(250,204,21,.55); color: #fef08a;
         font-size: 13px; font-weight: 700; text-align: left;
       }
+      
+      @keyframes krdBtnShine {
+        0% { transform: translateX(-140%) skewX(-20deg); }
+        45%, 100% { transform: translateX(240%) skewX(-20deg); }
+      }
+      @keyframes krdClStarPulse {
+        0%, 100% { box-shadow: 0 0 10px rgba(250,204,21,.45), inset 0 0 8px rgba(99,102,241,.45); }
+        50% { box-shadow: 0 0 22px rgba(250,204,21,.9), inset 0 0 14px rgba(129,140,248,.75); }
+      }
+      @keyframes krdTrophyFloat {
+        0%, 100% { transform: translateY(0) scale(1); }
+        50% { transform: translateY(-5px) scale(1.06); }
+      }
       #krdNavTabs {
         box-sizing: border-box; position: sticky; top: 8px; z-index: 950;
         width: calc(100% - 24px); max-width: 960px; margin: 8px auto 12px;
-        display: flex; align-items: center; gap: 6px;
+        display: flex; align-items: center; gap: 8px;
         overflow-x: auto; scrollbar-width: none;
-        padding: 7px 8px; border-radius: 14px;
-        background: #0b1120; border: 1px solid rgba(56, 189, 248, 0.42);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+        padding: 9px 10px; border-radius: 16px;
+        background: linear-gradient(135deg, rgba(8,14,32,.97), rgba(15,23,42,.97));
+        border: 1.5px solid rgba(99, 102, 241, 0.5);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.72);
       }
       #krdNavTabs::-webkit-scrollbar { display: none; }
       .krd-tab-btn {
-        box-sizing: border-box; flex: 0 0 auto; padding: 8px 13px; border-radius: 10px;
-        font-size: 12px; font-weight: 800; cursor: pointer;
-        border: 1px solid rgba(148, 163, 184, 0.25);
-        background: #131c31; color: #cbd5e1;
+        position: relative; overflow: hidden;
+        box-sizing: border-box; flex: 0 0 auto; padding: 9px 14px; border-radius: 12px;
+        font-size: 12.5px; font-weight: 900; cursor: pointer;
+        color: #fff !important; border: 1.5px solid rgba(255,255,255,.28) !important;
         white-space: nowrap; user-select: none; margin: 0;
+        transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+        text-shadow: 0 1px 3px rgba(0,0,0,.45);
       }
-      .krd-tab-btn.active {
-        background: linear-gradient(135deg, #0284c7, #2563eb);
-        color: #fff; border-color: #38bdf8;
+      .krd-tab-btn::after {
+        content: ''; position: absolute; top: 0; left: 0; width: 45%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+        animation: krdBtnShine 4s infinite ease-in-out;
+        pointer-events: none;
       }
+      .krd-tab-btn:hover { transform: translateY(-2px) scale(1.03); filter: brightness(1.1); }
+      .krd-tab-btn.active { transform: scale(1.05); border-color: #fff !important; }
+      .krd-tab-btn[data-tab="table"] {
+        background: linear-gradient(135deg, #059669, #0891b2) !important;
+        box-shadow: 0 4px 14px rgba(16,185,129,.4);
+      }
+      .krd-tab-btn[data-tab="table"].active { box-shadow: 0 0 20px rgba(16,185,129,.85); }
+      .krd-tab-btn[data-tab="fixtures"] {
+        background: linear-gradient(135deg, #2563eb, #4f46e5) !important;
+        box-shadow: 0 4px 14px rgba(59,130,246,.4);
+      }
+      .krd-tab-btn[data-tab="fixtures"].active { box-shadow: 0 0 20px rgba(59,130,246,.85); }
+      .krd-tab-btn[data-tab="predict"] {
+        background: linear-gradient(135deg, #9333ea, #db2777) !important;
+        box-shadow: 0 4px 14px rgba(168,85,247,.4);
+      }
+      .krd-tab-btn[data-tab="predict"].active { box-shadow: 0 0 20px rgba(219,39,119,.85); }
+      .krd-tab-btn[data-tab="rules"] {
+        background: linear-gradient(135deg, #ea580c, #ca8a04) !important;
+        box-shadow: 0 4px 14px rgba(234,88,12,.4);
+      }
+      .krd-tab-btn[data-tab="rules"].active { box-shadow: 0 0 20px rgba(234,88,12,.85); }
+      .krd-tab-btn[data-tab="champions"] {
+        background: linear-gradient(135deg, #0f172a, #312e81 55%, #b45309) !important;
+        border: 1.5px solid #facc15 !important;
+        color: #fef08a !important;
+        animation: krdClStarPulse 2.6s infinite ease-in-out;
+      }
+      .krd-tab-btn[data-tab="champions"].active {
+        background: linear-gradient(135deg, #1e1b4b, #4338ca 50%, #d97706) !important;
+        box-shadow: 0 0 26px rgba(250,204,21,.95) !important;
+      }
+      .krd-cl-hero {
+        position: relative; overflow: hidden; border-radius: 18px; padding: 18px 16px;
+        background: radial-gradient(circle at top right, rgba(99,102,241,.42), rgba(15,23,42,.98) 65%);
+        border: 1.5px solid rgba(250,204,21,.55);
+        box-shadow: 0 12px 32px rgba(30,27,75,.65);
+        display: grid; gap: 12px;
+      }
+      .krd-cl-trophy {
+        display: inline-block; font-size: 38px;
+        filter: drop-shadow(0 0 14px rgba(250,204,21,.85));
+        animation: krdTrophyFloat 2.8s infinite ease-in-out;
+      }
+      .krd-cl-grid {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px;
+      }
+      .krd-cl-match {
+        padding: 11px 13px; border-radius: 13px;
+        background: rgba(15, 23, 42, 0.88);
+        border: 1px solid rgba(129, 140, 248, 0.38);
+        display: grid; gap: 6px;
+      }
+
       #krdDedicatedView {
         box-sizing: border-box; width: calc(100% - 24px); max-width: 960px;
         margin: 10px auto 18px; display: grid; gap: 12px;
@@ -410,8 +482,8 @@
       const bar = document.createElement('div');
       bar.id = 'krdNavTabs';
       const tabs = [
-        { id: 'all', label: '🏠 Tümü' },
         { id: 'table', label: '📊 Puan & İstatistik' },
+        { id: 'champions', label: '🌟 KRD Şampiyonlar Ligi' },
         { id: 'fixtures', label: '📅 Fikstür & H2H' },
         { id: 'predict', label: '🎯 Tahmin & Kupa' },
         { id: 'rules', label: '📜 Kurallar & Bildir' }
@@ -426,10 +498,10 @@
   function buildDedicatedPanels() {
     const app = document.getElementById('app');
     if (!app || isAdm()) return;
-    const tab = window._krdActiveTab || 'all';
+    const tab = (window._krdActiveTab && window._krdActiveTab !== 'all') ? window._krdActiveTab : 'table';
     let host = document.getElementById('krdDedicatedView');
 
-    if (tab === 'all' || tab === 'table') {
+    if (tab === 'table') {
       if (host) host.remove();
       return;
     }
@@ -446,7 +518,68 @@
     const tMap = Object.fromEntries(teams.map(t => [t.id, t.name]));
     const ex = (window._krdData && window._krdData.extras) || {};
 
-    if (tab === 'fixtures') {
+        if (tab === 'champions') {
+      const { table } = calcStats();
+      const sorted = table.length ? table : teams.map(t => ({ id: t.id, name: t.name, p: 0, o: 0, av: 0, ag: 0 }));
+      const topTeams = sorted.slice(0, 8);
+      const q1 = topTeams[0] || { name: '1. Sıra Bekleniyor' };
+      const q2 = topTeams[1] || { name: '2. Sıra Bekleniyor' };
+      const q3 = topTeams[2] || { name: '3. Sıra Bekleniyor' };
+      const q4 = topTeams[3] || { name: '4. Sıra Bekleniyor' };
+      const topScorer = [...sorted].sort((a, b) => (b.ag || 0) - (a.ag || 0))[0];
+
+      host.innerHTML = `
+        <div class="krd-cl-hero">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span class="krd-cl-trophy">🏆</span>
+              <div>
+                <div style="font-size:11px;font-weight:900;letter-spacing:1.4px;color:#facc15;">✦ UEFA DEVLER LİGİ FORMATI ✦</div>
+                <h3 style="margin:2px 0 0;font-size:18px;color:#fff;font-weight:900;">🌟 KRD ŞAMPİYONLAR LİGİ</h3>
+                <div style="font-size:12px;color:#c7d2fe;">Lig aşamasının en elit kulüpleri Büyük Kupa için sahnede!</div>
+              </div>
+            </div>
+            <div style="padding:7px 12px;border-radius:999px;background:rgba(250,204,21,.16);border:1px solid rgba(250,204,21,.5);color:#fde047;font-size:11.5px;font-weight:900;">
+              ⭐ Katılımcı: ${topTeams.length} Elit Kulüp
+            </div>
+          </div>
+
+          <div style="background:rgba(2,6,23,.72);border:1px solid rgba(129,140,248,.32);border-radius:14px;padding:12px;">
+            <div style="font-size:13px;font-weight:900;color:#93c5fd;margin-bottom:8px;">🌌 Devler Ligi Sıralaması & Eleme Potası</div>
+            <div style="display:grid;gap:6px;">
+              ${topTeams.length ? topTeams.map((tm, idx) => {
+                const isElite = idx < 4;
+                return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 11px;border-radius:10px;background:${isElite ? 'linear-gradient(90deg,rgba(67,56,202,.42),rgba(15,23,42,.85))' : 'rgba(15,23,42,.65)'};border:1px solid ${isElite ? 'rgba(250,204,21,.45)' : 'rgba(148,163,184,.2)'};">
+                  <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#fff;">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:${isElite ? '#facc15' : '#334155'};color:${isElite ? '#090d16' : '#fff'};font-size:11px;font-weight:900;">${idx + 1}</span>
+                    <span>${esc(tm.name)}</span>
+                    ${isElite ? '<span style="font-size:10px;padding:2px 7px;border-radius:999px;background:rgba(250,204,21,.2);color:#fde047;border:1px solid rgba(250,204,21,.4);">🌟 Yarı Final Potası</span>' : ''}
+                  </div>
+                  <div style="font-size:12px;font-weight:900;color:#38bdf8;">${tm.p || 0} P <span style="color:#94a3b8;font-weight:700;">(Av: ${tm.av || 0})</span></div>
+                </div>`;
+              }).join('') : '<div class="mut" style="font-size:12px;">Henüz takım bulunmuyor.</div>'}
+            </div>
+          </div>
+
+          <div class="krd-cl-grid">
+            <div class="krd-cl-match">
+              <div style="font-size:11px;font-weight:900;color:#facc15;">⚔️ ŞAMPİYONLAR LİGİ YARI FİNAL 1</div>
+              <div style="font-size:13.5px;font-weight:900;color:#fff;">🌟 ${esc(q1.name)} <span style="color:#818cf8;">VS</span> ${esc(q4.name)}</div>
+              <div style="font-size:11px;color:#94a3b8;">1. Sıra ile 4. Sıra Devler Arenasında karşı karşıya</div>
+            </div>
+            <div class="krd-cl-match">
+              <div style="font-size:11px;font-weight:900;color:#facc15;">⚔️ ŞAMPİYONLAR LİGİ YARI FİNAL 2</div>
+              <div style="font-size:13.5px;font-weight:900;color:#fff;">🌟 ${esc(q2.name)} <span style="color:#818cf8;">VS</span> ${esc(q3.name)}</div>
+              <div style="font-size:11px;color:#94a3b8;">2. Sıra ile 3. Sıra Final bileti için mücadele ediyor</div>
+            </div>
+          </div>
+
+          <div style="padding:12px 14px;border-radius:14px;background:linear-gradient(90deg,rgba(180,83,9,.28),rgba(67,56,202,.32));border:1.5px solid rgba(250,204,21,.6);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+            <div style="font-size:12.5px;font-weight:900;color:#fef08a;">👑 BÜYÜK FİNAL: Yarı Final 1 Galibi vs Yarı Final 2 Galibi</div>
+            ${topScorer ? `<div style="font-size:11.5px;font-weight:800;color:#38bdf8;">⚽ Gol Makinesi: <b style="color:#fff;">${esc(topScorer.name)}</b> (${topScorer.ag || 0} Gol)</div>` : ''}
+          </div>
+        </div>`;
+    } else if (tab === 'fixtures') {
       const opts = teams.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
       const opts2 = teams.map((t, i) => `<option value="${t.id}" ${i === 1 ? 'selected' : ''}>${esc(t.name)}</option>`).join('');
       host.innerHTML = `
@@ -629,7 +762,7 @@
   function filterAppChildren() {
     const app = document.getElementById('app');
     if (!app || isAdm()) return;
-    const tab = window._krdActiveTab || 'all';
+    const tab = (window._krdActiveTab && window._krdActiveTab !== 'all') ? window._krdActiveTab : 'table';
 
     Array.from(app.children).forEach(el => {
       if (tab === 'predict' || tab === 'rules') {
