@@ -3835,7 +3835,7 @@ function adminSecurityTab(){
 
 function panel(){const weeks=[...new Set(S.matches.map(m=>m.week))].sort((a,b)=>a-b);if(!wk||!weeks.includes(wk))wk=+S.settings.week&&weeks.includes(+S.settings.week)?+S.settings.week:weeks[0]||1;
  const _topStats=adminStatsBar();
-const allTabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler ve Görüntü'],['cl','🌟 KRD Şampiyonlar Ligi'],['canli','🔴 Canlı (1-4)'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki & Log']];
+const allTabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['cl','🌟 KRD Şampiyonlar Ligi'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler ve Görüntü'],['canli','🔴 Canlı (1-4)'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki & Log']];
 const allowedSet = (ME && ME.isPrimary === false && Array.isArray(ME.perms)) ? new Set(ME.perms) : null;
 const tabs = (allowedSet ? allTabs.filter(([k]) => k === 'cl' || allowedSet.has(k)) : allTabs).filter(([k], idx, arr) => arr.findIndex(x => x[0] === k) === idx);
 if (tabs.length && !tabs.some(([k]) => k === tab)) { tab = tabs[0][0]; }
@@ -7130,6 +7130,7 @@ async function testUnifiedAdminNotify(){
   transform: scale(1.04);
 }
 </style>
+
 <script id="krd-admin-cl-js">
 window._krdClState = null;
 window._krdClLoading = false;
@@ -7141,9 +7142,11 @@ window.krdLoadClAdmin = async function(force) {
   try {
     const r = await fetch('/api/krd-cl?_=' + Date.now());
     const d = await r.json();
-    window._krdClState = d.cl || { active: false, season: '1. Devler Ligi', teamIds: [], matches: [], ko: {} };
+    window._krdClState = d.cl || { active: false, season: '1. Devler Ligi', note: '', teamIds: [], matches: [], penalties: {}, ko: {} };
+    if (!window._krdClState.penalties) window._krdClState.penalties = {};
+    if (!window._krdClState.ko) window._krdClState.ko = {};
   } catch (e) {
-    window._krdClState = { active: false, season: '1. Devler Ligi', teamIds: [], matches: [], ko: {} };
+    window._krdClState = { active: false, season: '1. Devler Ligi', note: '', teamIds: [], matches: [], penalties: {}, ko: {} };
   }
   window._krdClLoading = false;
   if (typeof render === 'function') render();
@@ -7179,16 +7182,36 @@ window.krdStartClDraw = async function() {
   window._krdClState = {
     active: true,
     season: seasonName,
+    note: '',
     teamIds: checks,
     matches,
-    ko: { sf1_h: '', sf1_a: '', sf2_h: '', sf2_a: '', f_h: '', f_a: '' }
+    penalties: {},
+    ko: { sf1_h: '', sf1_a: '', sf2_h: '', sf2_a: '', f_h: '', f_a: '', manualChamp: '' }
   };
   await window.krdSaveClAdmin('🌟 KRD Şampiyonlar Ligi kurası çekildi ve 0 puanla başlatıldı!');
 };
 
+window.krdAddClManualMatch = async function() {
+  const cl = window._krdClState;
+  const h = Number(document.getElementById('krdClAddH')?.value);
+  const a = Number(document.getElementById('krdClAddA')?.value);
+  const rnd = Number(document.getElementById('krdClAddRnd')?.value || 1);
+  if (!h || !a || h === a) { alert('Farklı iki kulüp seçin!'); return; }
+  const maxId = (cl.matches || []).reduce((mx, m) => Math.max(mx, Number(m.id) || 0), 0);
+  cl.matches.push({ id: maxId + 1, round: rnd, home_id: h, away_id: a, hs: '', aws: '', played: false });
+  await window.krdSaveClAdmin('➕ Şampiyonlar Ligi maçı eklendi!');
+};
+
+window.krdDelClMatch = async function(mid) {
+  if (!confirm('Bu Şampiyonlar Ligi maçı silinsin mi?')) return;
+  const cl = window._krdClState;
+  cl.matches = (cl.matches || []).filter(m => Number(m.id) !== Number(mid));
+  await window.krdSaveClAdmin('🗑 Maç silindi.');
+};
+
 window.krdSaveClMatch = async function(mid) {
   const cl = window._krdClState;
-  const m = (cl.matches || []).find(x => x.id === mid);
+  const m = (cl.matches || []).find(x => Number(x.id) === Number(mid));
   if (!m) return;
   const hv = document.getElementById('cl_h_' + mid)?.value;
   const av = document.getElementById('cl_a_' + mid)?.value;
@@ -7197,33 +7220,49 @@ window.krdSaveClMatch = async function(mid) {
   } else {
     m.hs = Number(hv); m.aws = Number(av); m.played = true;
   }
-  await window.krdSaveClAdmin('⚽ Şampiyonlar Ligi maç skoru güncellendi!');
+  await window.krdSaveClAdmin('⚽ Şampiyonlar Ligi maç skoru kaydedildi!');
+};
+
+window.krdSaveClPenalty = async function() {
+  const cl = window._krdClState;
+  const tid = String(document.getElementById('krdClPenTeam')?.value || '');
+  const delta = Number(document.getElementById('krdClPenVal')?.value || 0);
+  if (!tid) return;
+  if (!cl.penalties) cl.penalties = {};
+  cl.penalties[tid] = (Number(cl.penalties[tid]) || 0) + delta;
+  if (cl.penalties[tid] === 0) delete cl.penalties[tid];
+  await window.krdSaveClAdmin('⚖️ Şampiyonlar Ligi puan düzeltmesi uygulandı!');
 };
 
 window.krdSaveClKo = async function() {
   const cl = window._krdClState;
+  cl.season = (document.getElementById('krdClEditSeason')?.value || cl.season || '1. Devler Ligi').trim();
+  cl.note = (document.getElementById('krdClEditNote')?.value || '').trim();
   cl.ko = {
     sf1_h: document.getElementById('cl_sf1_h')?.value ?? '',
     sf1_a: document.getElementById('cl_sf1_a')?.value ?? '',
     sf2_h: document.getElementById('cl_sf2_h')?.value ?? '',
     sf2_a: document.getElementById('cl_sf2_a')?.value ?? '',
     f_h: document.getElementById('cl_f_h')?.value ?? '',
-    f_a: document.getElementById('cl_f_a')?.value ?? ''
+    f_a: document.getElementById('cl_f_a')?.value ?? '',
+    manualChamp: document.getElementById('cl_manual_champ')?.value ?? ''
   };
-  await window.krdSaveClAdmin('🏆 Şampiyonlar Ligi Eleme & Final skorları kaydedildi!');
+  await window.krdSaveClAdmin('🏆 Şampiyonlar Ligi ayarları, eleme & final skorları kaydedildi!');
 };
 
 window.krdResetCl = async function() {
-  if (!confirm('KRD Şampiyonlar Ligi tamamen sıfırlansın mı?')) return;
-  window._krdClState = { active: false, season: '1. Devler Ligi', teamIds: [], matches: [], ko: {} };
+  if (!confirm('KRD Şampiyonlar Ligi tamamen sıfırlansın mı? Tüm maçlar ve skorlar silinecek!')) return;
+  window._krdClState = { active: false, season: '1. Devler Ligi', note: '', teamIds: [], matches: [], penalties: {}, ko: {} };
   await window.krdSaveClAdmin('🧹 KRD Şampiyonlar Ligi sıfırlandı.');
 };
 
 window.krdCalcClStandings = function(cl, teams) {
   const tMap = Object.fromEntries((teams || []).map(t => [Number(t.id), t]));
+  const pens = cl.penalties || {};
   const rows = (cl.teamIds || []).map(id => {
     const t = tMap[Number(id)] || { id, name: 'Kulüp #' + id };
-    return { id: Number(id), name: t.name, o: 0, g: 0, b: 0, m: 0, ag: 0, yg: 0, av: 0, p: 0 };
+    const pen = Number(pens[String(id)]) || 0;
+    return { id: Number(id), name: t.name, o: 0, g: 0, b: 0, m: 0, ag: 0, yg: 0, av: 0, pen, p: pen };
   });
   const rMap = Object.fromEntries(rows.map(r => [r.id, r]));
   (cl.matches || []).filter(m => m.played).forEach(m => {
@@ -7242,19 +7281,19 @@ window.krdCalcClStandings = function(cl, teams) {
 window.adminClTab = function() {
   if (!window._krdClState) {
     setTimeout(() => window.krdLoadClAdmin(true), 10);
-    return '<div class="card">⏳ KRD Şampiyonlar Ligi verileri yükleniyor...</div>';
+    return '<div class="card">⏳ KRD Şampiyonlar Ligi yönetim merkezi yükleniyor...</div>';
   }
   const cl = window._krdClState;
   const teams = S.teams || [];
   const tMap = Object.fromEntries(teams.map(t => [Number(t.id), t.name]));
 
   if (!cl.active) {
-    return `<div class="card" style="border:1.5px solid rgba(250,204,21,.5);background:linear-gradient(135deg,rgba(30,27,75,.65),rgba(15,23,42,.95));display:grid;gap:12px;">
+    return `<div class="card" style="border:1.5px solid rgba(250,204,21,.55);background:linear-gradient(135deg,rgba(30,27,75,.72),rgba(15,23,42,.96));display:grid;gap:12px;">
       <div style="display:flex;align-items:center;gap:10px;">
         <span style="font-size:32px;">🏆</span>
         <div>
-          <h3 style="margin:0;color:#fde047;">🌟 KRD Şampiyonlar Ligi Kurulum & Kura</h3>
-          <div class="mut" style="font-size:12px;">Mevcut ligden bağımsızdır; seçilen takımlar <b>0 puanla</b> Devler Ligi'ne başlar.</div>
+          <h3 style="margin:0;color:#fde047;">🌟 KRD Şampiyonlar Ligi — Kurulum & Kura Merkezi</h3>
+          <div class="mut" style="font-size:12px;">Ana ligden tamamen bağımsızdır; seçtiğiniz kulüpler <b>0 puanla</b> Devler Ligi'ne başlar.</div>
         </div>
       </div>
       <div class="row">
@@ -7264,14 +7303,14 @@ window.adminClTab = function() {
         </label>
       </div>
       <div>
-        <div style="font-size:12.5px;font-weight:800;color:#93c5fd;margin-bottom:6px;">Katılacak Kulüpleri Seçin (En az 4 kulüp):</div>
+        <div style="font-size:12.5px;font-weight:800;color:#93c5fd;margin-bottom:6px;">Devler Ligi'ne Katılacak Kulüpleri Seçin (En az 4 kulüp):</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px;">
-          ${teams.map(t => `<label style="display:flex;align-items:center;gap:6px;padding:7px 9px;border-radius:9px;background:rgba(2,6,23,.65);border:1px solid rgba(129,140,248,.3);cursor:pointer;font-size:12.5px;">
+          ${teams.map(t => `<label style="display:flex;align-items:center;gap:6px;padding:7px 9px;border-radius:9px;background:rgba(2,6,23,.65);border:1px solid rgba(129,140,248,.35);cursor:pointer;font-size:12.5px;">
             <input type="checkbox" class="krd-cl-tm-chk" value="${t.id}" checked> <span>${esc(t.name)}</span>
           </label>`).join('')}
         </div>
       </div>
-      <button type="button" class="pri" onclick="window.krdStartClDraw()" style="background:linear-gradient(135deg,#4338ca,#b45309);border:1px solid #facc15;color:#fef08a;font-weight:900;">🌟 Kura Çek ve Şampiyonlar Ligi'ni Başlat (0 Puan)</button>
+      <button type="button" class="pri" onclick="window.krdStartClDraw()" style="background:linear-gradient(135deg,#4338ca,#b45309)!important;border:1px solid #facc15!important;color:#fef08a!important;font-weight:900;">🌟 Kura Çek ve Şampiyonlar Ligi'ni Başlat (0 Puan)</button>
     </div>`;
   }
 
@@ -7281,46 +7320,65 @@ window.adminClTab = function() {
   const c3 = stRows[2] || { name: '3. Sıra' };
   const c4 = stRows[3] || { name: '4. Sıra' };
   const ko = cl.ko || {};
+  const clTeamsOpts = (cl.teamIds || []).map(id => `<option value="${id}">${esc(tMap[id] || ('Kulüp #' + id))}</option>`).join('');
 
   return `<div style="display:grid;gap:12px;">
-    <div class="card" style="border:1.5px solid rgba(250,204,21,.5);background:linear-gradient(135deg,rgba(30,27,75,.6),rgba(15,23,42,.95));">
+    <div class="card" style="border:1.5px solid rgba(250,204,21,.55);background:linear-gradient(135deg,rgba(30,27,75,.68),rgba(15,23,42,.96));display:grid;gap:10px;">
       <div class="row" style="justify-content:space-between;">
         <div>
-          <h3 style="margin:0;color:#fde047;">🌟 ${esc(cl.season || 'KRD Şampiyonlar Ligi')} — Yönetim Merkezi</h3>
-          <div class="mut" style="font-size:12px;">Oynanan Maç: ${(cl.matches||[]).filter(x=>x.played).length} / ${(cl.matches||[]).length} (Bağımsız 0 Puan Başlangıçlı)</div>
+          <h3 style="margin:0;color:#fde047;">🌟 ${esc(cl.season || 'KRD Şampiyonlar Ligi')} — Tam Kontrol Merkezi</h3>
+          <div class="mut" style="font-size:12px;">Oynanan Maç: ${(cl.matches||[]).filter(x=>x.played).length} / ${(cl.matches||[]).length} • Katılımcı: ${(cl.teamIds||[]).length} Kulüp</div>
         </div>
         <button type="button" class="dng" onclick="window.krdResetCl()">🗑 Turnuvayı Sıfırla</button>
+      </div>
+      <div class="row">
+        <input id="krdClEditSeason" value="${esc(cl.season || '')}" placeholder="Turnuva Başlığı">
+        <input id="krdClEditNote" value="${esc(cl.note || '')}" placeholder="Devler Ligi Özel Duyuru / Not (Ana ekranda görünür)">
       </div>
     </div>
 
     <div class="card">
-      <h4 style="margin:0 0 8px;color:#38bdf8;">📊 Şampiyonlar Ligi Puan Durumu (İlk 4 Yarı Finale Çıkar)</h4>
+      <h4 style="margin:0 0 8px;color:#38bdf8;">📊 Devler Ligi Puan Durumu (İlk 4 Yarı Finale Yükselir)</h4>
       <div style="overflow-x:auto;">
         <table>
-          <thead><tr><th>#</th><th>Kulüp</th><th>O</th><th>G</th><th>B</th><th>M</th><th>Av</th><th>P</th></tr></thead>
+          <thead><tr><th>#</th><th>Kulüp</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AG</th><th>YG</th><th>Av</th><th>Ceza/Ek</th><th>P</th></tr></thead>
           <tbody>
-            ${stRows.map((r, i) => `<tr style="${i<4?'background:rgba(67,56,202,.22);':''}">
-              <td><b>${i+1}</b></td><td><b>${esc(r.name)}</b> ${i<4?'🌟':''}</td><td>${r.o}</td><td>${r.g}</td><td>${r.b}</td><td>${r.m}</td><td>${r.av}</td><td><b style="color:#facc15;">${r.p}</b></td>
+            ${stRows.map((r, i) => `<tr style="${i<4?'background:rgba(67,56,202,.25);':''}">
+              <td><b>${i+1}</b></td><td><b>${esc(r.name)}</b> ${i<4?'🌟':''}</td><td>${r.o}</td><td>${r.g}</td><td>${r.b}</td><td>${r.m}</td><td>${r.ag}</td><td>${r.yg}</td><td>${r.av}</td><td>${r.pen || 0}</td><td><b style="color:#facc15;">${r.p}</b></td>
             </tr>`).join('')}
           </tbody>
         </table>
       </div>
+      <div class="row" style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(148,163,184,.2);">
+        <select id="krdClPenTeam">${clTeamsOpts}</select>
+        <input type="number" id="krdClPenVal" placeholder="Puan (+/- örn: -3 veya +2)" style="max-width:170px;">
+        <button type="button" onclick="window.krdSaveClPenalty()">⚖️ Puan Uygula</button>
+      </div>
     </div>
 
     <div class="card" style="display:grid;gap:8px;">
-      <h4 style="margin:0;color:#a5b4fc;">⚽ Şampiyonlar Ligi Grup/Lig Maçları (Skor Girişi)</h4>
+      <h4 style="margin:0;color:#a5b4fc;">⚽ Devler Ligi Maçları & Skor Girişi</h4>
       ${(cl.matches || []).map(m => `<div class="row" style="justify-content:space-between;padding:7px 10px;border-radius:10px;background:rgba(2,6,23,.65);border:1px solid rgba(129,140,248,.25);">
+        <span style="font-size:11px;color:#94a3b8;">T${m.round||1}</span>
         <span style="flex:1;text-align:right;font-weight:700;">${esc(tMap[m.home_id] || 'Ev')}</span>
-        <input type="number" id="cl_h_${m.id}" value="${m.played ? m.hs : ''}" placeholder="-" style="width:54px;text-align:center;">
+        <input type="number" id="cl_h_${m.id}" value="${m.played ? m.hs : ''}" placeholder="-" style="width:52px;text-align:center;">
         <b>:</b>
-        <input type="number" id="cl_a_${m.id}" value="${m.played ? m.aws : ''}" placeholder="-" style="width:54px;text-align:center;">
+        <input type="number" id="cl_a_${m.id}" value="${m.played ? m.aws : ''}" placeholder="-" style="width:52px;text-align:center;">
         <span style="flex:1;font-weight:700;">${esc(tMap[m.away_id] || 'Dep')}</span>
-        <button type="button" class="pri" onclick="window.krdSaveClMatch(${m.id})" style="padding:6px 10px;font-size:12px;">${m.played ? '✅ Güncelle' : '💾 Kaydet'}</button>
+        <button type="button" class="pri" onclick="window.krdSaveClMatch(${m.id})" style="padding:5px 9px;font-size:11.5px;">${m.played ? '✅ Güncelle' : '💾 Kaydet'}</button>
+        <button type="button" class="dng" onclick="window.krdDelClMatch(${m.id})" style="padding:5px 8px;font-size:11px;">🗑</button>
       </div>`).join('')}
+
+      <div class="row" style="margin-top:8px;padding-top:10px;border-top:1px solid rgba(148,163,184,.2);">
+        <input type="number" id="krdClAddRnd" value="1" min="1" style="width:62px;" title="Tur">
+        <select id="krdClAddH">${clTeamsOpts}</select>
+        <select id="krdClAddA">${clTeamsOpts}</select>
+        <button type="button" class="pri" onclick="window.krdAddClManualMatch()">➕ Manuel Maç Ekle</button>
+      </div>
     </div>
 
     <div class="card" style="display:grid;gap:10px;border-color:rgba(250,204,21,.45);">
-      <h4 style="margin:0;color:#fde047;">🏆 Devler Ligi Eleme Ağacı (Yarı Final & Büyük Final)</h4>
+      <h4 style="margin:0;color:#fde047;">🏆 Devler Ligi Eleme Ağacı, Final & Şampiyon İlanı</h4>
       <div class="row">
         <span style="flex:1;"><b>YF 1:</b> ${esc(c1.name)} vs ${esc(c4.name)}</span>
         <input type="number" id="cl_sf1_h" value="${ko.sf1_h ?? ''}" placeholder="1." style="width:54px;text-align:center;">
@@ -7339,7 +7397,14 @@ window.adminClTab = function() {
         <b>-</b>
         <input type="number" id="cl_f_a" value="${ko.f_a ?? ''}" placeholder="YF2" style="width:54px;text-align:center;">
       </div>
-      <button type="button" class="pri" onclick="window.krdSaveClKo()" style="background:linear-gradient(135deg,#b45309,#4338ca);color:#fef08a;font-weight:900;">🏆 Eleme & Final Skorlarını Kaydet</button>
+      <div class="row">
+        <span style="font-size:12px;color:#fde047;"><b>👑 Şampiyonu Manuel Seç (Opsiyonel):</b></span>
+        <select id="cl_manual_champ">
+          <option value="">Otomatik (Final Skoruna Göre)</option>
+          ${(cl.teamIds || []).map(id => `<option value="${esc(tMap[id]||'')}" ${ko.manualChamp === (tMap[id]||'') ? 'selected' : ''}>${esc(tMap[id]||'')}</option>`).join('')}
+        </select>
+      </div>
+      <button type="button" class="pri" onclick="window.krdSaveClKo()" style="background:linear-gradient(135deg,#b45309,#4338ca)!important;color:#fef08a!important;font-weight:900;">🏆 Tüm Devler Ligi Ayar & Final Skorlarını Kaydet</button>
     </div>
   </div>`;
 };

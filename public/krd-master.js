@@ -533,7 +533,7 @@
             </p>
           </div>`;
       } else {
-        const rows = (cl.teamIds || []).map(id => ({ id: Number(id), name: tMap[id] || ('Kulüp #' + id), o: 0, g: 0, b: 0, m: 0, ag: 0, yg: 0, av: 0, p: 0 }));
+        const pens = cl.penalties || {}; const rows = (cl.teamIds || []).map(id => { const pen = Number(pens[String(id)]) || 0; return { id: Number(id), name: tMap[id] || ('Kulüp #' + id), o: 0, g: 0, b: 0, m: 0, ag: 0, yg: 0, av: 0, p: pen }; });
         const rMap = Object.fromEntries(rows.map(r => [r.id, r]));
         (cl.matches || []).filter(m => m.played).forEach(m => {
           const h = rMap[Number(m.home_id)], a = rMap[Number(m.away_id)];
@@ -557,7 +557,7 @@
         const fOk = ko.f_h !== '' && ko.f_h !== undefined && ko.f_a !== '' && ko.f_a !== undefined;
         const f1 = sf1Ok ? (Number(ko.sf1_h) >= Number(ko.sf1_a) ? q1 : q4) : { name: 'Yarı Final 1 Galibi' };
         const f2 = sf2Ok ? (Number(ko.sf2_h) >= Number(ko.sf2_a) ? q2 : q3) : { name: 'Yarı Final 2 Galibi' };
-        const champ = fOk ? (Number(ko.f_h) >= Number(ko.f_a) ? f1 : f2) : null;
+        const champ = (ko.manualChamp && ko.manualChamp.trim()) ? { name: ko.manualChamp.trim() } : (fOk ? (Number(ko.f_h) >= Number(ko.f_a) ? f1 : f2) : null);
 
         host.innerHTML = `
           <div class="krd-cl-hero">
