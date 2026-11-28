@@ -7131,9 +7131,29 @@ async function testUnifiedAdminNotify(){
 }
 </style>
 
+
+<script id="krd-sw-purge">
+if ('caches' in window) {
+  caches.keys().then(ks => ks.forEach(k => { if (!k.includes('v2026cl')) caches.delete(k); }));
+}
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.update()));
+}
+</script>
 <script id="krd-admin-cl-js">
 window._krdClState = null;
 window._krdClLoading = false;
+window._krdClUndoStack = [];
+
+function krdCloneCl(obj) {
+  return JSON.parse(JSON.stringify(obj || {}));
+}
+
+function krdPushClUndo() {
+  if (!window._krdClState) return;
+  window._krdClUndoStack.push(krdCloneCl(window._krdClState));
+  if (window._krdClUndoStack.length > 15) window._krdClUndoStack.shift();
+}
 
 window.krdLoadClAdmin = async function(force) {
   if (window._krdClLoading) return;
@@ -7142,11 +7162,15 @@ window.krdLoadClAdmin = async function(force) {
   try {
     const r = await fetch('/api/krd-cl?_=' + Date.now());
     const d = await r.json();
-    window._krdClState = d.cl || { active: false, season: '1. Devler Ligi', note: '', teamIds: [], matches: [], penalties: {}, ko: {} };
+    window._krdClState = Object.assign(
+      { active: false, hidden: false, mode: 'hybrid', season: '1. Devler Ligi', note: '', teamIds: [], matches: [], koMatches: [], penalties: {}, ko: {} },
+      d.cl || {}
+    );
     if (!window._krdClState.penalties) window._krdClState.penalties = {};
     if (!window._krdClState.ko) window._krdClState.ko = {};
+    if (!Array.isArray(window._krdClState.koMatches)) window._krdClState.koMatches = [];
   } catch (e) {
-    window._krdClState = { active: false, season: '1. Devler Ligi', note: '', teamIds: [], matches: [], penalties: {}, ko: {} };
+    window._krdClState = { active: false, hidden: false, mode: 'hybrid', season: '1. Devler Ligi', note: '', teamIds: [], matches: [], koMatches: [], penalties: {}, ko: {} };
   }
   window._krdClLoading = false;
   if (typeof render === 'function') render();
@@ -7164,11 +7188,70 @@ window.krdSaveClAdmin = async function(msg) {
   }
 };
 
+window.krdUndoCl = async function() {
+  if (!window._krdClUndoStack.length) {
+    alert('Geri alınacak bir işlem bulunamadı.');
+    return;
+  }
+  window._krdClState = window._krdClUndoStack.pop();
+  await window.krdSaveClAdmin('↩️ Son Şampiyonlar Ligi işlemi geri alındı!');
+};
+
+window.krdToggleHideCl = async function() {
+  if (!window._krdClState) return;
+  krdPushClUndo();
+  window._krdClState.hidden = !window._krdClState.hidden;
+  await window.krdSaveClAdmin(window._krdClState.hidden ? '🙈 KRD Şampiyonlar Ligi ziyaretçilerden gizlendi.' : '👁️ KRD Şampiyonlar Ligi tekrar yayına açıldı!');
+};
+
 window.krdStartClDraw = async function() {
   const checks = Array.from(document.querySelectorAll('.krd-cl-tm-chk:checked')).map(el => Number(el.value));
-  if (checks.length < 4) { alert('KRD Şampiyonlar Ligi için en az 4 kulüp seçmelisiniz!'); return; }
+  if (checks.length < 2) { alert('KRD Şampiyonlar Ligi için en az 2 kulüp seçmelisiniz!'); return; }
+  const mode = document.getElementById('krdClModeSel')?.value || 'hybrid';
+  if (mode === 'hybrid' && checks.length < 4) { alert('Puanlı + Eleme formatı için en az 4 kulüp seçmelisiniz!'); return; }
+
   const seasonName = (document.getElementById('krdClSeasonInp')?.value || '1. Devler Ligi').trim();
   const doubleLeg = !!document.getElementById('krdClDoubleChk')?.checked;
+
+  krdPushClUndo();
+
+  if (mode === 'knockout') {
+    // Dogrudan Eleme Kurasi: Takimlari karistir ve eslestir
+    const shuffled = checks.slice().sort(() => Math.random() - 0.5);
+    const stageName = shuffled.length > 4 ? 'Çeyrek Final' : (shuffled.length > 2 ? 'Yarı Final' : 'Büyük Final');
+    const koMatches = [];
+    let kid = 1;
+    for (let i = 0; i < shuffled.length; i += 2) {
+      const h = shuffled[i];
+      const a = shuffled[i + 1] || null; // Tek sayiysa BAY gecer
+      koMatches.push({
+        id: kid++,
+        stage: stageName,
+        home_id: h,
+        away_id: a,
+        hs: a ? '' : '3',
+        aws: a ? '' : '0',
+        played: !a,
+        bye: !a
+      });
+    }
+    window._krdClState = {
+      active: true,
+      hidden: false,
+      mode: 'knockout',
+      season: seasonName,
+      note: '',
+      teamIds: checks,
+      matches: [],
+      koMatches,
+      penalties: {},
+      ko: { sf1_h: '', sf1_a: '', sf2_h: '', sf2_a: '', f_h: '', f_a: '', manualChamp: '' }
+    };
+    await window.krdSaveClAdmin('⚔️ Doğrudan Eleme kurası çekildi ve eşleşmeler oluşturuldu!');
+    return;
+  }
+
+  // Hibrit (Puanli + Eleme) Kurasi
   const matches = [];
   let mid = 1;
   for (let i = 0; i < checks.length; i++) {
@@ -7181,14 +7264,52 @@ window.krdStartClDraw = async function() {
   }
   window._krdClState = {
     active: true,
+    hidden: false,
+    mode: 'hybrid',
     season: seasonName,
     note: '',
     teamIds: checks,
     matches,
+    koMatches: [],
     penalties: {},
     ko: { sf1_h: '', sf1_a: '', sf2_h: '', sf2_a: '', f_h: '', f_a: '', manualChamp: '' }
   };
-  await window.krdSaveClAdmin('🌟 KRD Şampiyonlar Ligi kurası çekildi ve 0 puanla başlatıldı!');
+  await window.krdSaveClAdmin('🌟 Puanlı + Eleme Devler Ligi kurası çekildi (0 Puan)!');
+};
+
+window.krdAddClKoMatch = async function() {
+  const cl = window._krdClState;
+  const stage = (document.getElementById('krdClKoStageInp')?.value || 'Yarı Final').trim();
+  const h = Number(document.getElementById('krdClKoAddH')?.value);
+  const a = Number(document.getElementById('krdClKoAddA')?.value);
+  if (!h || !a || h === a) { alert('Farklı iki kulüp seçin!'); return; }
+  krdPushClUndo();
+  if (!Array.isArray(cl.koMatches)) cl.koMatches = [];
+  const maxId = cl.koMatches.reduce((mx, m) => Math.max(mx, Number(m.id) || 0), 0);
+  cl.koMatches.push({ id: maxId + 1, stage, home_id: h, away_id: a, hs: '', aws: '', played: false });
+  await window.krdSaveClAdmin('⚔️ Eleme turu eşleşmesi eklendi!');
+};
+
+window.krdSaveClKoMatch = async function(kid) {
+  const cl = window._krdClState;
+  const m = (cl.koMatches || []).find(x => Number(x.id) === Number(kid));
+  if (!m) return;
+  krdPushClUndo();
+  const hv = document.getElementById('cl_koh_' + kid)?.value;
+  const av = document.getElementById('cl_koa_' + kid)?.value;
+  if (hv === '' || av === '' || hv === undefined || av === undefined) {
+    m.hs = ''; m.aws = ''; m.played = false;
+  } else {
+    m.hs = Number(hv); m.aws = Number(av); m.played = true;
+  }
+  await window.krdSaveClAdmin('⚔️ Eleme maçı skoru kaydedildi!');
+};
+
+window.krdDelClKoMatch = async function(kid) {
+  if (!confirm('Bu eleme maçı silinsin mi?')) return;
+  krdPushClUndo();
+  window._krdClState.koMatches = (window._krdClState.koMatches || []).filter(m => Number(m.id) !== Number(kid));
+  await window.krdSaveClAdmin('🗑 Eleme maçı silindi.');
 };
 
 window.krdAddClManualMatch = async function() {
@@ -7197,6 +7318,7 @@ window.krdAddClManualMatch = async function() {
   const a = Number(document.getElementById('krdClAddA')?.value);
   const rnd = Number(document.getElementById('krdClAddRnd')?.value || 1);
   if (!h || !a || h === a) { alert('Farklı iki kulüp seçin!'); return; }
+  krdPushClUndo();
   const maxId = (cl.matches || []).reduce((mx, m) => Math.max(mx, Number(m.id) || 0), 0);
   cl.matches.push({ id: maxId + 1, round: rnd, home_id: h, away_id: a, hs: '', aws: '', played: false });
   await window.krdSaveClAdmin('➕ Şampiyonlar Ligi maçı eklendi!');
@@ -7204,8 +7326,8 @@ window.krdAddClManualMatch = async function() {
 
 window.krdDelClMatch = async function(mid) {
   if (!confirm('Bu Şampiyonlar Ligi maçı silinsin mi?')) return;
-  const cl = window._krdClState;
-  cl.matches = (cl.matches || []).filter(m => Number(m.id) !== Number(mid));
+  krdPushClUndo();
+  window._krdClState.matches = (window._krdClState.matches || []).filter(m => Number(m.id) !== Number(mid));
   await window.krdSaveClAdmin('🗑 Maç silindi.');
 };
 
@@ -7213,6 +7335,7 @@ window.krdSaveClMatch = async function(mid) {
   const cl = window._krdClState;
   const m = (cl.matches || []).find(x => Number(x.id) === Number(mid));
   if (!m) return;
+  krdPushClUndo();
   const hv = document.getElementById('cl_h_' + mid)?.value;
   const av = document.getElementById('cl_a_' + mid)?.value;
   if (hv === '' || av === '' || hv === undefined || av === undefined) {
@@ -7228,6 +7351,7 @@ window.krdSaveClPenalty = async function() {
   const tid = String(document.getElementById('krdClPenTeam')?.value || '');
   const delta = Number(document.getElementById('krdClPenVal')?.value || 0);
   if (!tid) return;
+  krdPushClUndo();
   if (!cl.penalties) cl.penalties = {};
   cl.penalties[tid] = (Number(cl.penalties[tid]) || 0) + delta;
   if (cl.penalties[tid] === 0) delete cl.penalties[tid];
@@ -7236,6 +7360,7 @@ window.krdSaveClPenalty = async function() {
 
 window.krdSaveClKo = async function() {
   const cl = window._krdClState;
+  krdPushClUndo();
   cl.season = (document.getElementById('krdClEditSeason')?.value || cl.season || '1. Devler Ligi').trim();
   cl.note = (document.getElementById('krdClEditNote')?.value || '').trim();
   cl.ko = {
@@ -7247,13 +7372,14 @@ window.krdSaveClKo = async function() {
     f_a: document.getElementById('cl_f_a')?.value ?? '',
     manualChamp: document.getElementById('cl_manual_champ')?.value ?? ''
   };
-  await window.krdSaveClAdmin('🏆 Şampiyonlar Ligi ayarları, eleme & final skorları kaydedildi!');
+  await window.krdSaveClAdmin('🏆 Şampiyonlar Ligi ayarları & final bilgileri kaydedildi!');
 };
 
 window.krdResetCl = async function() {
-  if (!confirm('KRD Şampiyonlar Ligi tamamen sıfırlansın mı? Tüm maçlar ve skorlar silinecek!')) return;
-  window._krdClState = { active: false, season: '1. Devler Ligi', note: '', teamIds: [], matches: [], penalties: {}, ko: {} };
-  await window.krdSaveClAdmin('🧹 KRD Şampiyonlar Ligi sıfırlandı.');
+  if (!confirm('KRD Şampiyonlar Ligi tamamen iptal edilip sıfırlansın mı? (İstersen Geri Al ile kurtarabilirsin)')) return;
+  krdPushClUndo();
+  window._krdClState = { active: false, hidden: false, mode: 'hybrid', season: '1. Devler Ligi', note: '', teamIds: [], matches: [], koMatches: [], penalties: {}, ko: {} };
+  await window.krdSaveClAdmin('🚫 KRD Şampiyonlar Ligi iptal edildi ve sıfırlandı.');
 };
 
 window.krdCalcClStandings = function(cl, teams) {
@@ -7286,35 +7412,44 @@ window.adminClTab = function() {
   const cl = window._krdClState;
   const teams = S.teams || [];
   const tMap = Object.fromEntries(teams.map(t => [Number(t.id), t.name]));
+  const hasUndo = window._krdClUndoStack.length > 0;
 
   if (!cl.active) {
     return `<div class="card" style="border:1.5px solid rgba(250,204,21,.55);background:linear-gradient(135deg,rgba(30,27,75,.72),rgba(15,23,42,.96));display:grid;gap:12px;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:32px;">🏆</span>
-        <div>
-          <h3 style="margin:0;color:#fde047;">🌟 KRD Şampiyonlar Ligi — Kurulum & Kura Merkezi</h3>
-          <div class="mut" style="font-size:12px;">Ana ligden tamamen bağımsızdır; seçtiğiniz kulüpler <b>0 puanla</b> Devler Ligi'ne başlar.</div>
+      <div class="row" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:32px;">🏆</span>
+          <div>
+            <h3 style="margin:0;color:#fde047;">🌟 KRD Şampiyonlar Ligi — Kurulum & Format Seçimi</h3>
+            <div class="mut" style="font-size:12px;">İster <b>Puanlı + Eleme</b>, ister <b>Doğrudan Eleme</b> formatında başlatabilirsin.</div>
+          </div>
         </div>
+        ${hasUndo ? '<button type="button" onclick="window.krdUndoCl()">↩️ Son İşlemi Geri Al</button>' : ''}
       </div>
       <div class="row">
         <input id="krdClSeasonInp" value="${esc(cl.season || '1. Devler Ligi')}" placeholder="Turnuva Adı (örn. 1. Devler Ligi)">
-        <label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer;">
-          <input type="checkbox" id="krdClDoubleChk"> Çift Devreli (Rövanşlı)
+        <select id="krdClModeSel">
+          <option value="hybrid">🏆 Puanlı Lig + Eleme (İlk 4 Yarı Finale)</option>
+          <option value="knockout">⚔️ Doğrudan Eleme (Kura ile Direkt Tur)</option>
+        </select>
+        <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+          <input type="checkbox" id="krdClDoubleChk"> Çift Devreli (Puanlıda)
         </label>
       </div>
       <div>
-        <div style="font-size:12.5px;font-weight:800;color:#93c5fd;margin-bottom:6px;">Devler Ligi'ne Katılacak Kulüpleri Seçin (En az 4 kulüp):</div>
+        <div style="font-size:12.5px;font-weight:800;color:#93c5fd;margin-bottom:6px;">Devler Ligi'ne Katılacak Kulüpleri Seçin:</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px;">
           ${teams.map(t => `<label style="display:flex;align-items:center;gap:6px;padding:7px 9px;border-radius:9px;background:rgba(2,6,23,.65);border:1px solid rgba(129,140,248,.35);cursor:pointer;font-size:12.5px;">
             <input type="checkbox" class="krd-cl-tm-chk" value="${t.id}" checked> <span>${esc(t.name)}</span>
           </label>`).join('')}
         </div>
       </div>
-      <button type="button" class="pri" onclick="window.krdStartClDraw()" style="background:linear-gradient(135deg,#4338ca,#b45309)!important;border:1px solid #facc15!important;color:#fef08a!important;font-weight:900;">🌟 Kura Çek ve Şampiyonlar Ligi'ni Başlat (0 Puan)</button>
+      <button type="button" class="pri" onclick="window.krdStartClDraw()" style="background:linear-gradient(135deg,#4338ca,#b45309)!important;border:1px solid #facc15!important;color:#fef08a!important;font-weight:900;">🌟 Kura Çek ve KRD Şampiyonlar Ligi'ni Başlat</button>
     </div>`;
   }
 
-  const stRows = window.krdCalcClStandings(cl, teams);
+  const isKnockoutOnly = cl.mode === 'knockout';
+  const stRows = isKnockoutOnly ? [] : window.krdCalcClStandings(cl, teams);
   const c1 = stRows[0] || { name: '1. Sıra' };
   const c2 = stRows[1] || { name: '2. Sıra' };
   const c3 = stRows[2] || { name: '3. Sıra' };
@@ -7326,10 +7461,14 @@ window.adminClTab = function() {
     <div class="card" style="border:1.5px solid rgba(250,204,21,.55);background:linear-gradient(135deg,rgba(30,27,75,.68),rgba(15,23,42,.96));display:grid;gap:10px;">
       <div class="row" style="justify-content:space-between;">
         <div>
-          <h3 style="margin:0;color:#fde047;">🌟 ${esc(cl.season || 'KRD Şampiyonlar Ligi')} — Tam Kontrol Merkezi</h3>
-          <div class="mut" style="font-size:12px;">Oynanan Maç: ${(cl.matches||[]).filter(x=>x.played).length} / ${(cl.matches||[]).length} • Katılımcı: ${(cl.teamIds||[]).length} Kulüp</div>
+          <h3 style="margin:0;color:#fde047;">🌟 ${esc(cl.season || 'KRD Şampiyonlar Ligi')} ${cl.hidden ? '<span class="tag" style="background:#7f1d1d;color:#fecaca;">🙈 GİZLİ</span>' : '<span class="tag" style="background:#14532d;color:#bbf7d0;">👁️ YAYINDA</span>'}</h3>
+          <div class="mut" style="font-size:12px;">Format: <b>${isKnockoutOnly ? '⚔️ Doğrudan Eleme' : '🏆 Puanlı Lig + Eleme'}</b> • Katılımcı: ${(cl.teamIds||[]).length} Kulüp</div>
         </div>
-        <button type="button" class="dng" onclick="window.krdResetCl()">🗑 Turnuvayı Sıfırla</button>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button type="button" onclick="window.krdToggleHideCl()">${cl.hidden ? '👁️ Yayına Aç (Göster)' : '🙈 Ziyaretçilerden Gizle'}</button>
+          <button type="button" onclick="window.krdUndoCl()" ${hasUndo ? '' : 'disabled style="opacity:.45"'}>↩️ Geri Al (${window._krdClUndoStack.length})</button>
+          <button type="button" class="dng" onclick="window.krdResetCl()">🚫 İptal Et / Sıfırla</button>
+        </div>
       </div>
       <div class="row">
         <input id="krdClEditSeason" value="${esc(cl.season || '')}" placeholder="Turnuva Başlığı">
@@ -7337,6 +7476,7 @@ window.adminClTab = function() {
       </div>
     </div>
 
+    ${!isKnockoutOnly ? `
     <div class="card">
       <h4 style="margin:0 0 8px;color:#38bdf8;">📊 Devler Ligi Puan Durumu (İlk 4 Yarı Finale Yükselir)</h4>
       <div style="overflow-x:auto;">
@@ -7357,7 +7497,7 @@ window.adminClTab = function() {
     </div>
 
     <div class="card" style="display:grid;gap:8px;">
-      <h4 style="margin:0;color:#a5b4fc;">⚽ Devler Ligi Maçları & Skor Girişi</h4>
+      <h4 style="margin:0;color:#a5b4fc;">⚽ Devler Ligi Grup/Lig Maçları & Skor Girişi</h4>
       ${(cl.matches || []).map(m => `<div class="row" style="justify-content:space-between;padding:7px 10px;border-radius:10px;background:rgba(2,6,23,.65);border:1px solid rgba(129,140,248,.25);">
         <span style="font-size:11px;color:#94a3b8;">T${m.round||1}</span>
         <span style="flex:1;text-align:right;font-weight:700;">${esc(tMap[m.home_id] || 'Ev')}</span>
@@ -7375,10 +7515,40 @@ window.adminClTab = function() {
         <select id="krdClAddA">${clTeamsOpts}</select>
         <button type="button" class="pri" onclick="window.krdAddClManualMatch()">➕ Manuel Maç Ekle</button>
       </div>
-    </div>
+    </div>` : ''}
+
+    ${isKnockoutOnly ? `
+    <div class="card" style="display:grid;gap:8px;border-color:rgba(56,189,248,.45);">
+      <h4 style="margin:0;color:#38bdf8;">⚔️ Doğrudan Eleme Turu Eşleşmeleri (Çeyrek / Yarı Final / Final)</h4>
+      ${(cl.koMatches || []).map(m => `<div class="row" style="justify-content:space-between;padding:8px 10px;border-radius:10px;background:rgba(2,6,23,.7);border:1px solid rgba(250,204,21,.3);">
+        <span class="tag" style="font-size:10.5px;">${esc(m.stage || 'Eleme')}</span>
+        <span style="flex:1;text-align:right;font-weight:800;">${esc(tMap[m.home_id] || 'Kulüp 1')}</span>
+        ${m.bye ? '<span style="color:#4ade80;font-weight:900;padding:0 10px;">BAY GEÇTİ</span>' : `
+          <input type="number" id="cl_koh_${m.id}" value="${m.played ? m.hs : ''}" placeholder="-" style="width:52px;text-align:center;">
+          <b>:</b>
+          <input type="number" id="cl_koa_${m.id}" value="${m.played ? m.aws : ''}" placeholder="-" style="width:52px;text-align:center;">
+          <span style="flex:1;font-weight:800;">${esc(tMap[m.away_id] || 'Kulüp 2')}</span>
+          <button type="button" class="pri" onclick="window.krdSaveClKoMatch(${m.id})" style="padding:5px 9px;font-size:11.5px;">${m.played ? '✅ Güncelle' : '💾 Kaydet'}</button>
+        `}
+        <button type="button" class="dng" onclick="window.krdDelClKoMatch(${m.id})" style="padding:5px 8px;font-size:11px;">🗑</button>
+      </div>`).join('')}
+
+      <div class="row" style="margin-top:8px;padding-top:10px;border-top:1px solid rgba(148,163,184,.2);">
+        <select id="krdClKoStageInp">
+          <option value="Son 16">Son 16</option>
+          <option value="Çeyrek Final">Çeyrek Final</option>
+          <option value="Yarı Final" selected>Yarı Final</option>
+          <option value="Büyük Final">Büyük Final</option>
+        </select>
+        <select id="krdClKoAddH">${clTeamsOpts}</select>
+        <select id="krdClKoAddA">${clTeamsOpts}</select>
+        <button type="button" class="pri" onclick="window.krdAddClKoMatch()">➕ Yeni Tur Maçı Ekle</button>
+      </div>
+    </div>` : ''}
 
     <div class="card" style="display:grid;gap:10px;border-color:rgba(250,204,21,.45);">
-      <h4 style="margin:0;color:#fde047;">🏆 Devler Ligi Eleme Ağacı, Final & Şampiyon İlanı</h4>
+      <h4 style="margin:0;color:#fde047;">🏆 ${isKnockoutOnly ? 'Büyük Final & Şampiyon İlanı' : 'Devler Ligi Yarı Final, Büyük Final & Şampiyon İlanı'}</h4>
+      ${!isKnockoutOnly ? `
       <div class="row">
         <span style="flex:1;"><b>YF 1:</b> ${esc(c1.name)} vs ${esc(c4.name)}</span>
         <input type="number" id="cl_sf1_h" value="${ko.sf1_h ?? ''}" placeholder="1." style="width:54px;text-align:center;">
@@ -7396,26 +7566,18 @@ window.adminClTab = function() {
         <input type="number" id="cl_f_h" value="${ko.f_h ?? ''}" placeholder="YF1" style="width:54px;text-align:center;">
         <b>-</b>
         <input type="number" id="cl_f_a" value="${ko.f_a ?? ''}" placeholder="YF2" style="width:54px;text-align:center;">
-      </div>
+      </div>` : ''}
       <div class="row">
-        <span style="font-size:12px;color:#fde047;"><b>👑 Şampiyonu Manuel Seç (Opsiyonel):</b></span>
+        <span style="font-size:12px;color:#fde047;"><b>👑 KRD Şampiyonlar Ligi Şampiyonu:</b></span>
         <select id="cl_manual_champ">
-          <option value="">Otomatik (Final Skoruna Göre)</option>
+          <option value="">Otomatik / Henüz Belirlenmedi</option>
           ${(cl.teamIds || []).map(id => `<option value="${esc(tMap[id]||'')}" ${ko.manualChamp === (tMap[id]||'') ? 'selected' : ''}>${esc(tMap[id]||'')}</option>`).join('')}
         </select>
       </div>
-      <button type="button" class="pri" onclick="window.krdSaveClKo()" style="background:linear-gradient(135deg,#b45309,#4338ca)!important;color:#fef08a!important;font-weight:900;">🏆 Tüm Devler Ligi Ayar & Final Skorlarını Kaydet</button>
+      <button type="button" class="pri" onclick="window.krdSaveClKo()" style="background:linear-gradient(135deg,#b45309,#4338ca)!important;color:#fef08a!important;font-weight:900;">🏆 Tüm Devler Ligi Ayar & Şampiyon Bilgilerini Kaydet</button>
     </div>
   </div>`;
 };
-</script>
-<script id="krd-sw-purge">
-if ('caches' in window) {
-  caches.keys().then(ks => ks.forEach(k => { if (!k.includes('v2026cl')) caches.delete(k); }));
-}
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.update()));
-}
 </script>
 </body></html>
 

@@ -1,4 +1,4 @@
-﻿const CACHE = 'krd-lig-v2026cl-1795894296166';
+﻿const CACHE = 'krd-lig-v2026cl-1795894734984';
 const ASSETS = ['/', '/manifest.json', '/icon-192.png'];
 
 self.addEventListener('install', event => {
@@ -46,7 +46,7 @@ self.addEventListener('push', event => {
       body: data.body || '',
       icon: '/icon-192.png',
       badge: '/icon-192.png',
-      tag: 'krd-lig-v2026cl-1795894296166',
+      tag: 'krd-lig-v2026cl-1795894734984',
       vibrate: [180, 90, 180],
       data: { url: data.url || '/' }
     })

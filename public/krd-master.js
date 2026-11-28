@@ -519,21 +519,63 @@
     const tMap = Object.fromEntries(teams.map(t => [t.id, t.name]));
     const ex = (window._krdData && window._krdData.extras) || {};
 
-            if (tab === 'champions') {
+                if (tab === 'champions') {
       const cl = (window._krdData && window._krdData.cl) || { active: false };
-      if (!cl.active || !(cl.teamIds || []).length) {
+      if (!cl.active || cl.hidden || !(cl.teamIds || []).length) {
         host.innerHTML = `
           <div class="krd-cl-hero" style="text-align:center;padding:28px 18px;">
             <div><span class="krd-cl-trophy">🏆</span></div>
             <div style="font-size:11px;font-weight:900;letter-spacing:1.5px;color:#facc15;">✦ UEFA DEVLER LİGİ FORMATI ✦</div>
             <h3 style="margin:2px 0;font-size:19px;color:#fff;font-weight:900;">🌟 KRD ŞAMPİYONLAR LİGİ</h3>
             <p style="margin:4px auto 0;max-width:440px;font-size:13px;color:#cbd5e1;line-height:1.5;">
-              Yeni <b>KRD Şampiyonlar Ligi</b> sezonu henüz başlatılmadı.<br>
-              Yönetici panelinden kura çekildiğinde tüm kulüpler <b>0 puanla</b> Devler Arenası'nda yerini alacak!
+              Yeni <b>KRD Şampiyonlar Ligi</b> sezonu şu anda hazırlık aşamasında.<br>
+              Yönetici tarafından yayına açıldığında tüm eşleşmeler ve sonuçlar anında burada görünecek!
             </p>
           </div>`;
+      } else if (cl.mode === 'knockout') {
+        const ko = cl.ko || {};
+        const champ = (ko.manualChamp && ko.manualChamp.trim()) ? { name: ko.manualChamp.trim() } : null;
+        host.innerHTML = `
+          <div class="krd-cl-hero">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <span class="krd-cl-trophy">🏆</span>
+                <div>
+                  <div style="font-size:11px;font-weight:900;letter-spacing:1.4px;color:#facc15;">✦ ${esc(cl.season || 'KRD ŞAMPİYONLAR LİGİ')} ✦</div>
+                  <h3 style="margin:2px 0 0;font-size:18px;color:#fff;font-weight:900;">⚔️ KRD ŞAMPİYONLAR LİGİ (ELEME USULÜ)</h3>
+                  <div style="font-size:12px;color:#c7d2fe;">Doğrudan Eleme Turları & Büyük Final Sahnesi</div>
+                </div>
+              </div>
+              <div style="padding:7px 12px;border-radius:999px;background:rgba(250,204,21,.16);border:1px solid rgba(250,204,21,.5);color:#fde047;font-size:11.5px;font-weight:900;">
+                ⭐ ${(cl.teamIds||[]).length} Elit Kulüp
+              </div>
+            </div>
+
+            ${cl.note ? `<div style="padding:9px 12px;border-radius:11px;background:rgba(56,189,248,.14);border:1px solid rgba(56,189,248,.4);color:#bae6fd;font-size:12.5px;font-weight:700;">📢 ${esc(cl.note)}</div>` : ''}
+
+            ${champ ? `<div style="padding:14px;border-radius:14px;background:linear-gradient(135deg,rgba(234,179,8,.32),rgba(67,56,202,.45));border:2px solid #facc15;text-align:center;">
+              <div style="font-size:11px;font-weight:900;color:#fde047;letter-spacing:1.2px;">👑 KRD ŞAMPİYONLAR LİGİ ŞAMPİYONU 👑</div>
+              <div style="font-size:20px;font-weight:900;color:#fff;margin-top:4px;">🏆 ${esc(champ.name)}</div>
+            </div>` : ''}
+
+            <div style="background:rgba(2,6,23,.74);border:1px solid rgba(129,140,248,.35);border-radius:14px;padding:12px;display:grid;gap:8px;">
+              <div style="font-size:13px;font-weight:900;color:#93c5fd;">⚔️ Devler Ligi Eleme Eşleşmeleri</div>
+              ${(cl.koMatches || []).map(m => `<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 11px;border-radius:11px;background:linear-gradient(90deg,rgba(67,56,202,.32),rgba(15,23,42,.85));border:1px solid rgba(250,204,21,.35);font-size:13px;">
+                <span style="font-size:10.5px;font-weight:900;padding:2px 8px;border-radius:999px;background:rgba(250,204,21,.2);color:#fde047;">${esc(m.stage || 'Eleme')}</span>
+                <span style="flex:1;text-align:right;font-weight:800;color:#fff;margin-left:8px;">${esc(tMap[m.home_id] || 'Kulüp 1')}</span>
+                ${m.bye ? '<span style="margin:0 10px;padding:2px 9px;border-radius:7px;background:rgba(16,185,129,.22);color:#4ade80;font-weight:900;">BAY GEÇTİ</span>' : `
+                  <span style="margin:0 10px;padding:2px 9px;border-radius:7px;background:${m.played ? 'rgba(16,185,129,.22)' : 'rgba(99,102,241,.22)'};color:${m.played ? '#4ade80' : '#c7d2fe'};font-weight:900;">${m.played ? (m.hs + ' - ' + m.aws) : 'VS'}</span>
+                  <span style="flex:1;font-weight:800;color:#fff;">${esc(tMap[m.away_id] || 'Kulüp 2')}</span>
+                `}
+              </div>`).join('')}
+            </div>
+          </div>`;
       } else {
-        const pens = cl.penalties || {}; const rows = (cl.teamIds || []).map(id => { const pen = Number(pens[String(id)]) || 0; return { id: Number(id), name: tMap[id] || ('Kulüp #' + id), o: 0, g: 0, b: 0, m: 0, ag: 0, yg: 0, av: 0, p: pen }; });
+        const pens = cl.penalties || {};
+        const rows = (cl.teamIds || []).map(id => {
+          const pen = Number(pens[String(id)]) || 0;
+          return { id: Number(id), name: tMap[id] || ('Kulüp #' + id), o: 0, g: 0, b: 0, m: 0, ag: 0, yg: 0, av: 0, p: pen };
+        });
         const rMap = Object.fromEntries(rows.map(r => [r.id, r]));
         (cl.matches || []).filter(m => m.played).forEach(m => {
           const h = rMap[Number(m.home_id)], a = rMap[Number(m.away_id)];
@@ -574,6 +616,8 @@
                 ⭐ ${rows.length} Kulüp • ${(cl.matches||[]).filter(m=>m.played).length}/${(cl.matches||[]).length} Maç
               </div>
             </div>
+
+            ${cl.note ? `<div style="padding:9px 12px;border-radius:11px;background:rgba(56,189,248,.14);border:1px solid rgba(56,189,248,.4);color:#bae6fd;font-size:12.5px;font-weight:700;">📢 ${esc(cl.note)}</div>` : ''}
 
             ${champ ? `<div style="padding:14px;border-radius:14px;background:linear-gradient(135deg,rgba(234,179,8,.32),rgba(67,56,202,.45));border:2px solid #facc15;text-align:center;">
               <div style="font-size:11px;font-weight:900;color:#fde047;letter-spacing:1.2px;">👑 KRD ŞAMPİYONLAR LİGİ ŞAMPİYONU 👑</div>
