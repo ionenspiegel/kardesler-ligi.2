@@ -3835,7 +3835,7 @@ function adminSecurityTab(){
 
 function panel(){const weeks=[...new Set(S.matches.map(m=>m.week))].sort((a,b)=>a-b);if(!wk||!weeks.includes(wk))wk=+S.settings.week&&weeks.includes(+S.settings.week)?+S.settings.week:weeks[0]||1;
  const _topStats=adminStatsBar();
-const allTabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['cl','🌟 KRD Şampiyonlar Ligi'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler ve Görüntü'],['canli','🔴 Canlı (1-4)'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki & Log']];
+const allTabs=[['m','⚽ Maçlar'],['cl','🌟 Şampiyonlar Ligi'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler ve Görüntü'],['canli','🔴 Canlı (1-4)'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki & Log']];
 const allowedSet = (ME && ME.isPrimary === false && Array.isArray(ME.perms)) ? new Set(ME.perms) : null;
 const tabs = (allowedSet ? allTabs.filter(([k]) => k === 'cl' || allowedSet.has(k)) : allTabs).filter(([k], idx, arr) => arr.findIndex(x => x[0] === k) === idx);
 if (tabs.length && !tabs.some(([k]) => k === tab)) { tab = tabs[0][0]; }
@@ -7408,6 +7408,11 @@ window.adminClTab = function() {
     </div>
   </div>`;
 };
+</script>
+<script id="krd-sw-bust">
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.update()));
+}
 </script>
 </body></html>
 
