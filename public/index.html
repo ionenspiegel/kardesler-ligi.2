@@ -6464,7 +6464,7 @@ events.onmessage = async () => {
 
   // 2. Tek tikla tam JSON yedek indirme
   window.krdDownloadBackupJson = function() {
-    if (!window.S) { alert('Lig verisi henüz yüklenmedi.'); return; }
+    if (!window.S && typeof S !== "undefined") window.S = S;
     var payload = {
       exported_at: new Date().toISOString(),
       settings: S.settings || {},

@@ -527,7 +527,10 @@ async function api(req, res, u) {
       if (hasPlayed && tbl.length) {
         await t.run(`INSERT INTO ${ARCHIVES}(season,champion,data,archived_at) VALUES($1,$2,$3,$4)`, curS, tbl[0].name, JSON.stringify(tbl), new Date().toISOString());
       }
+      await t.run(`DELETE FROM ${GOALS}`);
       await t.run(`DELETE FROM ${MATCHES}`);
+      await t.run(`UPDATE ${TEAMS} SET penalty=0`);
+      await t.run(`DELETE FROM ${SETTINGS} WHERE k='krd_predictions'`);
       await t.run(`UPDATE ${SETTINGS} SET v=$1 WHERE k='season'`, n);
       await t.run(`UPDATE ${SETTINGS} SET v='1' WHERE k='week'`);
     });
