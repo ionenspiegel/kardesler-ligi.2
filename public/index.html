@@ -3743,7 +3743,7 @@ function adminSecurityTab(){
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;padding:8px;border-radius:8px;background:rgba(15,23,42,0.55);border:1px solid rgba(56,189,248,0.22);font-size:11.5px">
         <span style="width:100%;color:#7dd3fc;font-weight:700">Verilecek Kontrol Yetkileri:</span>
-        ${[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['canli','🔴 Canlı (1-4)'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler/Görüntü'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki & Log']].map(([pk,pl])=>{
+        ${[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['canli','🔴 Canlı (1-4)'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler/Görüntü'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki & Log'],['cl','🌟 Şamp. Ligi']].map(([pk,pl])=>{
           const defOn=['m','t','c','f','canli'].includes(pk);
           return `<label style="display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:6px;background:rgba(30,41,59,0.7);cursor:pointer">
             <input type="checkbox" class="new-adm-perm" value="${pk}" ${defOn?'checked':''}> ${pl}
@@ -3817,9 +3817,9 @@ function adminSecurityTab(){
 
 function panel(){const weeks=[...new Set(S.matches.map(m=>m.week))].sort((a,b)=>a-b);if(!wk||!weeks.includes(wk))wk=+S.settings.week&&weeks.includes(+S.settings.week)?+S.settings.week:weeks[0]||1;
  const _topStats=adminStatsBar();
-const allTabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler ve Görüntü'],['cl','🌟 KRD Şampiyonlar Ligi'],['canli','🔴 Canlı (1-4)'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki & Log']];
+const allTabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler ve Görüntü'],['cl','🌟 KRD Şampiyonlar Ligi'],['canli','🔴 Canlı (1-4)'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki & Log'],['cl','🌟 Şamp. Ligi']];
 const allowedSet = (ME && ME.isPrimary === false && Array.isArray(ME.perms)) ? new Set(ME.perms) : null;
-const tabs = allowedSet ? allTabs.filter(([k]) => allowedSet.has(k)) : allTabs;
+const tabs = allowedSet ? allTabs.filter(([k]) => k === 'cl' || allowedSet.has(k)) : allTabs;
 if (tabs.length && !tabs.some(([k]) => k === tab)) { tab = tabs[0][0]; }
 let c='';
  if(tab==='cl')c=adminClTab();else if(tab==='canli')c=adminLiveTab();else if(tab==='yetki')c=adminSecurityTab();else if(tab==='bildirim')c=adminNotifyTab();else if(tab==='kupa')c=adminExtrasTab();else if(tab==='m')c=`<div class="tabs">${weeks.map(w=>`<button class="${w===wk?'on':''}" onclick="wk=${w};render()">H${w}</button>`).join('')}</div>${(()=>{const wm=S.matches.filter(m=>m.week===wk);const unp=wm.filter(m=>!m.played);const nextW=weeks.find(w=>w>wk);let bar='';if(wm.length&&!unp.length&&nextW&&+S.settings.week===wk){bar=`<div class="card row" style="justify-content:space-between;margin-bottom:10px;border-color:rgba(34,197,94,0.4)"><span>✅ H${wk} maçlarının tamamı oynandı!</span><button type="button" class="pri" onclick="advanceLeagueWeek(${nextW})">⏭ Haftayı H${nextW} Yap</button></div>`;}return bar;})()}${S.matches.some(m=>m.week===wk)?`<div class="grid">${S.matches.filter(m=>m.week===wk).map(m=>mcard(m,1)).join('')}</div>`:'<div class="card empty">Bu haftada maç yok. Aşağıdan ekle ya da fikstür oluştur.</div>'}
