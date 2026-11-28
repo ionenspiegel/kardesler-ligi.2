@@ -434,6 +434,18 @@ async function api(req, res, u) {
 
   
 
+  if (M === 'POST' && P === '/api/admin/krd-cl') {
+    const b = await body(req);
+    const cl = b.cl || {};
+    await tx(async t => {
+      await t.run(`DELETE FROM ${SETTINGS} WHERE k=$1`, 'krd_champions_league');
+      await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES($1,$2)`, 'krd_champions_league', JSON.stringify(cl));
+    });
+    if (typeof pushAudit === 'function') pushAudit('KRD Şampiyonlar Ligi Güncellendi', (cl.season || 'Devler Ligi') + ' kaydedildi.');
+    if (typeof notifyClients === 'function') notifyClients();
+    return send(res, 200, { ok: 1, cl });
+  }
+
   if (M === 'POST' && P === '/api/admin/live-matches') {
     const b = await body(req);
     const list = Array.isArray(b.live) ? b.live.slice(0, 4).map(x => ({
@@ -958,19 +970,6 @@ const u = new URL(req.url, 'http://x');
     const row = await krdDbGet(`SELECT v FROM ${SETTINGS} WHERE k=$1`, 'krd_champions_league');
     let cl = { active: false, season: '1. Devler Ligi', teamIds: [], matches: [], ko: { sf1_h: '', sf1_a: '', sf2_h: '', sf2_a: '', f_h: '', f_a: '' } };
     try { if (row && row.v) cl = Object.assign(cl, JSON.parse(row.v)); } catch {}
-    return send(res, 200, { ok: 1, cl });
-  }
-  if (req.method === 'POST' && u.pathname === '/api/admin/krd-cl') {
-    const me = await getAdmin(req);
-    if (!me) return send(res, 401, { error: 'Yetkisiz' });
-    const b = await body(req);
-    const cl = b.cl || {};
-    await tx(async t => {
-      await t.run(`DELETE FROM ${SETTINGS} WHERE k=$1`, 'krd_champions_league');
-      await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES($1,$2)`, 'krd_champions_league', JSON.stringify(cl));
-    });
-    if (typeof pushAudit === 'function') pushAudit('KRD Şampiyonlar Ligi Güncellendi', (cl.season || 'Devler Ligi') + ' kaydedildi.');
-    if (typeof notifyClients === 'function') notifyClients();
     return send(res, 200, { ok: 1, cl });
   }
   // === KRD_CHAMPIONS_LEAGUE_END ===
