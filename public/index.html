@@ -7059,6 +7059,23 @@ events.onmessage = async () => {
   setInterval(enforceSubAdminSwitchLock, 500);
 })();
 </script>
+<script id="krd-test-notify-js">
+async function testUnifiedAdminNotify(){
+  try {
+    const r = await api('POST','/api/admin/test-notify',{});
+    let msg = '🧪 Test Sonucu:\n';
+    msg += '• Telefon Push Bildirimi: ' + (r.pushSent > 0 ? '✅ Gönderildi ('+r.pushSent+' cihaz)' : '⚪ Cihaz bağlı değil') + '\n';
+    if (r.mail && r.mail.ok) {
+      msg += '• E-Posta Bildirimi: ✅ Gönderildi (' + r.mail.provider + ')';
+    } else {
+      msg += '• E-Posta Bildirimi: ⚠️ Hata/Durum: ' + ((r.mail && r.mail.reason) || 'bilinmiyor');
+    }
+    alert(msg);
+  } catch (err) {
+    alert('Test gönderilirken hata: ' + (err.message || err));
+  }
+}
+</script>
 </body></html>
 
 
