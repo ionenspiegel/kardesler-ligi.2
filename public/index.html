@@ -3743,7 +3743,7 @@ function adminSecurityTab(){
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;padding:8px;border-radius:8px;background:rgba(15,23,42,0.55);border:1px solid rgba(56,189,248,0.22);font-size:11.5px">
         <span style="width:100%;color:#7dd3fc;font-weight:700">Verilecek Kontrol Yetkileri:</span>
-        ${[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['canli','🔴 Canlı (1-4)'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler/Görüntü'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki & Log'],['cl','🌟 Şamp. Ligi']].map(([pk,pl])=>{
+        ${[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['canli','🔴 Canlı (1-4)'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler/Görüntü'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki & Log']].map(([pk,pl])=>{
           const defOn=['m','t','c','f','canli'].includes(pk);
           return `<label style="display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:6px;background:rgba(30,41,59,0.7);cursor:pointer">
             <input type="checkbox" class="new-adm-perm" value="${pk}" ${defOn?'checked':''}> ${pl}
@@ -3767,7 +3767,7 @@ function adminSecurityTab(){
               </div>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:11px">
-              ${[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['canli','🔴 Canlı'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler'],['cl','🌟 Şamp. Ligi'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki']].map(([pk,pl])=>`<label style="display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:5px;background:rgba(30,41,59,0.75);cursor:pointer">
+              ${[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['canli','🔴 Canlı'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki']].map(([pk,pl])=>`<label style="display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:5px;background:rgba(30,41,59,0.75);cursor:pointer">
                 <input type="checkbox" class="sub-perm-${uSafe}" value="${pk}" ${pArr.includes(pk)?'checked':''}> ${pl}
               </label>`).join('')}
             </div>
@@ -3817,7 +3817,7 @@ function adminSecurityTab(){
 
 function panel(){const weeks=[...new Set(S.matches.map(m=>m.week))].sort((a,b)=>a-b);if(!wk||!weeks.includes(wk))wk=+S.settings.week&&weeks.includes(+S.settings.week)?+S.settings.week:weeks[0]||1;
  const _topStats=adminStatsBar();
-const allTabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler ve Görüntü'],['cl','🌟 KRD Şampiyonlar Ligi'],['canli','🔴 Canlı (1-4)'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki & Log'],['cl','🌟 Şamp. Ligi']];
+const allTabs=[['m','⚽ Maçlar'],['t','👕 Takımlar'],['c','⚖️ Ceza & Puan'],['f','📅 Fikstür'],['s','⚙ Ayarlar'],['kupa','✨ Eklemeler ve Görüntü'],['cl','🌟 KRD Şampiyonlar Ligi'],['canli','🔴 Canlı (1-4)'],['bildirim','🔔 Bildirim'],['yetki','🛡️ Yetki & Log']];
 const allowedSet = (ME && ME.isPrimary === false && Array.isArray(ME.perms)) ? new Set(ME.perms) : null;
 const tabs = allowedSet ? allTabs.filter(([k]) => k === 'cl' || allowedSet.has(k)) : allTabs;
 if (tabs.length && !tabs.some(([k]) => k === tab)) { tab = tabs[0][0]; }
