@@ -3887,7 +3887,41 @@ function restoreJson(inp){
  rd.readAsText(file);
 }
 
-function render(){const _admSlug=(S&&S.settings&&S.settings.admin_slug)||'krd-kontrol';const r=location.hash.startsWith('#/'+_admSlug)||location.hash.startsWith('#/yonetici-gizli');$('#app').innerHTML=!r?home():!ME.admin?login():panel();bump=null}
+function render(){
+  const _prevY = window.scrollY || document.documentElement.scrollTop || 0;
+  const _ae = document.activeElement;
+  const _aeId = (_ae && _ae.id) ? _ae.id : '';
+  const _aeName = (_ae && _ae.name) ? _ae.name : '';
+  const _aeVal = (_ae && typeof _ae.value === 'string') ? _ae.value : null;
+  const _selStart = (_ae && typeof _ae.selectionStart === 'number') ? _ae.selectionStart : null;
+
+  const _admSlug=(S&&S.settings&&S.settings.admin_slug)||'krd-kontrol';
+  const r=location.hash.startsWith('#/'+_admSlug)||location.hash.startsWith('#/yonetici-gizli');
+  $('#app').innerHTML=!r?home():!ME.admin?login():panel();
+  bump=null;
+
+  // Alt-yoneticilerde (Yusuf olmayan ve 'kupa' yetkisi bulunmayan) Duyuru/Bakim/Kurallar gecis barini gizle
+  const _canExtras = !ME || ME.isPrimary !== false || (Array.isArray(ME.perms) && ME.perms.includes('kupa'));
+  const _swBar = document.getElementById('krdAdmSwitchBar');
+  if (_swBar) _swBar.style.display = _canExtras ? '' : 'none';
+
+  // Kaydirma konumunu ve aktif input odagini geri yukle (sayfa yukari kaymaz)
+  requestAnimationFrame(() => {
+    window.scrollTo(0, _prevY);
+    if (_aeId || _aeName) {
+      const _nextEl = _aeId ? document.getElementById(_aeId) : document.querySelector('[name="' + _aeName + '"]');
+      if (_nextEl && document.body.contains(_nextEl)) {
+        try {
+          _nextEl.focus({ preventScroll: true });
+          if (_aeVal !== null && _nextEl.value !== _aeVal) _nextEl.value = _aeVal;
+          if (_selStart !== null && typeof _nextEl.setSelectionRange === 'function') {
+            _nextEl.setSelectionRange(_selStart, _selStart);
+          }
+        } catch {}
+      }
+    }
+  });
+}
 const out=()=>act(()=>api('POST','/api/admin/logout'),'Çıkış yapıldı');
 const f=e=>(e.preventDefault(),e.target);
 async function g(id,k,d){const m=S.matches.find(x=>x.id===id),v=Math.max(0,m[k]+d);if(v===m[k])return;bump=id;if(d>0){playSfx('goal');launchConfetti();const e=$('#goal');e.className='';void e.offsetWidth;e.className='go'}
@@ -6990,6 +7024,36 @@ events.onmessage = async () => {
   enhanceHomeDerbyAndForms();
   setInterval(enhanceHomeDerbyAndForms, 1500);
   window.addEventListener('hashchange', enhanceHomeDerbyAndForms);
+})();
+</script>
+<script id="krd-stability-guard-js">
+(function() {
+  // Bos href="#" tiklamalarinin sayfayi en tepeye ziplatmasini engelle
+  document.addEventListener('click', function(e) {
+    var a = e.target && e.target.closest ? e.target.closest('a[href="#"]') : null;
+    if (a) e.preventDefault();
+  }, true);
+
+  // Alt-yoneticilerde (kupa yetkisi yoksa) Duyuru, Bakim & Kurallar barini ve panelini gizle
+  function enforceSubAdminSwitchLock() {
+    if (typeof ME === 'undefined' || !ME || !ME.admin) return;
+    var canExtras = (ME.isPrimary !== false) || (Array.isArray(ME.perms) && ME.perms.indexOf('kupa') !== -1);
+    var sw = document.getElementById('krdAdmSwitchBar');
+    if (sw) {
+      sw.style.display = canExtras ? '' : 'none';
+    }
+    if (!canExtras) {
+      // Eger bir sekilde Duyuru/Bakim gorunumu acildiysa geri Lig & Mac Yonetimine cevir
+      var extrasWrap = document.getElementById('krdExtrasAdminView') || document.getElementById('krdExtrasBox');
+      if (extrasWrap && extrasWrap.style.display !== 'none') {
+        extrasWrap.style.display = 'none';
+        var appEl = document.getElementById('app');
+        if (appEl) appEl.style.display = '';
+      }
+    }
+  }
+
+  setInterval(enforceSubAdminSwitchLock, 500);
 })();
 </script>
 </body></html>
