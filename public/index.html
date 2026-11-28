@@ -2689,8 +2689,8 @@ body.krd-cyber-admin #krdAdmSwitchBar {
   margin: 12px 0 16px 0;
   padding: 8px;
   border-radius: 16px;
-  background: rgba(15, 23, 42, 0.78);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.82);
+  border: 1px solid rgba(148, 163, 184, 0.2);
   backdrop-filter: blur(12px);
 }
 .krd-mnav-btn {
@@ -2704,127 +2704,76 @@ body.krd-cyber-admin #krdAdmSwitchBar {
   border-radius: 12px;
   font-weight: 800;
   font-size: 13px;
-  letter-spacing: 0.01em;
   border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(30, 41, 59, 0.55);
+  background: rgba(30, 41, 59, 0.6);
   color: #cbd5e1;
   cursor: pointer;
   transition: transform 0.22s cubic-bezier(.2,.8,.2,1), box-shadow 0.22s ease, background 0.22s ease, color 0.22s ease, border-color 0.22s ease;
 }
-.krd-mnav-btn:hover {
-  transform: translateY(-2px) scale(1.02);
-  color: #fff;
-}
-/* Her menunun kendine ozel rengi */
-.krd-mnav-btn[data-nav="puan"] { border-color: rgba(16,185,129,0.32); }
+.krd-mnav-btn:hover { transform: translateY(-2px) scale(1.02); color: #fff; }
+.krd-mnav-btn[data-nav="puan"] { border-color: rgba(16,185,129,0.35); }
 .krd-mnav-btn[data-nav="puan"].active, .krd-mnav-btn[data-nav="puan"]:hover {
-  background: linear-gradient(135deg, #059669, #10b981);
-  color: #fff;
-  border-color: #6ee7b7;
+  background: linear-gradient(135deg, #059669, #10b981); color: #fff; border-color: #6ee7b7;
   box-shadow: 0 6px 20px rgba(16,185,129,0.42);
 }
-.krd-mnav-btn[data-nav="maclar"] { border-color: rgba(59,130,246,0.32); }
+.krd-mnav-btn[data-nav="maclar"] { border-color: rgba(59,130,246,0.35); }
 .krd-mnav-btn[data-nav="maclar"].active, .krd-mnav-btn[data-nav="maclar"]:hover {
-  background: linear-gradient(135deg, #2563eb, #38bdf8);
-  color: #fff;
-  border-color: #93c5fd;
+  background: linear-gradient(135deg, #2563eb, #38bdf8); color: #fff; border-color: #93c5fd;
   box-shadow: 0 6px 20px rgba(59,130,246,0.42);
 }
 .krd-mnav-btn[data-nav="istatistik"] { border-color: rgba(168,85,247,0.35); }
 .krd-mnav-btn[data-nav="istatistik"].active, .krd-mnav-btn[data-nav="istatistik"]:hover {
-  background: linear-gradient(135deg, #7c3aed, #c084fc);
-  color: #fff;
-  border-color: #e9d5ff;
+  background: linear-gradient(135deg, #7c3aed, #c084fc); color: #fff; border-color: #e9d5ff;
   box-shadow: 0 6px 20px rgba(168,85,247,0.42);
 }
 .krd-mnav-btn[data-nav="muze"] { border-color: rgba(245,158,11,0.35); }
 .krd-mnav-btn[data-nav="muze"].active, .krd-mnav-btn[data-nav="muze"]:hover {
-  background: linear-gradient(135deg, #d97706, #fbbf24);
-  color: #0f172a;
-  border-color: #fef08a;
+  background: linear-gradient(135deg, #d97706, #fbbf24); color: #0f172a; border-color: #fef08a;
   box-shadow: 0 6px 20px rgba(245,158,11,0.42);
 }
 .krd-mnav-btn[data-nav="cl"] {
-  border-color: rgba(250,204,21,0.45);
-  background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(30,58,138,0.65));
+  border-color: rgba(250,204,21,0.5);
+  background: linear-gradient(135deg, rgba(15,23,42,0.92), rgba(30,58,138,0.7));
   color: #fde68a;
 }
 .krd-mnav-btn[data-nav="cl"].active, .krd-mnav-btn[data-nav="cl"]:hover {
-  background: linear-gradient(135deg, #1e3a8a, #3b82f6 55%, #eab308);
-  color: #fff;
-  border-color: #fde047;
+  background: linear-gradient(135deg, #1e3a8a, #3b82f6 55%, #eab308); color: #fff; border-color: #fde047;
   box-shadow: 0 6px 24px rgba(234,179,8,0.48);
 }
-.krd-nav-pane-anim {
-  animation: krdTabFadeSlide 0.34s cubic-bezier(.2,.8,.2,1);
-}
-/* KRD Sampiyonlar Ligi Ozel Sahnesi */
+.krd-nav-pane-anim { animation: krdTabFadeSlide 0.34s cubic-bezier(.2,.8,.2,1); }
 #krdChampionsLeagueSection {
-  border-radius: 20px;
-  padding: 18px;
-  background: radial-gradient(circle at top right, rgba(59,130,246,0.26), transparent 55%),
-              radial-gradient(circle at bottom left, rgba(234,179,8,0.18), transparent 55%),
+  border-radius: 20px; padding: 18px; margin-bottom: 16px;
+  background: radial-gradient(circle at top right, rgba(59,130,246,0.28), transparent 55%),
+              radial-gradient(circle at bottom left, rgba(234,179,8,0.2), transparent 55%),
               linear-gradient(145deg, #070d1f, #0f1c3f 55%, #091128);
-  border: 1px solid rgba(250, 204, 21, 0.38);
+  border: 1px solid rgba(250, 204, 21, 0.42);
   animation: krdClStarPulse 4.5s infinite ease-in-out, krdTabFadeSlide 0.35s ease;
 }
 .krd-cl-banner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding-bottom: 14px;
-  margin-bottom: 16px;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 10px; padding-bottom: 14px; margin-bottom: 16px;
   border-bottom: 1px solid rgba(250,204,21,0.22);
 }
 .krd-cl-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px;
+  font-size: 11px; font-weight: 900; letter-spacing: 0.08em;
   background: linear-gradient(135deg, rgba(250,204,21,0.22), rgba(56,189,248,0.22));
-  color: #fde047;
-  border: 1px solid rgba(250,204,21,0.45);
+  color: #fde047; border: 1px solid rgba(250,204,21,0.45);
 }
-.krd-cl-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 14px;
-}
+.krd-cl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
 .krd-cl-card {
-  background: rgba(15, 23, 42, 0.72);
-  border: 1px solid rgba(96, 165, 250, 0.3);
-  border-radius: 14px;
-  padding: 14px;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  background: rgba(15, 23, 42, 0.74); border: 1px solid rgba(96, 165, 250, 0.32);
+  border-radius: 14px; padding: 14px; transition: transform 0.2s ease, border-color 0.2s ease;
 }
-.krd-cl-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(250, 204, 21, 0.55);
-}
+.krd-cl-card:hover { transform: translateY(-2px); border-color: rgba(250, 204, 21, 0.55); }
 .krd-cl-match-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: rgba(30, 41, 59, 0.65);
-  margin-top: 8px;
-  font-weight: 700;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 10px; border-radius: 10px; background: rgba(30, 41, 59, 0.68);
+  margin-top: 8px; font-weight: 700;
 }
 .krd-cl-score {
-  padding: 3px 9px;
-  border-radius: 8px;
-  background: rgba(250, 204, 21, 0.16);
-  color: #fde047;
-  font-weight: 900;
-  min-width: 34px;
-  text-align: center;
+  padding: 3px 9px; border-radius: 8px; background: rgba(250, 204, 21, 0.16);
+  color: #fde047; font-weight: 900; min-width: 34px; text-align: center;
 }
 </style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
@@ -5112,7 +5061,7 @@ events.onmessage = async () => {
 
     const expectedCount = S.teams.length + 1;
     if (bar.children.length !== expectedCount) {
-      bar.innerHTML = `<button type="button" class="krd-chip ${!activeTeamFilter ? 'active' : ''}" data-team="">Tümü</button>` +
+      bar.innerHTML = `<button type="button" class="krd-chip ${!activeTeamFilter ? 'active' : ''}" data-team="">Tüm Takımlar</button>` +
         S.teams.map(t => `<button type="button" class="krd-chip ${activeTeamFilter === t.name.toLowerCase() ? 'active' : ''}" data-team="${t.name.toLowerCase()}">${esc(t.name)}</button>`).join('');
 
       bar.querySelectorAll('.krd-chip').forEach(chip => {
@@ -7233,7 +7182,7 @@ async function testUnifiedAdminNotify(){
 <script id="krd-colored-menus-cl-js">
 (function() {
   window.__krdClCfg = window.__krdClCfg || {
-    enabled: false,
+    enabled: true,
     mode: 'auto',
     title: 'KRD ŞAMPİYONLAR LİGİ',
     sf1_h: '', sf1_a: '', sf1_hs: '', sf1_as: '',
@@ -7302,8 +7251,7 @@ async function testUnifiedAdminNotify(){
       '</div>'
     ).join('') || '<div class="mut" style="font-size:12px;">Henüz sıralama oluşmadı.</div>';
 
-    return '<div id="krdChampionsLeagueSection">' +
-      '<div class="krd-cl-banner">' +
+    return '<div class="krd-cl-banner">' +
         '<div>' +
           '<div class="krd-cl-badge">🌟 DEVLER ARENASI • ' + (isAuto ? 'OTOMATİK İLK 4 MODU' : 'MANUEL ÖZEL EŞLEŞME') + '</div>' +
           '<h2 style="margin:8px 0 2px 0;font-size:21px;color:#fff;letter-spacing:.02em;">🏆 ' + escCl(cfg.title || 'KRD ŞAMPİYONLAR LİGİ') + '</h2>' +
@@ -7334,8 +7282,7 @@ async function testUnifiedAdminNotify(){
             (champName ? '🎉 Kupa Sahibi: <b>' + escCl(champName) + '</b>' : 'Final maçı oynandığında kupa sahibi burada taçlandırılır.') +
           '</div>' +
         '</div>' +
-      '</div>' +
-    '</div>';
+      '</div>';
   }
 
   function syncColoredMenusAndCl() {
@@ -7346,7 +7293,6 @@ async function testUnifiedAdminNotify(){
     const app = document.getElementById('app');
     if (!app) return;
 
-    // Yonetici panelinde Eklemeler/Goruntu sekmesindeysek KRD Sampiyonlar Ligi Kontrol Kutusunu ekle
     if (isAdmin) {
       const navEl = document.getElementById('krdColoredMainNav');
       if (navEl) navEl.remove();
@@ -7424,7 +7370,6 @@ async function testUnifiedAdminNotify(){
       return;
     }
 
-    // Ana Sayfa: Renkli & Animasyonlu Menuleri Olustur ("Tumu" YOK!)
     const hero = app.querySelector('.hero');
     if (!hero) return;
 
@@ -7465,7 +7410,9 @@ async function testUnifiedAdminNotify(){
       });
     }
 
-    // Icerik bolumlerini secili menuye gore siniflandir ve animasyonla goster/gizle
+    // Eger htab 'all' kaldiysa 'ozet' yap
+    if (typeof htab !== 'undefined' && htab === 'all') { htab = 'ozet'; }
+
     let currentBucket = 'puan';
     Array.from(app.children).forEach(el => {
       if (el === hero || el === navBar || el.classList.contains('modal')) return;
@@ -7500,7 +7447,6 @@ async function testUnifiedAdminNotify(){
       }
     });
 
-    // KRD Sampiyonlar Ligi Sahnesi
     let clSec = document.getElementById('krdChampionsLeagueSection');
     if (activeMainMenu === 'cl' && clEnabled) {
       if (!clSec) {
