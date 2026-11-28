@@ -2673,6 +2673,160 @@ body.krd-cyber-admin #krdAdmSwitchBar {
   color: #fdba74;
 }
 </style>
+<style id="krd-colored-menus-cl-css">
+@keyframes krdTabFadeSlide {
+  from { opacity: 0; transform: translateY(10px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes krdClStarPulse {
+  0%, 100% { box-shadow: 0 0 18px rgba(56,189,248,0.28), inset 0 0 20px rgba(250,204,21,0.08); }
+  50%      { box-shadow: 0 0 30px rgba(250,204,21,0.38), inset 0 0 28px rgba(56,189,248,0.16); }
+}
+#krdColoredMainNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 16px 0;
+  padding: 8px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  backdrop-filter: blur(12px);
+}
+.krd-mnav-btn {
+  flex: 1 1 auto;
+  min-width: 135px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(30, 41, 59, 0.55);
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: transform 0.22s cubic-bezier(.2,.8,.2,1), box-shadow 0.22s ease, background 0.22s ease, color 0.22s ease, border-color 0.22s ease;
+}
+.krd-mnav-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  color: #fff;
+}
+/* Her menunun kendine ozel rengi */
+.krd-mnav-btn[data-nav="puan"] { border-color: rgba(16,185,129,0.32); }
+.krd-mnav-btn[data-nav="puan"].active, .krd-mnav-btn[data-nav="puan"]:hover {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #fff;
+  border-color: #6ee7b7;
+  box-shadow: 0 6px 20px rgba(16,185,129,0.42);
+}
+.krd-mnav-btn[data-nav="maclar"] { border-color: rgba(59,130,246,0.32); }
+.krd-mnav-btn[data-nav="maclar"].active, .krd-mnav-btn[data-nav="maclar"]:hover {
+  background: linear-gradient(135deg, #2563eb, #38bdf8);
+  color: #fff;
+  border-color: #93c5fd;
+  box-shadow: 0 6px 20px rgba(59,130,246,0.42);
+}
+.krd-mnav-btn[data-nav="istatistik"] { border-color: rgba(168,85,247,0.35); }
+.krd-mnav-btn[data-nav="istatistik"].active, .krd-mnav-btn[data-nav="istatistik"]:hover {
+  background: linear-gradient(135deg, #7c3aed, #c084fc);
+  color: #fff;
+  border-color: #e9d5ff;
+  box-shadow: 0 6px 20px rgba(168,85,247,0.42);
+}
+.krd-mnav-btn[data-nav="muze"] { border-color: rgba(245,158,11,0.35); }
+.krd-mnav-btn[data-nav="muze"].active, .krd-mnav-btn[data-nav="muze"]:hover {
+  background: linear-gradient(135deg, #d97706, #fbbf24);
+  color: #0f172a;
+  border-color: #fef08a;
+  box-shadow: 0 6px 20px rgba(245,158,11,0.42);
+}
+.krd-mnav-btn[data-nav="cl"] {
+  border-color: rgba(250,204,21,0.45);
+  background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(30,58,138,0.65));
+  color: #fde68a;
+}
+.krd-mnav-btn[data-nav="cl"].active, .krd-mnav-btn[data-nav="cl"]:hover {
+  background: linear-gradient(135deg, #1e3a8a, #3b82f6 55%, #eab308);
+  color: #fff;
+  border-color: #fde047;
+  box-shadow: 0 6px 24px rgba(234,179,8,0.48);
+}
+.krd-nav-pane-anim {
+  animation: krdTabFadeSlide 0.34s cubic-bezier(.2,.8,.2,1);
+}
+/* KRD Sampiyonlar Ligi Ozel Sahnesi */
+#krdChampionsLeagueSection {
+  border-radius: 20px;
+  padding: 18px;
+  background: radial-gradient(circle at top right, rgba(59,130,246,0.26), transparent 55%),
+              radial-gradient(circle at bottom left, rgba(234,179,8,0.18), transparent 55%),
+              linear-gradient(145deg, #070d1f, #0f1c3f 55%, #091128);
+  border: 1px solid rgba(250, 204, 21, 0.38);
+  animation: krdClStarPulse 4.5s infinite ease-in-out, krdTabFadeSlide 0.35s ease;
+}
+.krd-cl-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(250,204,21,0.22);
+}
+.krd-cl-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  background: linear-gradient(135deg, rgba(250,204,21,0.22), rgba(56,189,248,0.22));
+  color: #fde047;
+  border: 1px solid rgba(250,204,21,0.45);
+}
+.krd-cl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 14px;
+}
+.krd-cl-card {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  border-radius: 14px;
+  padding: 14px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.krd-cl-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(250, 204, 21, 0.55);
+}
+.krd-cl-match-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(30, 41, 59, 0.65);
+  margin-top: 8px;
+  font-weight: 700;
+}
+.krd-cl-score {
+  padding: 3px 9px;
+  border-radius: 8px;
+  background: rgba(250, 204, 21, 0.16);
+  color: #fde047;
+  font-weight: 900;
+  min-width: 34px;
+  text-align: center;
+}
+</style>
 </head><body><div id="goal">GOL!</div><main id="main-content" role="main">
 
 <div id="krdLiveTickerBar" aria-label="Canlı Maç Akışı">
@@ -3428,7 +3582,7 @@ function home(){const s=S.settings,pl=S.matches.filter(m=>m.played).sort((a,b)=>
  ${sb.length?`<div class="sh"><h2>Gol & Asist Krallığı</h2></div><div class="card tw"><table><thead><tr><th>#<th class="n">Oyuncu<th class="n">Takım<th>Gol<th>Asist<th>Katkı</tr></thead><tbody>${sb.map((x,i)=>{const tm=T(x.team_id);return `<tr><td><span class="pos">${i+1}</span><td class="n"><b>${esc(x.player)}</b><td class="n">${badge(tm,24)}${esc(tm.name)}<td class="pts">${x.goals}<td>${x.assists}<td><b>${x.goals+x.assists}</b></tr>`}).join('')}</tbody></table></div>`:''}
  ${h2hSection()}${predictionLeaderboard()}${playoffSection()}
  
- ${weeks.length?`<div class="sh"><h2>Maçlar & Fikstür</h2></div><div class="tabs"><button class="${htab==='ozet'?'on':''}" onclick="htab='ozet';render()">Özet</button><button class="${htab==='all'?'on':''}" onclick="htab='all';render()">Tümü (${S.matches.length})</button>${weeks.map(w=>`<button class="${htab===w?'on':''}" onclick="htab=${w};render()">H${w}</button>`).join('')}</div>${mSec}`:mSec}
+ ${weeks.length?`<div class="sh"><h2>Maçlar & Fikstür</h2></div><div class="tabs"><button class="${htab==='ozet'?'on':''}" onclick="htab='ozet';render()">Özet</button>${weeks.map(w=>`<button class="${htab===w?'on':''}" onclick="htab=${w};render()">H${w}</button>`).join('')}</div>${mSec}`:mSec}
  ${ars.length?`<div class="sh"><h2>🏆 Şampiyonlar Müzesi</h2></div><div class="grid">${ars.map(a=>`<div class="champ" onclick="archView=${a.id};render()"><div><div class="mut">${esc(a.season)} ŞAMPİYONU</div><b style="font-size:18px;color:var(--y)">🥇 ${esc(a.champion)}</b></div><span class="tag">Tabloyu Gör →</span></div>`).join('')}</div>`:''}
  <p class="mut" style="text-align:center;margin-top:30px"></p>${teamModal()}${storyModal()}${archiveModal()}`}
 
@@ -7075,6 +7229,296 @@ async function testUnifiedAdminNotify(){
     alert('Test gönderilirken hata: ' + (err.message || err));
   }
 }
+</script>
+<script id="krd-colored-menus-cl-js">
+(function() {
+  window.__krdClCfg = window.__krdClCfg || {
+    enabled: false,
+    mode: 'auto',
+    title: 'KRD ŞAMPİYONLAR LİGİ',
+    sf1_h: '', sf1_a: '', sf1_hs: '', sf1_as: '',
+    sf2_h: '', sf2_a: '', sf2_hs: '', sf2_as: '',
+    fin_h: '', fin_a: '', fin_hs: '', fin_as: '',
+    champ: '', note: ''
+  };
+  let activeMainMenu = localStorage.getItem('krd_active_main_menu') || 'puan';
+
+  async function fetchClCfg() {
+    try {
+      const r = await fetch('/api/krd-extras');
+      if (!r.ok) return;
+      const d = await r.json();
+      if (d && d.cl) {
+        window.__krdClCfg = Object.assign({}, window.__krdClCfg, d.cl);
+        if (!window.__krdClCfg.enabled && activeMainMenu === 'cl') {
+          activeMainMenu = 'puan';
+          localStorage.setItem('krd_active_main_menu', 'puan');
+        }
+        syncColoredMenusAndCl();
+      }
+    } catch (e) {}
+  }
+
+  function escCl(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function resolveTeamName(val, fallback) {
+    if (!val) return fallback || 'Belirlenmedi';
+    if (typeof S !== 'undefined' && Array.isArray(S.teams)) {
+      const found = S.teams.find(t => String(t.id) === String(val));
+      if (found) return found.name;
+    }
+    return String(val);
+  }
+
+  function renderChampionsLeagueView() {
+    const cfg = window.__krdClCfg || {};
+    const stRows = (typeof liveStandings === 'function') ? liveStandings().rows : [];
+    const isAuto = cfg.mode !== 'manual';
+
+    let sf1H = '', sf1A = '', sf2H = '', sf2A = '', finH = '', finA = '';
+    if (isAuto) {
+      sf1H = stRows[0] ? stRows[0].name : 'Lig 1.si';
+      sf1A = stRows[3] ? stRows[3].name : 'Lig 4.sü';
+      sf2H = stRows[1] ? stRows[1].name : 'Lig 2.si';
+      sf2A = stRows[2] ? stRows[2].name : 'Lig 3.sü';
+      finH = cfg.fin_h ? resolveTeamName(cfg.fin_h, 'Yarı Final 1 Galibi') : 'Yarı Final 1 Galibi';
+      finA = cfg.fin_a ? resolveTeamName(cfg.fin_a, 'Yarı Final 2 Galibi') : 'Yarı Final 2 Galibi';
+    } else {
+      sf1H = resolveTeamName(cfg.sf1_h, 'Takım 1');
+      sf1A = resolveTeamName(cfg.sf1_a, 'Takım 2');
+      sf2H = resolveTeamName(cfg.sf2_h, 'Takım 3');
+      sf2A = resolveTeamName(cfg.sf2_a, 'Takım 4');
+      finH = resolveTeamName(cfg.fin_h, 'Finalist 1');
+      finA = resolveTeamName(cfg.fin_a, 'Finalist 2');
+    }
+
+    const champName = cfg.champ ? resolveTeamName(cfg.champ, '') : '';
+    const top4Html = stRows.slice(0, 4).map((t, idx) =>
+      '<div class="krd-cl-match-row">' +
+        '<span><b style="color:#fde047;margin-right:6px;">#' + (idx + 1) + '</b> ' + escCl(t.name) + '</span>' +
+        '<span class="krd-cl-score">' + t.pts + ' P</span>' +
+      '</div>'
+    ).join('') || '<div class="mut" style="font-size:12px;">Henüz sıralama oluşmadı.</div>';
+
+    return '<div id="krdChampionsLeagueSection">' +
+      '<div class="krd-cl-banner">' +
+        '<div>' +
+          '<div class="krd-cl-badge">🌟 DEVLER ARENASI • ' + (isAuto ? 'OTOMATİK İLK 4 MODU' : 'MANUEL ÖZEL EŞLEŞME') + '</div>' +
+          '<h2 style="margin:8px 0 2px 0;font-size:21px;color:#fff;letter-spacing:.02em;">🏆 ' + escCl(cfg.title || 'KRD ŞAMPİYONLAR LİGİ') + '</h2>' +
+          (cfg.note ? '<div style="font-size:12.5px;color:#cbd5e1;">' + escCl(cfg.note) + '</div>' : '<div style="font-size:12.5px;color:#93c5fd;">Sezonun en iyilerinin şampiyonluk kupası mücadelesi</div>') +
+        '</div>' +
+        (champName ? '<div style="padding:10px 16px;border-radius:14px;background:linear-gradient(135deg,#eab308,#f59e0b);color:#0f172a;font-weight:900;font-size:14px;box-shadow:0 6px 20px rgba(234,179,8,0.4);">👑 ŞAMPİYON: ' + escCl(champName) + '</div>' : '') +
+      '</div>' +
+      '<div class="krd-cl-grid">' +
+        '<div class="krd-cl-card">' +
+          '<div style="font-size:12px;font-weight:900;color:#7dd3fc;letter-spacing:.05em;">⭐ ŞAMPİYONLAR LİGİ POTASI (İLK 4)</div>' +
+          top4Html +
+        '</div>' +
+        '<div class="krd-cl-card">' +
+          '<div style="font-size:12px;font-weight:900;color:#c084fc;letter-spacing:.05em;">⚔️ YARI FİNAL EŞLEŞMELERİ</div>' +
+          '<div style="font-size:11px;color:#94a3b8;margin-top:6px;">1. Yarı Final</div>' +
+          '<div class="krd-cl-match-row"><span>' + escCl(sf1H) + '</span><span class="krd-cl-score">' + escCl(cfg.sf1_hs || '-') + '</span></div>' +
+          '<div class="krd-cl-match-row"><span>' + escCl(sf1A) + '</span><span class="krd-cl-score">' + escCl(cfg.sf1_as || '-') + '</span></div>' +
+          '<div style="font-size:11px;color:#94a3b8;margin-top:10px;">2. Yarı Final</div>' +
+          '<div class="krd-cl-match-row"><span>' + escCl(sf2H) + '</span><span class="krd-cl-score">' + escCl(cfg.sf2_hs || '-') + '</span></div>' +
+          '<div class="krd-cl-match-row"><span>' + escCl(sf2A) + '</span><span class="krd-cl-score">' + escCl(cfg.sf2_as || '-') + '</span></div>' +
+        '</div>' +
+        '<div class="krd-cl-card" style="border-color:rgba(250,204,21,0.5);">' +
+          '<div style="font-size:12px;font-weight:900;color:#fde047;letter-spacing:.05em;">🏆 BÜYÜK FİNAL</div>' +
+          '<div style="font-size:11.5px;color:#cbd5e1;margin-top:6px;">KRD Şampiyonlar Ligi Kupası Finali</div>' +
+          '<div class="krd-cl-match-row" style="margin-top:12px;"><span>🥇 ' + escCl(finH) + '</span><span class="krd-cl-score">' + escCl(cfg.fin_hs || '-') + '</span></div>' +
+          '<div class="krd-cl-match-row"><span>🥈 ' + escCl(finA) + '</span><span class="krd-cl-score">' + escCl(cfg.fin_as || '-') + '</span></div>' +
+          '<div style="margin-top:14px;padding:10px;border-radius:10px;background:rgba(250,204,21,0.1);border:1px dashed rgba(250,204,21,0.4);text-align:center;font-size:12px;color:#fde68a;">' +
+            (champName ? '🎉 Kupa Sahibi: <b>' + escCl(champName) + '</b>' : 'Final maçı oynandığında kupa sahibi burada taçlandırılır.') +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function syncColoredMenusAndCl() {
+    if (typeof S === 'undefined' || !S || !Array.isArray(S.teams)) return;
+    const slug = (S.settings && S.settings.admin_slug) ? S.settings.admin_slug : 'krd-kontrol';
+    const h = location.hash || '';
+    const isAdmin = h.startsWith('#/' + slug) || h.startsWith('#/yonetici');
+    const app = document.getElementById('app');
+    if (!app) return;
+
+    // Yonetici panelinde Eklemeler/Goruntu sekmesindeysek KRD Sampiyonlar Ligi Kontrol Kutusunu ekle
+    if (isAdmin) {
+      const navEl = document.getElementById('krdColoredMainNav');
+      if (navEl) navEl.remove();
+      const clBox = document.getElementById('krdChampionsLeagueSection');
+      if (clBox) clBox.remove();
+
+      if (typeof tab !== 'undefined' && tab === 'kupa' && !document.getElementById('krdAdminClCtrlBox')) {
+        const cfg = window.__krdClCfg || {};
+        const teamOpts = (sel, lbl) => '<option value="">' + lbl + '</option>' + S.teams.map(t => '<option value="' + t.id + '" ' + (String(sel) === String(t.id) ? 'selected' : '') + '>' + escCl(t.name) + '</option>').join('');
+        const box = document.createElement('div');
+        box.id = 'krdAdminClCtrlBox';
+        box.className = 'card';
+        box.style.cssText = 'margin-top:14px;border:1px solid rgba(250,204,21,0.45);background:linear-gradient(145deg,rgba(15,23,42,0.95),rgba(30,58,138,0.35));';
+        box.innerHTML =
+          '<div class="sh"><h2>🌟 KRD ŞAMPİYONLAR LİGİ Kontrol Merkezi (Otomatik & Manuel)</h2></div>' +
+          '<div style="display:grid;gap:10px;">' +
+            '<label style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;background:rgba(250,204,21,0.12);border:1px solid rgba(250,204,21,0.35);cursor:pointer;font-weight:800;color:#fde047;">' +
+              '<input type="checkbox" id="cl_enabled" ' + (cfg.enabled ? 'checked' : '') + '> 🌟 KRD ŞAMPİYONLAR LİGİ Menüsünü Ana Sayfada Göster (Açık / Kapalı)' +
+            '</label>' +
+            '<div class="row">' +
+              '<label>Turnuva Başlığı<input id="cl_title" value="' + escCl(cfg.title || 'KRD ŞAMPİYONLAR LİGİ') + '"></label>' +
+              '<label>Çalışma Modu<select id="cl_mode">' +
+                '<option value="auto" ' + (cfg.mode !== 'manual' ? 'selected' : '') + '>⚡ Otomatik (Puan Durumu İlk 4)</option>' +
+                '<option value="manual" ' + (cfg.mode === 'manual' ? 'selected' : '') + '>✍️ Manuel (Yönetici Seçimi)</option>' +
+              '</select></label>' +
+            '</div>' +
+            '<label>Turnuva Alt Notu / Duyurusu<input id="cl_note" value="' + escCl(cfg.note || '') + '" placeholder="Örn: Sezon sonu devler arenası başlıyor!"></label>' +
+            '<div class="grid">' +
+              '<div class="card" style="margin:0"><b>1. Yarı Final (Manuel Takım & Skor)</b>' +
+                '<div class="row" style="margin-top:6px"><select id="cl_sf1_h">' + teamOpts(cfg.sf1_h, 'Ev Sahibi') + '</select><input id="cl_sf1_hs" value="' + escCl(cfg.sf1_hs || '') + '" placeholder="Skor" style="max-width:70px"></div>' +
+                '<div class="row" style="margin-top:6px"><select id="cl_sf1_a">' + teamOpts(cfg.sf1_a, 'Deplasman') + '</select><input id="cl_sf1_as" value="' + escCl(cfg.sf1_as || '') + '" placeholder="Skor" style="max-width:70px"></div>' +
+              '</div>' +
+              '<div class="card" style="margin:0"><b>2. Yarı Final (Manuel Takım & Skor)</b>' +
+                '<div class="row" style="margin-top:6px"><select id="cl_sf2_h">' + teamOpts(cfg.sf2_h, 'Ev Sahibi') + '</select><input id="cl_sf2_hs" value="' + escCl(cfg.sf2_hs || '') + '" placeholder="Skor" style="max-width:70px"></div>' +
+                '<div class="row" style="margin-top:6px"><select id="cl_sf2_a">' + teamOpts(cfg.sf2_a, 'Deplasman') + '</select><input id="cl_sf2_as" value="' + escCl(cfg.sf2_as || '') + '" placeholder="Skor" style="max-width:70px"></div>' +
+              '</div>' +
+              '<div class="card" style="margin:0"><b>🏆 Büyük Final & Şampiyon</b>' +
+                '<div class="row" style="margin-top:6px"><select id="cl_fin_h">' + teamOpts(cfg.fin_h, 'Finalist 1') + '</select><input id="cl_fin_hs" value="' + escCl(cfg.fin_hs || '') + '" placeholder="Skor" style="max-width:70px"></div>' +
+                '<div class="row" style="margin-top:6px"><select id="cl_fin_a">' + teamOpts(cfg.fin_a, 'Finalist 2') + '</select><input id="cl_fin_as" value="' + escCl(cfg.fin_as || '') + '" placeholder="Skor" style="max-width:70px"></div>' +
+                '<div style="margin-top:6px"><select id="cl_champ">' + teamOpts(cfg.champ, '👑 Şampiyon Takımı Seç') + '</select></div>' +
+              '</div>' +
+            '</div>' +
+            '<button type="button" class="pri" id="cl_save_btn">💾 KRD Şampiyonlar Ligi Ayarlarını Kaydet</button>' +
+          '</div>';
+        app.appendChild(box);
+        document.getElementById('cl_save_btn').addEventListener('click', async () => {
+          const payload = {
+            enabled: document.getElementById('cl_enabled').checked,
+            title: document.getElementById('cl_title').value.trim() || 'KRD ŞAMPİYONLAR LİGİ',
+            mode: document.getElementById('cl_mode').value,
+            note: document.getElementById('cl_note').value.trim(),
+            sf1_h: document.getElementById('cl_sf1_h').value,
+            sf1_hs: document.getElementById('cl_sf1_hs').value.trim(),
+            sf1_a: document.getElementById('cl_sf1_a').value,
+            sf1_as: document.getElementById('cl_sf1_as').value.trim(),
+            sf2_h: document.getElementById('cl_sf2_h').value,
+            sf2_hs: document.getElementById('cl_sf2_hs').value.trim(),
+            sf2_a: document.getElementById('cl_sf2_a').value,
+            sf2_as: document.getElementById('cl_sf2_as').value.trim(),
+            fin_h: document.getElementById('cl_fin_h').value,
+            fin_hs: document.getElementById('cl_fin_hs').value.trim(),
+            fin_a: document.getElementById('cl_fin_a').value,
+            fin_as: document.getElementById('cl_fin_as').value.trim(),
+            champ: document.getElementById('cl_champ').value
+          };
+          try {
+            await api('POST', '/api/admin/krd-extras', { cl: payload });
+            window.__krdClCfg = payload;
+            if (typeof toast === 'function') toast('KRD Şampiyonlar Ligi ayarları kaydedildi!');
+          } catch (err) {
+            alert('Kaydedilemedi: ' + (err.message || err));
+          }
+        });
+      }
+      return;
+    }
+
+    // Ana Sayfa: Renkli & Animasyonlu Menuleri Olustur ("Tumu" YOK!)
+    const hero = app.querySelector('.hero');
+    if (!hero) return;
+
+    const clEnabled = !!(window.__krdClCfg && window.__krdClCfg.enabled);
+    if (!clEnabled && activeMainMenu === 'cl') activeMainMenu = 'puan';
+
+    let navBar = document.getElementById('krdColoredMainNav');
+    if (!navBar) {
+      navBar = document.createElement('div');
+      navBar.id = 'krdColoredMainNav';
+      hero.insertAdjacentElement('afterend', navBar);
+    }
+
+    const menuItems = [
+      { id: 'puan', icon: '📊', label: 'Puan Durumu' },
+      { id: 'maclar', icon: '⚽', label: 'Maçlar & Fikstür' },
+      { id: 'istatistik', icon: '📈', label: 'İstatistik & Rekabet' },
+      { id: 'muze', icon: '🏆', label: 'Şampiyonlar Müzesi' }
+    ];
+    if (clEnabled) {
+      menuItems.push({ id: 'cl', icon: '🌟', label: 'KRD ŞAMPİYONLAR LİGİ' });
+    }
+
+    const sig = menuItems.map(m => m.id).join(',') + '|' + activeMainMenu;
+    if (navBar.dataset.sig !== sig) {
+      navBar.dataset.sig = sig;
+      navBar.innerHTML = menuItems.map(m =>
+        '<button type="button" class="krd-mnav-btn ' + (activeMainMenu === m.id ? 'active' : '') + '" data-nav="' + m.id + '">' +
+          '<span>' + m.icon + '</span><span>' + m.label + '</span>' +
+        '</button>'
+      ).join('');
+      navBar.querySelectorAll('.krd-mnav-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          activeMainMenu = btn.getAttribute('data-nav');
+          localStorage.setItem('krd_active_main_menu', activeMainMenu);
+          syncColoredMenusAndCl();
+        });
+      });
+    }
+
+    // Icerik bolumlerini secili menuye gore siniflandir ve animasyonla goster/gizle
+    let currentBucket = 'puan';
+    Array.from(app.children).forEach(el => {
+      if (el === hero || el === navBar || el.classList.contains('modal')) return;
+      if (el.id === 'krdChampionsLeagueSection') return;
+
+      const txt = (el.textContent || '');
+      if (el.classList.contains('sh')) {
+        if (/Puan Durumu/i.test(txt)) currentBucket = 'puan';
+        else if (/Gol & Asist|Kafa Kafaya|Tahmin Kralı|Kupa / Play-Off/i.test(txt)) currentBucket = 'istatistik';
+        else if (/Maçlar & Fikstür|Son Maçlar|Sıradaki Maçlar/i.test(txt)) currentBucket = 'maclar';
+        else if (/Şampiyonlar Müzesi/i.test(txt)) currentBucket = 'muze';
+      }
+      if (el.id === 'krdHomeRadarWrap' || el.id === 'krdAdminBanner') {
+        el.style.display = (activeMainMenu === 'puan') ? '' : 'none';
+        return;
+      }
+      if (el.id === 'krdOddsPanel' || el.id === 'krdH2hBox') {
+        el.style.display = (activeMainMenu === 'istatistik') ? '' : 'none';
+        return;
+      }
+
+      const show = (activeMainMenu !== 'cl') && (currentBucket === activeMainMenu);
+      if (show) {
+        if (el.style.display === 'none') {
+          el.style.display = '';
+          el.classList.remove('krd-nav-pane-anim');
+          void el.offsetWidth;
+          el.classList.add('krd-nav-pane-anim');
+        }
+      } else {
+        el.style.display = 'none';
+      }
+    });
+
+    // KRD Sampiyonlar Ligi Sahnesi
+    let clSec = document.getElementById('krdChampionsLeagueSection');
+    if (activeMainMenu === 'cl' && clEnabled) {
+      if (!clSec) {
+        clSec = document.createElement('div');
+        clSec.id = 'krdChampionsLeagueSection';
+        navBar.insertAdjacentElement('afterend', clSec);
+      }
+      clSec.innerHTML = renderChampionsLeagueView();
+    } else if (clSec) {
+      clSec.remove();
+    }
+  }
+
+  fetchClCfg();
+  setInterval(fetchClCfg, 15000);
+  setInterval(syncColoredMenusAndCl, 350);
+  window.addEventListener('hashchange', syncColoredMenusAndCl);
+})();
 </script>
 </body></html>
 
