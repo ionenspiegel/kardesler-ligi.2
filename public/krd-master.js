@@ -1782,11 +1782,7 @@
   window.__krdSafeVisitorPolish = true;
 
   function isAdminScreen() {
-    if (location.hash && location.hash.indexOf('admin') !== -1) return true;
-    if (document.getElementById('admSubVal')) return true;
-    if (document.querySelector('[onclick*="saveAdminExtra"], [onclick*="/api/admin/"]')) return true;
-    if (document.body && document.body.textContent.indexOf('Notu Kaydet') !== -1) return true;
-    return false;
+    return isAdm();
   }
 
   function applyVisitorOnlyPolish() {

@@ -3905,7 +3905,7 @@ let c='';
  if(tab==='s'){const s=S.settings;c=`<form class="card" style="display:grid;gap:10px" onsubmit="return sv(event)"><div class="row"><label>Lig adı<input name="name" value="${esc(s.name)}" required></label><label>Sezon<input name="season" value="${esc(s.season)}" required></label><label>Güncel hafta<input name="week" type="number" min="1" value="${esc(s.week)}"></label></div><div class="row"><label>Galibiyet puanı<input name="win" type="number" min="0" value="${esc(s.win)}"></label><label>Beraberlik puanı<input name="draw" type="number" min="0" value="${esc(s.draw)}"></label><label>Mağlubiyet puanı<input name="loss" type="number" min="0" value="${esc(s.loss)}"></label></div><button class="pri">Kaydet</button></form>
  <div class="sh"><h2>Şifre Değiştir</h2></div><form class="card row" onsubmit="return pw(event)"><input name="c" type="password" placeholder="Mevcut şifre" required autocomplete="current-password"><input name="n" type="password" placeholder="Yeni şifre (en az 8)" minlength="8" required autocomplete="new-password"><button class="pri">Değiştir</button></form>
  <div class="sh"><h2>Yedek & Geri Yükle</h2></div><div class="card row"><a href="/api/admin/backup" style="flex:0 0 auto"><button type="button">⬇ JSON yedeği indir</button></a><button type="button" onclick="$('#impFile').click()">⬆ JSON yedeği yükle</button><input id="impFile" type="file" accept=".json,application/json" style="display:none" onchange="restoreJson(this)"></div>`}
- return `<div class="top"><h2 style="margin:0">🛡 Yönetici Paneli — ${esc((ME && ME.username) || 'Yusuf')}</h2><div style="display:flex;gap:6px"><button type="button" class="sm pri" id="pwaBtn" style="${deferredInstall?'':'display:none'}" onclick="installApp()">📲 Uygulamayı Yükle</button><button class="sm" onclick="toggleSfx()">${sfxOn?'🔊 Ses Açık':'🔇 Ses Kapalı'}</button><a href="#/"><button class="sm">Lig</button></a><button class="sm" onclick="out()">Çıkış</button></div></div><div class="tabs">${tabs.map(([k,l])=>`<button class="${tab===k?'on':''}" onclick="tab='${k}';render()">${l}</button>`).join('')}</div>${c}`}
+ return `<div class="top"><h2 style="margin:0">🛡 Yönetici Paneli — ${esc((ME && ME.username) || 'Yusuf')}</h2><div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="sm" onclick="tab='cl';render()" style="background:linear-gradient(135deg,#312e81,#b45309)!important;color:#fef08a!important;border:1px solid #facc15!important;font-weight:900!important;">🌟 KRD Şampiyonlar Ligi</button><button type="button" class="sm pri" id="pwaBtn" style="${deferredInstall?'':'display:none'}" onclick="installApp()">📲 Uygulamayı Yükle</button><button class="sm" onclick="toggleSfx()">${sfxOn?'🔊 Ses Açık':'🔇 Ses Kapalı'}</button><a href="#/"><button class="sm">Lig</button></a><button class="sm" onclick="out()">Çıkış</button></div></div><div class="tabs">${tabs.map(([k,l])=>`<button class="${tab===k?'on':''}" onclick="tab='${k}';render()">${l}</button>`).join('')}</div>${c}`}
 
 function restoreJson(inp){
  const file=inp.files?.[0];if(!file)return;
@@ -7409,7 +7409,10 @@ window.adminClTab = function() {
   </div>`;
 };
 </script>
-<script id="krd-sw-bust">
+<script id="krd-sw-purge">
+if ('caches' in window) {
+  caches.keys().then(ks => ks.forEach(k => { if (!k.includes('v2026cl')) caches.delete(k); }));
+}
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.update()));
 }
