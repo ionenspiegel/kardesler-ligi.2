@@ -965,10 +965,12 @@ const u = new URL(req.url, 'http://x');
     if (!me) return send(res, 401, { error: 'Yetkisiz' });
     const b = await body(req);
     const cl = b.cl || {};
-    await pool.query(
-      `INSERT INTO ${SETTINGS} (k, v) VALUES ($1, $2) ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v`,
-      ['krd_champions_league', JSON.stringify(cl)]
-    );
+    await tx(async t => {
+      await t.run(`DELETE FROM ${SETTINGS} WHERE k=$1`, 'krd_champions_league');
+      await t.run(`INSERT INTO ${SETTINGS}(k,v) VALUES($1,$2)`, 'krd_champions_league', JSON.stringify(cl));
+    });
+    if (typeof pushAudit === 'function') pushAudit('KRD Şampiyonlar Ligi Güncellendi', (cl.season || 'Devler Ligi') + ' kaydedildi.');
+    if (typeof notifyClients === 'function') notifyClients();
     return send(res, 200, { ok: 1, cl });
   }
   // === KRD_CHAMPIONS_LEAGUE_END ===
